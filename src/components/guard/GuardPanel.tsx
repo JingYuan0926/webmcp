@@ -31,7 +31,9 @@ export function GuardPanel() {
             className={`webmcp-badge panel-webmcp-badge${snapshot.environment.native ? " webmcp-badge--native" : ""}`}
             aria-live="polite"
           >
-            {snapshot.environment.native
+            {!snapshot.available
+              ? "WebMCP: Checking"
+              : snapshot.environment.native
               ? "WebMCP: Native"
               : "WebMCP: Shim — demo fallback"}
           </span>

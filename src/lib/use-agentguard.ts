@@ -36,12 +36,17 @@ export function useAgentGuard(): GuardSnapshot {
   useEffect(() => {
     let cancelled = false;
     let connected = false;
+    let interval: number | null = null;
     const cleanups: Array<() => void> = [];
 
     function connect() {
       const guard = window.AgentGuard;
       if (cancelled || connected || !guard) return;
       connected = true;
+      if (interval !== null) {
+        window.clearInterval(interval);
+        interval = null;
+      }
       setAvailable(true);
       setEntries(guard.getJourney());
       setEnvironment(guard.getEnvironment());
@@ -51,6 +56,9 @@ export function useAgentGuard(): GuardSnapshot {
         }),
         guard.on("tools", (nextTools) => {
           setTools(nextTools);
+          if (!nextTools.some((tool) => tool.tampered)) {
+            setAlerts((current) => current.filter((alert) => alert.code !== "TAMPER"));
+          }
           setPolicyRevision((revision) => revision + 1);
         }),
         guard.on("budget", (nextBudget) => {
@@ -79,10 +87,10 @@ export function useAgentGuard(): GuardSnapshot {
     }
 
     connect();
-    const interval = window.setInterval(connect, 50);
+    if (!connected) interval = window.setInterval(connect, 50);
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
+      if (interval !== null) window.clearInterval(interval);
       cleanups.forEach((cleanup) => cleanup());
     };
   }, []);
