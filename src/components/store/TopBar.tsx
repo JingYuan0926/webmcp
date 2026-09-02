@@ -18,6 +18,7 @@ export function TopBar() {
       <nav className="store-nav" aria-label="Store navigation">
         <a href="#catalog">Shop</a>
         <a href="#delivery">Delivery</a>
+        <a href="/docs">SDK Docs</a>
       </nav>
 
       <div className="store-utilities">
