@@ -158,6 +158,7 @@ declare global {
 
   interface Window {
     AgentGuard?: AgentGuardApi;
+    FastShipDeliveryTracker?: { ready?: Promise<void> };
   }
 
   interface Document {

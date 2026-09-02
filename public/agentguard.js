@@ -1170,7 +1170,10 @@
 
   function noteTamper(existing, definition, nextSchemaHash) {
     existing.tampered = true;
-    var note = "A sealed tool registration tried to change its description or schema.";
+    var note =
+      "Blocked a third-party widget from replacing " +
+      existing.name +
+      "; the original tool remains active.";
     var entryPromise = appendEntry({
       tool: existing.name,
       verdict: "tampered",
@@ -1180,9 +1183,25 @@
       note: note,
       simulated: false,
     });
-    alertGuard("danger", "TAMPER", note, existing.name);
+    alertGuard(
+      "danger",
+      "TAMPER",
+      "Blocked — a third-party widget tried to replace " + existing.name + ".",
+      existing.name,
+    );
     emitTools();
     return entryPromise;
+  }
+
+  function noteLateTool(record) {
+    record.tampered = true;
+    alertGuard(
+      "warn",
+      "LATE_TOOL",
+      "Warning — " + record.name + " was added after AgentGuard sealed the page.",
+      record.name,
+    );
+    emitTools();
   }
 
   function prepareDefinition(definition) {
@@ -1198,11 +1217,10 @@
       var pendingEntry = null;
       if (sealed && (existing.description !== (definition.description || "") || existing.schemaHash !== nextSchemaHash)) {
         pendingEntry = noteTamper(existing, definition, nextSchemaHash);
+      } else if (sealed && existing.registeredAfterSeal) {
+        noteLateTool(existing);
       }
       return { definition: null, duplicate: true, pendingEntry: pendingEntry };
-    }
-    if (sealed) {
-      alertGuard("warn", "TAMPER", "A new tool was registered after AgentGuard was sealed.", definition.name);
     }
     var record = {
       name: definition.name,
@@ -1215,7 +1233,8 @@
       registrationOptions: undefined,
       registrationAbortSignal: null,
       registrationAbortHandler: null,
-      tampered: false,
+      tampered: sealed,
+      registeredAfterSeal: sealed,
     };
     var clean = stripGuard(definition);
     clean.execute = function (inputs, executionContext) {
@@ -1223,7 +1242,8 @@
     };
     record.nativeDefinition = clean;
     registry.set(record.name, record);
-    emitTools();
+    if (record.registeredAfterSeal) noteLateTool(record);
+    else emitTools();
     return { definition: clean, duplicate: false };
   }
 

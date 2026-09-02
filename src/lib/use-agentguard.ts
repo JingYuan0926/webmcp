@@ -17,11 +17,12 @@ export type GuardSnapshot = {
 };
 
 const emptyPolicies: AgentGuardPolicies = { merchant: {}, user: {}, effective: {} };
+const MAX_ORDINARY_ALERTS = 20;
 
 export function useAgentGuard(): GuardSnapshot {
   const [entries, setEntries] = useState<AgentGuardEntry[]>([]);
   const [tools, setTools] = useState<AgentGuardTool[]>([]);
-  const [budget, setBudget] = useState({ limit: 0, spent: 0, currency: "RM" });
+  const [budget, setBudget] = useState({ limit: 0, spent: 0, currency: "USD" });
   const [approvals, setApprovals] = useState<AgentGuardApproval[]>([]);
   const [alerts, setAlerts] = useState<GuardAlert[]>([]);
   const nextAlertId = useRef(1);
@@ -57,7 +58,11 @@ export function useAgentGuard(): GuardSnapshot {
         guard.on("tools", (nextTools) => {
           setTools(nextTools);
           if (!nextTools.some((tool) => tool.tampered)) {
-            setAlerts((current) => current.filter((alert) => alert.code !== "TAMPER"));
+            setAlerts((current) =>
+              current.filter(
+                (alert) => alert.code !== "TAMPER" && alert.code !== "LATE_TOOL",
+              ),
+            );
           }
           setPolicyRevision((revision) => revision + 1);
         }),
@@ -71,10 +76,12 @@ export function useAgentGuard(): GuardSnapshot {
           const nextAlert = { ...alert, id: nextAlertId.current };
           nextAlertId.current += 1;
           setAlerts((current) => {
-            const dangerAlerts = current.filter((item) => item.level === "danger");
-            const ordinaryAlerts = current.filter((item) => item.level !== "danger");
-            const retainedOrdinary = ordinaryAlerts.slice(alert.level === "danger" ? -20 : -19);
-            return [...dangerAlerts, ...retainedOrdinary, nextAlert];
+            const updated = [...current, nextAlert];
+            const dangerAlerts = updated.filter((item) => item.level === "danger");
+            const ordinaryAlerts = updated
+              .filter((item) => item.level !== "danger")
+              .slice(-MAX_ORDINARY_ALERTS);
+            return [...dangerAlerts, ...ordinaryAlerts];
           });
         }),
         guard.on("state", (state) => {
