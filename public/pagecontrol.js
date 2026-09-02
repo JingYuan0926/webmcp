@@ -5,7 +5,7 @@
     return;
   }
 
-  var VERSION = "1.1.0";
+  var VERSION = "1.0.0";
   var APPROVAL_TTL_MS = 60000;
   var EXECUTION_TTL_MS = 20000;
   var MODE_RANK = { allow: 0, approve: 1, deny: 2 };

@@ -71,14 +71,14 @@ PageControl.setUserPolicy(
 );`;
 
 const sriExample = `<script
-  src="https://your-cdn.example/pagecontrol/v1.1.0/pagecontrol.js"
+  src="https://your-cdn.example/pagecontrol/v1.0.0/pagecontrol.js"
   integrity="sha384-YOUR_RELEASE_HASH"
   crossorigin="anonymous">
 </script>`;
 
-const componentRoadmapExample = `<!-- Roadmap sketch — not available in v1.1.0. -->
+const componentRoadmapExample = `<!-- Roadmap sketch — not available in v1.0.0. -->
 <script
-  src="https://your-cdn.example/pagecontrol/v1.1.0/pagecontrol.js"
+  src="https://your-cdn.example/pagecontrol/v1.0.0/pagecontrol.js"
   data-budget="300"
   data-currency="USD">
 </script>
@@ -147,7 +147,7 @@ export default function DocsPage() {
           <Link className="sdk-docs-brand" href="/" aria-label="PageControl demo home">
             <span><ShieldMark /></span>
             <strong>PageControl SDK</strong>
-            <small>v1.1.0</small>
+            <small>v1.0.0</small>
           </Link>
           <nav aria-label="Documentation utilities">
             <Link href="/">Live demo</Link>
