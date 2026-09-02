@@ -4,15 +4,12 @@ import { useMemo, useState } from "react";
 
 import { AddressCard } from "@/components/store/AddressCard";
 import { CartCard } from "@/components/store/CartCard";
-import { OrdersCard } from "@/components/store/OrdersCard";
 import { ProductGrid } from "@/components/store/ProductGrid";
 import { SearchBar } from "@/components/store/SearchBar";
 import { catalog } from "@/lib/catalog";
-import { useAgentGuard } from "@/lib/use-agentguard";
 
 export function StorePane() {
   const [query, setQuery] = useState("");
-  const { tools, budget, available } = useAgentGuard();
   const products = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return catalog;
@@ -28,36 +25,34 @@ export function StorePane() {
     <main className="store-pane">
       <section className="store-intro" aria-labelledby="catalog-title">
         <div>
-          <p className="eyebrow">Kuala Lumpur · ready to ship</p>
-          <h1 id="catalog-title">Let your agent shop. Keep the final say.</h1>
-          <p>Share the cart, not control. AgentGuard checks every WebMCP call inside the page.</p>
+          <p className="eyebrow">Curated essentials for work and home</p>
+          <h1 id="catalog-title">Better tech for everyday work.</h1>
+          <p>Reliable desk gear, useful upgrades, and straightforward support—all selected to make your setup work better.</p>
         </div>
         <SearchBar value={query} onChange={setQuery} resultCount={products.length} />
       </section>
-      <section className="trust-path" aria-label="AgentGuard protection path">
+      <section className="store-benefits" aria-label="Shopping benefits">
         <div>
-          <span className="trust-step">01</span>
-          <p><strong>{available ? tools.length : "—"} tools</strong><span>registered in-page</span></p>
+          <span aria-hidden="true">✓</span>
+          <p><strong>Free shipping</strong><small>On orders over $50</small></p>
         </div>
-        <span className="trust-arrow" aria-hidden="true">→</span>
         <div>
-          <span className="trust-step">02</span>
-          <p><strong>{available ? `RM ${budget.limit.toFixed(0)}` : "Loading"}</strong><span>session policy floor</span></p>
+          <span aria-hidden="true">↺</span>
+          <p><strong>30-day returns</strong><small>Simple, no-stress returns</small></p>
         </div>
-        <span className="trust-arrow" aria-hidden="true">→</span>
         <div>
-          <span className="trust-step">03</span>
-          <p><strong>Human approval</strong><span>before address or checkout</span></p>
+          <span aria-hidden="true">◇</span>
+          <p><strong>Helpful support</strong><small>Real answers when you need them</small></p>
         </div>
       </section>
       <div className="store-content">
-        <section aria-label="Product catalog">
+        <section id="catalog" aria-label="Product catalog">
           <ProductGrid products={products} />
         </section>
         <aside className="store-sidebar" aria-label="Cart and account details">
+          <div id="partner-slot" aria-live="polite" />
           <CartCard />
           <AddressCard />
-          <OrdersCard />
         </aside>
       </div>
     </main>

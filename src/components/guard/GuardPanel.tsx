@@ -1,17 +1,35 @@
 "use client";
 
+import { useState } from "react";
+
 import { AlertsStrip } from "@/components/guard/AlertsStrip";
 import { ApprovalsList } from "@/components/guard/ApprovalsList";
-import { ExportRow } from "@/components/guard/ExportRow";
 import { PolicyList } from "@/components/guard/PolicyList";
 import { SpendMeter } from "@/components/guard/SpendMeter";
 import { Timeline } from "@/components/guard/Timeline";
+import { demoSteps, runTestAgent } from "@/lib/demo-agent";
 import { useAgentGuard } from "@/lib/use-agentguard";
 
-export function GuardPanel() {
+export function GuardPanel({ onHide }: { onHide: () => void }) {
   const snapshot = useAgentGuard();
+  const [progress, setProgress] = useState<{ step: number; tool: string } | null>(null);
+  const [runError, setRunError] = useState("");
   const tampered = snapshot.tools.some((tool) => tool.tampered);
   const status = tampered ? "Tamper detected" : snapshot.guardState.paused ? "Paused" : "Live";
+  const ready = snapshot.available && snapshot.tools.some((tool) => tool.name === "list_products");
+
+  async function runSecurityDemo() {
+    setRunError("");
+    const result = await runTestAgent((step, tool) => setProgress({ step, tool }));
+    if (!result.ok) setRunError(result.message);
+    setProgress(null);
+  }
+
+  function togglePause() {
+    if (!window.AgentGuard) return;
+    if (snapshot.guardState.paused) window.AgentGuard.resume();
+    else window.AgentGuard.pause();
+  }
 
   return (
     <aside className="guard-panel" aria-label="AgentGuard control panel">
@@ -38,10 +56,24 @@ export function GuardPanel() {
               : "WebMCP: Shim — demo fallback"}
           </span>
         </div>
-        <div className="guard-live">
-          <span className={tampered || snapshot.guardState.paused ? "is-alert" : ""} aria-hidden="true" />
-          <strong>{status}</strong>
-          <small>{snapshot.entries.length} entries</small>
+        <div className="guard-header-actions">
+          <div className="guard-live">
+            <span className={tampered || snapshot.guardState.paused ? "is-alert" : ""} aria-hidden="true" />
+            <strong>{status}</strong>
+            <small>{snapshot.entries.length} entries</small>
+          </div>
+          <button
+            type="button"
+            className="guard-hide-button"
+            onClick={onHide}
+            aria-label="Hide AgentGuard panel"
+            title="Hide AgentGuard"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path d="m14 7-5 5 5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M19 5v14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
       </header>
 
@@ -50,6 +82,27 @@ export function GuardPanel() {
           Guarding native agent calls on this page.
         </p>
       ) : null}
+
+      <div className="guard-command-bar" aria-label="Agent controls">
+        <button
+          type="button"
+          className="panel-button panel-button--allow"
+          onClick={runSecurityDemo}
+          disabled={!ready || Boolean(progress)}
+          aria-busy={Boolean(progress)}
+        >
+          {progress ? `Demo ${progress.step}/${demoSteps.length}: ${progress.tool}` : "Run security demo"}
+        </button>
+        <button
+          type="button"
+          className="panel-button panel-button--ghost"
+          onClick={togglePause}
+          disabled={!snapshot.available}
+        >
+          {snapshot.guardState.paused ? "Resume agent" : "Pause agent"}
+        </button>
+        {runError ? <p role="alert">{runError}</p> : null}
+      </div>
 
       {!snapshot.available ? (
         <div className="panel-error" role="status">
@@ -66,7 +119,6 @@ export function GuardPanel() {
         policies={snapshot.policies}
         budget={snapshot.budget}
       />
-      <ExportRow />
     </aside>
   );
 }

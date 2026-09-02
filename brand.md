@@ -2,7 +2,7 @@
 
 _Status: active_
 
-AgentGuard is a calm, technical trust product for the agent-native web. The interface pairs a light Malaysian storefront with a dark operations console so people can see the boundary between commerce and control.
+AgentGuard is a calm, technical trust product for the agent-native web. The interface pairs a light US technology storefront with a dark operations console so people can see the boundary between commerce and control.
 
 ## Palette
 

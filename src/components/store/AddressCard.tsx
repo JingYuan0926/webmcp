@@ -58,7 +58,7 @@ function AddressForm({
   }
 
   return (
-    <section className={`store-card${flashed(lastFlash, "address") ? " is-flashing" : ""}`} aria-labelledby="address-title">
+    <section id="delivery" className={`store-card${flashed(lastFlash, "address") ? " is-flashing" : ""}`} aria-labelledby="address-title">
       <div className="section-heading">
         <div>
           <p className="eyebrow">Delivery</p>
@@ -76,7 +76,6 @@ function AddressForm({
             spellCheck={false}
             value={form.name}
             onChange={(event) => update("name", event.target.value)}
-            placeholder="Aiman Rahman"
             required
             aria-invalid={error ? "true" : undefined}
             aria-describedby={error ? "address-error" : undefined}
@@ -91,7 +90,6 @@ function AddressForm({
             spellCheck={false}
             value={form.line1}
             onChange={(event) => update("line1", event.target.value)}
-            placeholder="12 Jalan Merdeka"
             required
             aria-invalid={error ? "true" : undefined}
             aria-describedby={error ? "address-error" : undefined}
@@ -106,14 +104,13 @@ function AddressForm({
             spellCheck={false}
             value={form.city}
             onChange={(event) => update("city", event.target.value)}
-            placeholder="Kuala Lumpur"
             required
             aria-invalid={error ? "true" : undefined}
             aria-describedby={error ? "address-error" : undefined}
           />
         </div>
         <div className="field">
-          <label htmlFor="shipping-postcode">Postcode</label>
+          <label htmlFor="shipping-postcode">ZIP code</label>
           <input
             id="shipping-postcode"
             type="text"
@@ -123,7 +120,6 @@ function AddressForm({
             spellCheck={false}
             value={form.postcode}
             onChange={(event) => update("postcode", event.target.value)}
-            placeholder="50000"
             required
             aria-invalid={error ? "true" : undefined}
             aria-describedby={error ? "address-error" : undefined}

@@ -4,9 +4,9 @@ import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AgentGuard · Kedai Tech",
+  title: "Northline Tech | Everyday technology",
   description:
-    "The in-page trust layer for WebMCP: policies, approvals, and a hash-chained flight recorder.",
+    "Thoughtfully selected technology for work, home, and everything between.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
