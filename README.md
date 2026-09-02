@@ -10,6 +10,14 @@ These calls run inside the page. They do not cross the network, so a firewall, A
 
 The page is the only control point that sees the tool definition, arguments, result, and user state together. AgentGuard puts the policy layer there.
 
+## The design problem
+
+Blocking an agent is easy. Blocking it without making it useless is the hard part.
+
+A guard that only says no turns the agent into a dead end. AgentGuard answers every blocked call with a plain sentence: which rule stopped it, and what the limit is. The agent reads that, adapts, and retries inside the rule. Refused fifty cables, it asks for five.
+
+The guard also registers its own WebMCP tools. The agent can ask why it was blocked, read its own record, and request a budget change that a human must approve. The result is a boundary the agent can work inside, not a wall it keeps hitting.
+
 ## The demo
 
 The app is one shared workspace. Kedai Tech, a Malaysian electronics store, sits on the left. The AgentGuard control panel sits on the right. A human and an agent change the same cart and address.
@@ -54,6 +62,37 @@ The shim is only a demo fallback. The interface always shows the active mode:
 - Open the deployed URL in ChatGPT's in-app browser. The badge must read **WebMCP: Native**. Ask the agent to add a wireless mouse and check out.
 - In Chrome, enable `chrome://flags/#enable-webmcp-testing`, reload the page, and confirm the badge reads **Native**.
 - Use the open-source [Model Context Tool Inspector](https://github.com/beaufortfrancois/model-context-tool-inspector) to list and execute the page tools manually.
+
+## How we attacked it
+
+A guard that nobody attacked is a guess. Two adversarial review rounds tried to break AgentGuard and confirmed sixteen defects. All are fixed. Every security defect carries a regression test in `scripts/agentguard-smoke.mjs`.
+
+These four attacks worked, and matter most:
+
+**1. The budget race.** Two `checkout` calls fired together both passed one remaining budget. The check read the spent total before the awaited execution added to it. Two calls of RM200 each cleared an RM300 limit. Fix: the cost is now reserved synchronously at check time, then refunded on deny, pause, timeout, or error.
+
+**2. The kill switch gap.** `pause()` set the paused flag but never settled approvals already waiting for a human. Granting one of those approvals still ran the tool, with the kill switch on. Fix: `pause()` denies every pending approval, and the pipeline re-checks the flag after an approval resolves.
+
+**3. The guard that failed open.** Any script could define `document.modelContext = {}` before the SDK loaded. The wrapper threw, `window.AgentGuard` never existed, and the page ran with no guard at all — silently. This is the worst failure mode for a security product. Fix: load-time wrapping falls back to the shim, so the guard always comes up.
+
+**4. The split tool surface.** If one tool failed while migrating to a late-arriving native WebMCP, half the tools moved and half stayed. The two globals then pointed at different contexts, permanently, with no retry. Fix: migration tolerates per-tool failures, keeps both globals identical, and retries after a total failure.
+
+The remaining twelve were smaller: a tool that stayed callable after `unregisterTool`, policy fields that were accepted without validation, a leaked interval, alert rows keyed by array index, and a badge that claimed a mode before the SDK had connected.
+
+## What happens when things fail
+
+Failure behavior is a security decision. A guard that fails quietly is worse than no guard, because it creates false confidence. AgentGuard never fails open.
+
+| Situation | Behavior |
+| --- | --- |
+| The browser has no WebMCP | The SDK installs its own shim and still guards every call. The badge reads Shim. |
+| A page defines a broken or hostile `modelContext` | The SDK falls back to the shim and comes up guarded. It never leaves the page unprotected. |
+| Native WebMCP arrives after page load | The SDK adopts it, migrates every guarded tool, and keeps the sealed policy state. |
+| A migration fails part way | Both globals stay on one context, an alert fires, and the SDK retries. |
+| A tool throws or times out | The call is recorded as an error and any budget reservation is refunded. |
+| An agent cancels a call | The pending approval settles, the budget is refunded, and the record shows the abort. |
+| A human ignores an approval | It denies itself after 60 seconds. Silence is never consent. |
+| A call is blocked | The agent receives a plain sentence explaining why, so it can correct itself and retry. |
 
 ## Merchant quick start
 
