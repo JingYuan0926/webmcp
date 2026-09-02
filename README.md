@@ -22,7 +22,7 @@ The guard also registers its own WebMCP tools. The agent can ask why it was bloc
 
 The app is one shared workspace. Northline Tech, a US technology store, sits on the left. The PageControl panel sits on the right. A human and an agent change the same cart and address.
 
-Select **Run security demo** to start a deterministic ten-step run. The agent lists products, adds a safe quantity, hits quantity and amount caps, receives an instruction-like seller reply, asks why a call was blocked, and reaches two human approval gates. It then reads its own journey record before a third-party widget attempts to replace checkout and add an unreviewed tool.
+The included test harness covers a deterministic ten-step run. The agent lists products, adds a safe quantity, hits quantity and amount caps, receives an instruction-like seller reply, asks why a call was blocked, and reaches two human approval gates. It then reads its own journey record before a third-party widget attempts to replace checkout and add an unreviewed tool.
 
 The control panel updates as the run moves. It shows spend, pending approvals, verdicts, alerts, policy floors, stricter user rules, and hash links. Select **Pause agent** at any time to activate the kill switch.
 
