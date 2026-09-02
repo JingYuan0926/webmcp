@@ -7,7 +7,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test:sdk": "node scripts/agentguard-smoke.mjs"
+    "test:sdk": "node scripts/agentguard-smoke.mjs",
+    "journey:sample": "node scripts/agentguard-smoke.mjs --write-sample"
   },
   "dependencies": {
     "next": "16.3.4",

@@ -128,6 +128,10 @@ declare global {
       defaultMaxPerMinute: number;
       tools: Record<string, AgentGuardRule>;
     }) => Promise<{ ok: boolean; message: string }>;
+    registerTool: (
+      tool: WebMCPToolDefinition,
+      options?: WebMCPRegisterOptions,
+    ) => Promise<unknown>;
     on: <Event extends keyof AgentGuardEventPayloads>(
       event: Event,
       callback: (payload: AgentGuardEventPayloads[Event]) => void,
@@ -148,6 +152,7 @@ declare global {
     exportJourney: () => string;
     explainLast: () => string;
     getEnvironment: () => AgentGuardEnvironment;
+    resetTamperStatus: () => { ok: boolean; message: string };
     seal: () => { ok: boolean; message: string };
   };
 

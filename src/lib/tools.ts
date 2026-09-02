@@ -28,8 +28,7 @@ export function registerStoreTools(): Promise<boolean> {
       await new Promise<void>((resolve) => window.setTimeout(resolve, 50));
     }
     const guard = window.AgentGuard;
-    const modelContext = document.modelContext;
-    if (!guard || !modelContext) {
+    if (!guard) {
       registrationPromise = null;
       return false;
     }
@@ -156,7 +155,7 @@ export function registerStoreTools(): Promise<boolean> {
       },
     ];
 
-    for (const tool of tools) await modelContext.registerTool(tool);
+    for (const tool of tools) await guard.registerTool(tool);
     guard.seal();
     return true;
   })().catch((error) => {

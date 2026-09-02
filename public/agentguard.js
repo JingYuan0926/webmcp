@@ -64,10 +64,14 @@
   var userPolicies = {};
   var budget = { limit: 0, spent: 0, currency: "USD" };
   var modelContext = null;
+  var activeBinding = null;
   var shimContext = null;
   var contextBindings = new WeakMap();
   var lateNativeAdopted = environment.native;
+  var lateNativeAdopting = false;
   var lateNativePoll = null;
+  var pendingNativeContext = null;
+  var pendingNativeApi = null;
 
   function clone(value) {
     if (value === undefined) return undefined;
@@ -1126,6 +1130,14 @@
     emit("state", { paused: false });
   }
 
+  function resetTamperStatus() {
+    registry.forEach(function (record) {
+      record.tampered = false;
+    });
+    emitTools();
+    return { ok: true, message: "Live tamper status cleared. Journey entries were preserved." };
+  }
+
   function on(event, callback) {
     if (typeof callback !== "function") return function () {};
     if (!listeners.has(event)) listeners.set(event, new Set());
@@ -1201,6 +1213,8 @@
       guardMeta: definition.guard || null,
       annotations: clone(definition.annotations || {}),
       registrationOptions: undefined,
+      registrationAbortSignal: null,
+      registrationAbortHandler: null,
       tampered: false,
     };
     var clean = stripGuard(definition);
@@ -1249,6 +1263,90 @@
         Object.defineProperty(target, "modelContext", { configurable: true, value: value });
       } catch {}
     }
+    return target.modelContext === value;
+  }
+
+  function assignSharedContext(value, apiName) {
+    var firstTarget = apiName === "document" ? navigator : document;
+    var secondTarget = apiName === "document" ? document : navigator;
+    assignContext(firstTarget, value);
+    assignContext(secondTarget, value);
+    return document.modelContext === value && navigator.modelContext === value;
+  }
+
+  function detachRegistrationAbort(record) {
+    if (record.registrationAbortSignal && record.registrationAbortHandler) {
+      record.registrationAbortSignal.removeEventListener("abort", record.registrationAbortHandler);
+    }
+    record.registrationAbortSignal = null;
+    record.registrationAbortHandler = null;
+  }
+
+  function removeGuardedRecord(record) {
+    if (!record || registry.get(record.name) !== record) return false;
+    detachRegistrationAbort(record);
+    registry.delete(record.name);
+    rateWindows.delete(record.name);
+    emitTools();
+    return true;
+  }
+
+  function attachRegistrationAbort(record, options, binding) {
+    var signal = options && options.signal;
+    if (!signal || typeof signal.addEventListener !== "function") return;
+    var abortHandler = function () {
+      if (!removeGuardedRecord(record)) return;
+      if (typeof binding.unregister === "function") {
+        Promise.resolve(binding.unregister(record.name)).catch(function () {});
+      }
+    };
+    record.registrationAbortSignal = signal;
+    record.registrationAbortHandler = abortHandler;
+    signal.addEventListener("abort", abortHandler, { once: true });
+    if (signal.aborted) abortHandler();
+  }
+
+  async function registerWithBinding(binding, definition, options) {
+    if (!binding || typeof binding.register !== "function") {
+      throw new Error("AgentGuard does not have an active WebMCP registration binding.");
+    }
+    var prepared = prepareDefinition(definition);
+    if (prepared.duplicate) {
+      if (prepared.pendingEntry) await prepared.pendingEntry;
+      return undefined;
+    }
+    var record = registry.get(prepared.definition.name);
+    if (record) record.registrationOptions = options;
+    var signal = options && options.signal;
+    if (signal && signal.aborted) {
+      removeGuardedRecord(record);
+      return undefined;
+    }
+    var result;
+    try {
+      result = await binding.register(prepared.definition, options);
+    } catch (error) {
+      removeGuardedRecord(record);
+      throw error;
+    }
+    if (signal && signal.aborted) {
+      removeGuardedRecord(record);
+      if (typeof binding.unregister === "function") {
+        await binding.unregister(record.name);
+      }
+      return result;
+    }
+    attachRegistrationAbort(record, options, binding);
+    return result;
+  }
+
+  function installContextMethod(context, name, method) {
+    try {
+      context[name] = method;
+      return context[name] === method;
+    } catch {
+      return false;
+    }
   }
 
   function wrapContext(context) {
@@ -1258,39 +1356,32 @@
     if (typeof originalRegister !== "function") {
       throw new Error("AgentGuard could not find or install modelContext.registerTool.");
     }
-    var binding = { register: originalRegister };
+    var binding = { register: originalRegister, patchedRegister: false };
     contextBindings.set(context, binding);
 
-    context.registerTool = async function (definition, options) {
-      var prepared = prepareDefinition(definition);
-      if (prepared.duplicate) {
-        if (prepared.pendingEntry) await prepared.pendingEntry;
-        return undefined;
-      }
-      var record = registry.get(prepared.definition.name);
-      if (record) record.registrationOptions = options;
-      return originalRegister(prepared.definition, options);
+    var guardedRegister = function (definition, options) {
+      return registerWithBinding(binding, definition, options);
     };
+    binding.guardedRegister = guardedRegister;
+    binding.patchedRegister = installContextMethod(context, "registerTool", guardedRegister);
 
     if (typeof context.unregisterTool === "function") {
       var originalUnregister = context.unregisterTool.bind(context);
       binding.unregister = originalUnregister;
-      context.unregisterTool = async function (tool, options) {
+      var guardedUnregister = async function (tool, options) {
         var name = typeof tool === "string" ? tool : tool && tool.name;
+        var record = typeof name === "string" ? registry.get(name) : null;
         var result = await originalUnregister(tool, options);
-        if (typeof name === "string") {
-          registry.delete(name);
-          rateWindows.delete(name);
-          emitTools();
-        }
+        if (record) removeGuardedRecord(record);
         return result;
       };
+      binding.patchedUnregister = installContextMethod(context, "unregisterTool", guardedUnregister);
     }
 
     if (typeof context.provideContext === "function") {
       var originalProvideContext = context.provideContext.bind(context);
       binding.provideContext = originalProvideContext;
-      context.provideContext = function (provided, options) {
+      var guardedProvideContext = function (provided, options) {
         if (!provided || typeof provided !== "object" || !Array.isArray(provided.tools)) {
           return originalProvideContext(provided, options);
         }
@@ -1306,57 +1397,115 @@
           .filter(Boolean);
         return originalProvideContext(Object.assign({}, provided, { tools: guardedTools }), options);
       };
+      binding.patchedProvideContext = installContextMethod(context, "provideContext", guardedProvideContext);
     }
     return binding;
   }
 
   async function adoptNativeContext(context, apiName) {
-    if (lateNativeAdopted || !context || context === shimContext) return;
-    lateNativeAdopted = true;
+    if (lateNativeAdopted || lateNativeAdopting || !context || context === shimContext) return;
+    lateNativeAdopting = true;
+    pendingNativeContext = context;
+    pendingNativeApi = apiName;
     if (lateNativePoll !== null) {
       window.clearInterval(lateNativePoll);
       lateNativePoll = null;
     }
+    var previousContext = modelContext;
+    var previousBinding = activeBinding;
+    var failures = [];
+    var eligibleRecords = [];
+    var successfulRegistrations = 0;
+    if (!assignSharedContext(previousContext, apiName)) {
+      failures.push({ tool: "modelContext", message: "Could not keep the shim context mirrored during migration." });
+    }
+    var binding = null;
     try {
-      var binding = wrapContext(context);
-      var records = Array.from(registry.values());
-      for (var index = 0; index < records.length; index += 1) {
-        await binding.register(records[index].nativeDefinition, records[index].registrationOptions);
-      }
-      modelContext = context;
-      assignContext(document, context);
-      assignContext(navigator, context);
-      environment = { native: true, api: apiName };
-      emitEnvironment();
-      await appendEntry({
-        tool: "agentguard_environment",
-        verdict: "allowed",
-        args: { from: "shim", to: apiName },
-        result: "Native WebMCP adopted.",
-        policySource: null,
-        note: "Native WebMCP appeared after load. AgentGuard migrated every guarded tool.",
-        simulated: false,
-      });
+      binding = wrapContext(context);
     } catch (error) {
-      lateNativeAdopted = false;
+      failures.push({
+        tool: "modelContext",
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+    if (binding) {
+      eligibleRecords = Array.from(registry.values()).filter(function (record) {
+        var signal = record.registrationOptions && record.registrationOptions.signal;
+        return !(signal && signal.aborted);
+      });
+      for (var index = 0; index < eligibleRecords.length; index += 1) {
+        var record = eligibleRecords[index];
+        try {
+          await binding.register(record.nativeDefinition, record.registrationOptions);
+          successfulRegistrations += 1;
+        } catch (error) {
+          failures.push({
+            tool: record.name,
+            message: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+    }
+
+    var totalFailure = !binding || (eligibleRecords.length > 0 && successfulRegistrations === 0);
+    if (!totalFailure) assignSharedContext(context, apiName);
+    if (failures.length) {
       alertGuard(
         "warn",
         "NATIVE_MIGRATION",
-        "AgentGuard could not migrate tools to the late native WebMCP context: " +
-          (error instanceof Error ? error.message : String(error)),
+        "AgentGuard native migration encountered " + failures.length + " failure" +
+          (failures.length === 1 ? "" : "s") + ": " +
+          failures.map(function (failure) {
+            return failure.tool + " (" + failure.message + ")";
+          }).join("; "),
         null,
       );
     }
+    if (totalFailure) {
+      modelContext = previousContext;
+      activeBinding = previousBinding;
+      assignSharedContext(previousContext, apiName);
+      lateNativeAdopted = false;
+      lateNativeAdopting = false;
+      startLateNativePoll(context, apiName);
+      return;
+    }
+
+    modelContext = context;
+    activeBinding = binding;
+    environment = { native: true, api: apiName };
+    lateNativeAdopted = true;
+    lateNativeAdopting = false;
+    pendingNativeContext = null;
+    pendingNativeApi = null;
+    emitEnvironment();
+    await appendEntry({
+      tool: "agentguard_environment",
+      verdict: "allowed",
+      args: { from: "shim", to: apiName },
+      result: "Native WebMCP adopted.",
+      policySource: null,
+      note: failures.length
+        ? "Native WebMCP appeared after load. AgentGuard migrated the surviving guarded tools; failed tools remain available through guard.invoke."
+        : "Native WebMCP appeared after load. AgentGuard migrated every guarded tool.",
+      simulated: false,
+    });
   }
 
-  function startLateNativePoll() {
-    if (environment.native || lateNativePoll !== null) return;
+  function startLateNativePoll(context, apiName) {
+    if (context && context !== shimContext) {
+      pendingNativeContext = context;
+      pendingNativeApi = apiName;
+    }
+    if (environment.native || lateNativeAdopting || lateNativePoll !== null) return;
     var checks = 0;
     lateNativePoll = window.setInterval(function () {
       checks += 1;
       var documentCandidate = document.modelContext;
       var navigatorCandidate = navigator.modelContext;
-      if (documentCandidate && documentCandidate !== shimContext) {
+      if (pendingNativeContext && pendingNativeContext !== shimContext) {
+        void adoptNativeContext(pendingNativeContext, pendingNativeApi || "document");
+      } else if (documentCandidate && documentCandidate !== shimContext) {
         void adoptNativeContext(documentCandidate, "document");
       } else if (navigatorCandidate && navigatorCandidate !== shimContext) {
         void adoptNativeContext(navigatorCandidate, "navigator");
@@ -1373,9 +1522,16 @@
     shimContext = createShim();
     modelContext = shimContext;
   }
-  wrapContext(modelContext);
-  assignContext(document, modelContext);
-  assignContext(navigator, modelContext);
+  try {
+    activeBinding = wrapContext(modelContext);
+  } catch {
+    shimContext = createShim();
+    modelContext = shimContext;
+    environment = { native: false, api: "shim" };
+    lateNativeAdopted = false;
+    activeBinding = wrapContext(modelContext);
+  }
+  assignSharedContext(modelContext, environment.api);
 
   async function init(config) {
     if (initialized) return { ok: true, message: "AgentGuard is already initialized." };
@@ -1401,7 +1557,7 @@
     emitBudget();
     emit("state", { paused: paused });
 
-    await modelContext.registerTool({
+    await registerWithBinding(activeBinding, {
       name: "guard_get_journey",
       description: "Read the last 20 AgentGuard journey entries.",
       inputSchema: { type: "object", properties: {}, required: [] },
@@ -1421,7 +1577,7 @@
         );
       },
     });
-    await modelContext.registerTool({
+    await registerWithBinding(activeBinding, {
       name: "guard_explain_block",
       description: "Explain the most recent call blocked by AgentGuard.",
       inputSchema: { type: "object", properties: {}, required: [] },
@@ -1430,7 +1586,7 @@
         return explainLast();
       },
     });
-    await modelContext.registerTool({
+    await registerWithBinding(activeBinding, {
       name: "guard_set_budget",
       description: "Lower the agent budget, or request human approval to raise it.",
       inputSchema: {
@@ -1454,6 +1610,9 @@
 
   var api = {
     init: init,
+    registerTool: function (definition, options) {
+      return registerWithBinding(activeBinding, definition, options);
+    },
     on: on,
     invoke: function (name, args, options) {
       return runPipeline(name, args || {}, {}, options || {});
@@ -1469,6 +1628,7 @@
     exportJourney: exportJourney,
     explainLast: explainLast,
     getEnvironment: getEnvironment,
+    resetTamperStatus: resetTamperStatus,
     seal: seal,
   };
 
