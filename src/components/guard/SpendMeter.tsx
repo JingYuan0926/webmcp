@@ -30,9 +30,9 @@ export function SpendMeter({ budget }: SpendMeterProps) {
 
   function submitBudget(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const result = window.AgentGuard?.setBudget(Number(limit), { humanConfirmed: true }) ?? {
+    const result = window.PageControl?.setBudget(Number(limit), { humanConfirmed: true }) ?? {
       ok: false,
-      message: "AgentGuard is not available.",
+      message: "PageControl is not available.",
     };
     setBudgetOk(result.ok);
     setBudgetMessage(result.message);

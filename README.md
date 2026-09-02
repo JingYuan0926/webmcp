@@ -1,28 +1,28 @@
-# AgentGuard
+# PageControl
 
 The trust layer for the agent-native web. One script. Policies, approvals, and a flight recorder for every WebMCP tool call.
 
-## Why AgentGuard exists
+## Why PageControl exists
 
 AI agents can act inside a web page through WebMCP. A page registers JavaScript tools, and an agent can search, edit, buy, or delete through those tools.
 
 These calls run inside the page. They do not cross the network, so a firewall, API gateway, payment rail, or browser extension cannot reliably inspect them.
 
-The page is the only control point that sees the tool definition, arguments, result, and user state together. AgentGuard puts the policy layer there.
+The page is the only control point that sees the tool definition, arguments, result, and user state together. PageControl puts the policy layer there.
 
 ## The design problem
 
 Blocking an agent is easy. Blocking it without making it useless is the hard part.
 
-A guard that only says no turns the agent into a dead end. AgentGuard answers every blocked call with a plain sentence: which rule stopped it, and what the limit is. The agent reads that, adapts, and retries inside the rule. Refused fifty cables, it asks for five.
+A guard that only says no turns the agent into a dead end. PageControl answers every blocked call with a plain sentence: which rule stopped it, and what the limit is. The agent reads that, adapts, and retries inside the rule. Refused fifty cables, it asks for five.
 
 The guard also registers its own WebMCP tools. The agent can ask why it was blocked, read its own record, and request a budget change that a human must approve. The result is a boundary the agent can work inside, not a wall it keeps hitting.
 
 ## The demo
 
-The app is one shared workspace. Kedai Tech, a Malaysian electronics store, sits on the left. The AgentGuard control panel sits on the right. A human and an agent change the same cart and address.
+The app is one shared workspace. Northline Tech, a US technology store, sits on the left. The PageControl panel sits on the right. A human and an agent change the same cart and address.
 
-Select **Run test agent** to start a deterministic nine-step run. The agent lists products, adds a safe quantity, hits quantity and amount caps, receives an instruction-like seller reply, asks why a call was blocked, and reaches two human approval gates. It then reads its own journey record.
+Select **Run security demo** to start a deterministic ten-step run. The agent lists products, adds a safe quantity, hits quantity and amount caps, receives an instruction-like seller reply, asks why a call was blocked, and reaches two human approval gates. It then reads its own journey record before a third-party widget attempts to replace checkout and add an unreviewed tool.
 
 The control panel updates as the run moves. It shows spend, pending approvals, verdicts, alerts, policy floors, stricter user rules, and hash links. Select **Pause agent** at any time to activate the kill switch.
 
@@ -49,13 +49,13 @@ Merchant rules are the floor. They stay locked after setup. Users can deny more 
 
 ## How this uses WebMCP
 
-AgentGuard patches `document.modelContext.registerTool` before application code runs and mirrors the same context on `navigator.modelContext` for older clients. Every registered `execute()` function is replaced with a guarded pipeline for validation, policy resolution, rate limits, caps, budgets, approvals, execution timeouts, redaction, output scanning, and journey hashing. AgentGuard also registers `guard_get_journey`, `guard_explain_block`, and `guard_set_budget` as WebMCP tools through that same pipeline. An approval gate leaves `execute()` pending until a human selects Allow or Deny; that in-page human checkpoint is not possible in classic server-side MCP.
+PageControl patches `document.modelContext.registerTool` before application code runs and mirrors the same context on `navigator.modelContext` for older clients. Every registered `execute()` function is replaced with a guarded pipeline for validation, policy resolution, rate limits, caps, budgets, approvals, execution timeouts, redaction, output scanning, and journey hashing. PageControl also registers `pagecontrol_get_journey`, `pagecontrol_explain_block`, and `pagecontrol_set_budget` as WebMCP tools through that same pipeline. An approval gate leaves `execute()` pending until a human selects Allow or Deny; that in-page human checkpoint is not possible in classic server-side MCP.
 
 When the browser does not provide WebMCP, the SDK installs a compatible in-page shim. The demo therefore runs in a normal browser while using the same guarded path as a native client.
 
 ## Native WebMCP
 
-AgentGuard binds directly to `document.modelContext` when the browser provides it and mirrors that context on `navigator.modelContext` for older clients. Registration options, annotations, and execution cancellation signals pass through to the native API. If WebMCP appears shortly after page load, AgentGuard adopts it once and migrates every already-guarded tool without dropping the sealed policy state.
+PageControl binds directly to `document.modelContext` when the browser provides it and mirrors that context on `navigator.modelContext` for older clients. Registration options, annotations, and execution cancellation signals pass through to the native API. If WebMCP appears shortly after page load, PageControl adopts it once and migrates every already-guarded tool without dropping the sealed policy state.
 
 The shim is only a demo fallback. The interface always shows the active mode:
 
@@ -65,15 +65,15 @@ The shim is only a demo fallback. The interface always shows the active mode:
 
 ## How we attacked it
 
-A guard that nobody attacked is a guess. Two adversarial review rounds tried to break AgentGuard and confirmed sixteen defects. All are fixed. Every security defect carries a regression test in `scripts/agentguard-smoke.mjs`.
+A guard that nobody attacked is a guess. Two adversarial review rounds tried to break PageControl and confirmed sixteen defects. All are fixed. Every security defect carries a regression test in `scripts/pagecontrol-smoke.mjs`.
 
 These four attacks worked, and matter most:
 
-**1. The budget race.** Two `checkout` calls fired together both passed one remaining budget. The check read the spent total before the awaited execution added to it. Two calls of RM200 each cleared an RM300 limit. Fix: the cost is now reserved synchronously at check time, then refunded on deny, pause, timeout, or error.
+**1. The budget race.** Two `checkout` calls fired together both passed one remaining budget. The check read the spent total before the awaited execution added to it. Two calls of $200 each cleared a $300 limit. Fix: the cost is now reserved synchronously at check time, then refunded on deny, pause, timeout, or error.
 
 **2. The kill switch gap.** `pause()` set the paused flag but never settled approvals already waiting for a human. Granting one of those approvals still ran the tool, with the kill switch on. Fix: `pause()` denies every pending approval, and the pipeline re-checks the flag after an approval resolves.
 
-**3. The guard that failed open.** Any script could define `document.modelContext = {}` before the SDK loaded. The wrapper threw, `window.AgentGuard` never existed, and the page ran with no guard at all — silently. This is the worst failure mode for a security product. Fix: load-time wrapping falls back to the shim, so the guard always comes up.
+**3. The guard that failed open.** Any script could define `document.modelContext = {}` before the SDK loaded. The wrapper threw, `window.PageControl` never existed, and the page ran with no guard at all — silently. This is the worst failure mode for a security product. Fix: load-time wrapping falls back to the shim, so the guard always comes up.
 
 **4. The split tool surface.** If one tool failed while migrating to a late-arriving native WebMCP, half the tools moved and half stayed. The two globals then pointed at different contexts, permanently, with no retry. Fix: migration tolerates per-tool failures, keeps both globals identical, and retries after a total failure.
 
@@ -81,7 +81,7 @@ The remaining twelve were smaller: a tool that stayed callable after `unregister
 
 ## What happens when things fail
 
-Failure behavior is a security decision. A guard that fails quietly is worse than no guard, because it creates false confidence. AgentGuard never fails open.
+Failure behavior is a security decision. A guard that fails quietly is worse than no guard, because it creates false confidence. PageControl never fails open.
 
 | Situation | Behavior |
 | --- | --- |
@@ -97,11 +97,11 @@ Failure behavior is a security decision. A guard that fails quietly is worse tha
 ## Merchant quick start
 
 ```html
-<script src="/agentguard.js"></script>
+<script src="/pagecontrol.js"></script>
 <script>
-  await AgentGuard.init({
+  await PageControl.init({
     appName: "My Store",
-    budget: { limit: 300, currency: "RM" },
+    budget: { limit: 300, currency: "USD" },
     defaultMode: "allow",
     defaultMaxPerMinute: 30,
     tools: {
@@ -111,11 +111,11 @@ Failure behavior is a security decision. A guard that fails quietly is worse tha
     },
   });
   await document.modelContext.registerTool(myTool);
-  AgentGuard.seal();
+  PageControl.seal();
 </script>
 ```
 
-A tool can add `guard: { getCost(inputs), getQty(inputs) }`. AgentGuard removes this extension before native registration and uses it to enforce amount, quantity, and budget rules.
+A tool can add `guard: { getCost(inputs), getQty(inputs) }`. PageControl removes this extension before native registration and uses it to enforce amount, quantity, and budget rules.
 
 ## Run locally
 
@@ -127,15 +127,15 @@ Open `http://localhost:3000`. Test native WebMCP in ChatGPT's in-app browser or 
 
 ## Project structure
 
-- `public/agentguard.js` — dependency-free SDK, WebMCP patch, guard pipeline, shim, approval modal, and public API.
+- `public/pagecontrol.js` — dependency-free SDK, WebMCP patch, guard pipeline, shim, approval modal, and public API.
 - `src/app/layout.tsx` — metadata, fonts, global styles, and early SDK loading.
 - `src/app/page.tsx` — split-screen application and one-time tool registration.
 - `src/app/globals.css` — product tokens, responsive layout, interaction states, and reduced-motion rules.
-- `src/lib/catalog.ts` — typed Kedai Tech product catalog.
+- `src/lib/catalog.ts` — typed Northline Tech product catalog.
 - `src/lib/store.tsx` — React store, reducer, persistence, and imperative tool facade.
 - `src/lib/tools.ts` — merchant policy and ten WebMCP store tools.
-- `src/lib/use-agentguard.ts` — React bridge for SDK events.
-- `src/lib/demo-agent.ts` — deterministic nine-step test agent.
+- `src/lib/use-pagecontrol.ts` — React bridge for SDK events.
+- `src/lib/demo-agent.ts` — deterministic ten-step security demo.
 - `src/components/store/` — storefront, cart, address, and orders interface.
 - `src/components/guard/` — spend, approvals, timeline, alerts, policies, and export interface.
 

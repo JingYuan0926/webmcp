@@ -24,10 +24,10 @@ export function registerStoreTools(): Promise<boolean> {
 
   registrationPromise = (async () => {
     const deadline = Date.now() + 5_000;
-    while (!window.AgentGuard && Date.now() < deadline) {
+    while (!window.PageControl && Date.now() < deadline) {
       await new Promise<void>((resolve) => window.setTimeout(resolve, 50));
     }
-    const guard = window.AgentGuard;
+    const guard = window.PageControl;
     if (!guard) {
       registrationPromise = null;
       return false;

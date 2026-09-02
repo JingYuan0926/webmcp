@@ -17,7 +17,7 @@ function Countdown({ expiresAt }: { expiresAt: number }) {
   return <span className="approval-timer">{seconds}s left</span>;
 }
 
-export function ApprovalsList({ approvals }: { approvals: AgentGuardApproval[] }) {
+export function ApprovalsList({ approvals }: { approvals: PageControlApproval[] }) {
   if (!approvals.length) return null;
   return (
     <section className="guard-section approvals-section" aria-labelledby="approvals-title">
@@ -40,10 +40,10 @@ export function ApprovalsList({ approvals }: { approvals: AgentGuardApproval[] }
               <span className="approval-cost">Cost {formatUSD(approval.cost)}</span>
             ) : null}
             <div className="approval-actions">
-              <button type="button" className="panel-button panel-button--ghost" onClick={() => window.AgentGuard?.deny(approval.id)}>
+              <button type="button" className="panel-button panel-button--ghost" onClick={() => window.PageControl?.deny(approval.id)}>
                 Block
               </button>
-              <button type="button" className="panel-button panel-button--allow" onClick={() => window.AgentGuard?.approve(approval.id)}>
+              <button type="button" className="panel-button panel-button--allow" onClick={() => window.PageControl?.approve(approval.id)}>
                 Run once
               </button>
             </div>

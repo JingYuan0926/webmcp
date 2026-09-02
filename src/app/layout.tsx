@@ -14,7 +14,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en">
       <body>
         {children}
-        <Script src="/agentguard.js" strategy="beforeInteractive" />
+        <Script src="/pagecontrol.js" strategy="beforeInteractive" />
       </body>
     </html>
   );

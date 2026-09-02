@@ -1,10 +1,10 @@
 export {};
 
 declare global {
-  type AgentGuardMode = "allow" | "approve" | "deny";
+  type PageControlMode = "allow" | "approve" | "deny";
 
-  type AgentGuardRule = {
-    mode?: AgentGuardMode;
+  type PageControlRule = {
+    mode?: PageControlMode;
     maxAmount?: number;
     maxQty?: number;
     maxPerMinute?: number;
@@ -12,7 +12,7 @@ declare global {
     denyMessage?: string;
   };
 
-  type AgentGuardEntry = {
+  type PageControlEntry = {
     id: string;
     seq: number;
     ts: string;
@@ -42,7 +42,7 @@ declare global {
     suspicious: boolean;
   };
 
-  type AgentGuardTool = {
+  type PageControlTool = {
     name: string;
     label?: string;
     description: string;
@@ -50,7 +50,7 @@ declare global {
     tampered: boolean;
   };
 
-  type AgentGuardApproval = {
+  type PageControlApproval = {
     id: string;
     tool: string;
     argsSummary: string;
@@ -58,22 +58,22 @@ declare global {
     cost?: number;
   };
 
-  type AgentGuardAlert = {
+  type PageControlAlert = {
     level: "warn" | "danger" | "info";
     code: string;
     message: string;
     tool: string | null;
   };
 
-  type AgentGuardEnvironment = {
+  type PageControlEnvironment = {
     native: boolean;
     api: "document" | "navigator" | "shim";
   };
 
-  type AgentGuardPolicies = {
-    merchant: Record<string, AgentGuardRule>;
-    user: Record<string, AgentGuardRule>;
-    effective: Record<string, AgentGuardRule>;
+  type PageControlPolicies = {
+    merchant: Record<string, PageControlRule>;
+    user: Record<string, PageControlRule>;
+    effective: Record<string, PageControlRule>;
   };
 
   type WebMCPToolDefinition = {
@@ -97,14 +97,14 @@ declare global {
     exposedTo?: string[];
   };
 
-  type AgentGuardEventPayloads = {
-    entry: AgentGuardEntry;
-    tools: AgentGuardTool[];
+  type PageControlEventPayloads = {
+    entry: PageControlEntry;
+    tools: PageControlTool[];
     budget: { limit: number; spent: number; currency: string };
-    approval: { pending: AgentGuardApproval[] };
-    alert: AgentGuardAlert;
+    approval: { pending: PageControlApproval[] };
+    alert: PageControlAlert;
     state: { paused: boolean };
-    environment: AgentGuardEnvironment;
+    environment: PageControlEnvironment;
   };
 
   type ModelContext = {
@@ -122,21 +122,21 @@ declare global {
     removeEventListener?: (name: string, callback: EventListenerOrEventListenerObject) => void;
   };
 
-  type AgentGuardApi = {
+  type PageControlApi = {
     init: (config: {
       appName: string;
       budget: { limit: number; currency: string };
-      defaultMode: AgentGuardMode;
+      defaultMode: PageControlMode;
       defaultMaxPerMinute: number;
-      tools: Record<string, AgentGuardRule>;
+      tools: Record<string, PageControlRule>;
     }) => Promise<{ ok: boolean; message: string }>;
     registerTool: (
       tool: WebMCPToolDefinition,
       options?: WebMCPRegisterOptions,
     ) => Promise<unknown>;
-    on: <Event extends keyof AgentGuardEventPayloads>(
+    on: <Event extends keyof PageControlEventPayloads>(
       event: Event,
-      callback: (payload: AgentGuardEventPayloads[Event]) => void,
+      callback: (payload: PageControlEventPayloads[Event]) => void,
     ) => () => void;
     invoke: (
       name: string,
@@ -149,24 +149,24 @@ declare global {
     resume: () => void;
     setUserPolicy: (
       name: string,
-      rule: AgentGuardRule,
+      rule: PageControlRule,
       options?: { humanConfirmed?: boolean },
     ) => { ok: boolean; message: string };
     setBudget: (
       limit: number,
       options?: { humanConfirmed?: boolean },
     ) => { ok: boolean; message: string };
-    getPolicies: () => AgentGuardPolicies;
-    getJourney: () => AgentGuardEntry[];
+    getPolicies: () => PageControlPolicies;
+    getJourney: () => PageControlEntry[];
     exportJourney: () => string;
     explainLast: () => string;
-    getEnvironment: () => AgentGuardEnvironment;
+    getEnvironment: () => PageControlEnvironment;
     resetTamperStatus: () => { ok: boolean; message: string };
     seal: () => { ok: boolean; message: string };
   };
 
   interface Window {
-    AgentGuard?: AgentGuardApi;
+    PageControl?: PageControlApi;
     FastShipDeliveryTracker?: { ready?: Promise<void> };
   }
 

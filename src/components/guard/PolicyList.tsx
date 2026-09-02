@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
-const modeRank: Record<AgentGuardMode, number> = { allow: 0, approve: 1, deny: 2 };
-const modes: AgentGuardMode[] = ["allow", "approve", "deny"];
-const modeLabels: Record<AgentGuardMode, string> = {
+const modeRank: Record<PageControlMode, number> = { allow: 0, approve: 1, deny: 2 };
+const modes: PageControlMode[] = ["allow", "approve", "deny"];
+const modeLabels: Record<PageControlMode, string> = {
   allow: "Allowed",
   approve: "Ask me",
   deny: "Not allowed",
@@ -40,7 +40,7 @@ const toolUsageRank = new Map<string, number>(toolUsageOrder.map((name, index) =
 type CapKey = keyof typeof capCopy;
 
 function humanizeToolName(name: string) {
-  const words = name.replace(/^guard_/, "AgentGuard ").replaceAll("_", " ");
+  const words = name.replace(/^pagecontrol_/, "PageControl ").replaceAll("_", " ");
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
@@ -84,13 +84,13 @@ function ActionIcon({ name }: { name: string }) {
   if (name === "delete_account") {
     return <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="8" cy="6" r="3" {...shared} /><path d="M2.8 16c.5-3 2.4-4.5 5.2-4.5 1.2 0 2.2.3 3 .8M13 14h4" {...shared} /></svg>;
   }
-  if (name === "guard_get_journey") {
+  if (name === "pagecontrol_get_journey") {
     return <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M4 3h12v14H4Z" {...shared} /><path d="M7 7h6M7 10h6M7 13h4" {...shared} /></svg>;
   }
-  if (name === "guard_explain_block") {
+  if (name === "pagecontrol_explain_block") {
     return <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="7" {...shared} /><path d="M8.4 7.4a2 2 0 1 1 2.3 3.2c-.7.3-.9.7-.9 1.4M9.8 15h.01" {...shared} /></svg>;
   }
-  if (name === "guard_set_budget") {
+  if (name === "pagecontrol_set_budget") {
     return <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="7" {...shared} /><path d="M12.5 7.2c-.6-.5-1.4-.8-2.3-.8-1.3 0-2.2.6-2.2 1.6 0 2.5 4.5 1.1 4.5 3.8 0 1.1-1 1.8-2.5 1.8-.9 0-1.8-.3-2.5-.9M10 5.2v9.6" {...shared} /></svg>;
   }
 
@@ -114,14 +114,14 @@ function PolicyRow({
   label: string;
   description: string;
   tampered: boolean;
-  merchant: AgentGuardRule;
-  effective: AgentGuardRule;
+  merchant: PageControlRule;
+  effective: PageControlRule;
 }) {
   const currentMode = effective.mode ?? "allow";
   const merchantMode = merchant.mode ?? "allow";
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [modeMenuOpen, setModeMenuOpen] = useState(false);
-  const [pendingMode, setPendingMode] = useState<AgentGuardMode | null>(null);
+  const [pendingMode, setPendingMode] = useState<PageControlMode | null>(null);
   const modeTriggerRef = useRef<HTMLButtonElement>(null);
   const [caps, setCaps] = useState<Record<CapKey, string>>({
     maxAmount: effective.maxAmount?.toString() ?? "",
@@ -150,14 +150,14 @@ function PolicyRow({
     (key) => merchant[key] !== undefined,
   );
 
-  function changeMode(nextMode: AgentGuardMode, humanConfirmed = false) {
-    const result = window.AgentGuard?.setUserPolicy(
+  function changeMode(nextMode: PageControlMode, humanConfirmed = false) {
+    const result = window.PageControl?.setUserPolicy(
       name,
       { mode: nextMode },
       humanConfirmed ? { humanConfirmed: true } : undefined,
     ) ?? {
       ok: false,
-      message: "AgentGuard is not available.",
+      message: "PageControl is not available.",
     };
     setOk(result.ok);
     setMessage(result.ok ? "" : result.message);
@@ -170,14 +170,14 @@ function PolicyRow({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const rule: AgentGuardRule = {};
+    const rule: PageControlRule = {};
     visibleCaps.forEach((key) => {
       const value = caps[key].trim();
       if (value) rule[key] = Number(value);
     });
-    const result = window.AgentGuard?.setUserPolicy(name, rule) ?? {
+    const result = window.PageControl?.setUserPolicy(name, rule) ?? {
       ok: false,
-      message: "AgentGuard is not available.",
+      message: "PageControl is not available.",
     };
     setOk(result.ok);
     setMessage(result.ok ? "Limits saved." : result.message);
@@ -311,8 +311,8 @@ export function PolicyList({
   tools,
   policies,
 }: {
-  tools: AgentGuardTool[];
-  policies: AgentGuardPolicies;
+  tools: PageControlTool[];
+  policies: PageControlPolicies;
 }) {
   const sortedTools = [...tools].sort((left, right) => {
     const usageOrder = (toolUsageRank.get(left.name) ?? Number.MAX_SAFE_INTEGER) -
@@ -323,10 +323,10 @@ export function PolicyList({
     const rightLabel = right.label?.trim() || right.name;
     return leftLabel.localeCompare(rightLabel) || left.name.localeCompare(right.name);
   });
-  const storeTools = sortedTools.filter((tool) => !tool.name.startsWith("guard_"));
-  const guardTools = sortedTools.filter((tool) => tool.name.startsWith("guard_"));
+  const storeTools = sortedTools.filter((tool) => !tool.name.startsWith("pagecontrol_"));
+  const pageControlTools = sortedTools.filter((tool) => tool.name.startsWith("pagecontrol_"));
 
-  function renderPolicyRow(tool: AgentGuardTool) {
+  function renderPolicyRow(tool: PageControlTool) {
     return (
       <PolicyRow
         key={tool.name}
@@ -353,8 +353,8 @@ export function PolicyList({
       </p>
       <div className="policy-list">
         {storeTools.map(renderPolicyRow)}
-        {guardTools.length ? <h3 className="policy-subheading">AgentGuard tools</h3> : null}
-        {guardTools.map(renderPolicyRow)}
+        {pageControlTools.length ? <h3 className="policy-subheading">PageControl tools</h3> : null}
+        {pageControlTools.map(renderPolicyRow)}
       </div>
     </section>
   );

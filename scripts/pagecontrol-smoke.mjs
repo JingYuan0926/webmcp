@@ -137,19 +137,19 @@ const context = vm.createContext({
   TypeError,
 });
 
-const sdkSource = await readFile(new URL("../public/agentguard.js", import.meta.url), "utf8");
+const sdkSource = await readFile(new URL("../public/pagecontrol.js", import.meta.url), "utf8");
 const partnerWidgetSource = await readFile(
   new URL("../public/partner-widget.js", import.meta.url),
   "utf8",
 );
-vm.runInContext(sdkSource, context, { filename: "agentguard.js" });
+vm.runInContext(sdkSource, context, { filename: "pagecontrol.js" });
 
-const guard = window.AgentGuard;
-assert.ok(guard, "AgentGuard should be defined");
+const guard = window.PageControl;
+assert.ok(guard, "PageControl should be defined");
 assert.equal(document.modelContext, navigator.modelContext, "modelContext should be mirrored");
 const firstContext = document.modelContext;
-vm.runInContext(sdkSource, context, { filename: "agentguard-double-load.js" });
-assert.equal(window.AgentGuard, guard, "A second script load must preserve the SDK instance");
+vm.runInContext(sdkSource, context, { filename: "pagecontrol-double-load.js" });
+assert.equal(window.PageControl, guard, "A second script load must preserve the SDK instance");
 assert.equal(document.modelContext, firstContext, "A second script load must not patch twice");
 
 const products = new Map([
@@ -316,10 +316,10 @@ const demoToolSteps = [
   ["add_to_cart", { id: "usb-cable", qty: 50 }],
   ["add_to_cart", { id: "laptop-pro", qty: 1 }],
   ["contact_seller", { message: "Is the usb-hub in stock?" }],
-  ["guard_explain_block", {}],
+  ["pagecontrol_explain_block", {}],
   ["set_shipping_address", { name: "Taylor Morgan", line1: "125 Market Street", city: "San Francisco", postcode: "94105" }],
   ["checkout", {}],
-  ["guard_get_journey", {}],
+  ["pagecontrol_get_journey", {}],
 ];
 const tamperAlerts = [];
 const lateToolAlerts = [];
@@ -344,7 +344,7 @@ assert.equal(
 assert.equal(
   document.modelContext.getTools().find((tool) => tool.name === "list_products")?.label,
   undefined,
-  "AgentGuard display labels must not leak into native WebMCP definitions",
+  "PageControl display labels must not leak into native WebMCP definitions",
 );
 
 async function loadPartnerWidget() {
@@ -393,7 +393,7 @@ assert.match(tamperAlerts[0].message, /third-party widget tried to replace check
 assert.equal(lateToolAlerts.length, 1, "The post-seal tool must raise an alert");
 assert.equal(lateToolAlerts[0].level, "warn");
 assert.equal(lateToolAlerts[0].tool, "track_delivery");
-assert.match(lateToolAlerts[0].message, /track_delivery was added after AgentGuard sealed/);
+assert.match(lateToolAlerts[0].message, /track_delivery was added after PageControl sealed/);
 assert.equal(
   latestTools.find((tool) => tool.name === "checkout")?.tampered,
   true,
@@ -566,7 +566,7 @@ const timeoutResult = await Promise.race([
 assert.match(timeoutResult, /approval timed out/);
 assert.equal(addressExecutions, beforeDeny, "Timeout must prevent execution");
 
-const raiseResult = await guard.invoke("guard_set_budget", { limit: 400 });
+const raiseResult = await guard.invoke("pagecontrol_set_budget", { limit: 400 });
 assert.match(raiseResult, /approval timed out/);
 
 await register({
@@ -702,23 +702,23 @@ function createIsolatedBrowser({
     Error,
     TypeError,
   });
-  vm.runInContext(sdkSource, isolatedContext, { filename: "agentguard-isolated.js" });
+  vm.runInContext(sdkSource, isolatedContext, { filename: "pagecontrol-isolated.js" });
   return {
     window: isolatedWindow,
     document: isolatedDocument,
     navigator: isolatedNavigator,
-    guard: isolatedWindow.AgentGuard,
+    guard: isolatedWindow.PageControl,
   };
 }
 
 // A truthy but unusable pre-existing context must not prevent the guard from loading.
 const brokenContextHarness = createIsolatedBrowser({ documentContext: {} });
-assert.ok(brokenContextHarness.guard, "AgentGuard must load around a broken modelContext");
+assert.ok(brokenContextHarness.guard, "PageControl must load around a broken modelContext");
 assert.deepEqual(brokenContextHarness.guard.getEnvironment(), { native: false, api: "shim" });
 assert.equal(brokenContextHarness.document.modelContext, brokenContextHarness.navigator.modelContext);
 assert.equal(typeof brokenContextHarness.document.modelContext.registerTool, "function");
 
-// Native context present before AgentGuard: options and annotations survive,
+// Native context present before PageControl: options and annotations survive,
 // while execution still passes through the guard pipeline.
 const preexistingNative = createNativeModelContext();
 const nativeHarness = createIsolatedBrowser({ documentContext: preexistingNative });
@@ -764,7 +764,7 @@ assert.match(
 );
 assert.equal(nativeHarness.guard.getJourney().at(-1).verdict, "capped");
 
-// ChatGPT exposes native modelContext methods as read-only. AgentGuard must
+// ChatGPT exposes native modelContext methods as read-only. PageControl must
 // leave those methods untouched and register wrapped definitions explicitly.
 const readOnlyNative = Object.freeze(createNativeModelContext());
 const originalReadOnlyRegister = readOnlyNative.registerTool;
@@ -772,7 +772,7 @@ const readOnlyHarness = createIsolatedBrowser({
   documentContext: readOnlyNative,
   readOnlyDocumentContext: true,
 });
-assert.ok(readOnlyHarness.guard, "AgentGuard must load with a read-only native context");
+assert.ok(readOnlyHarness.guard, "PageControl must load with a read-only native context");
 assert.deepEqual(readOnlyHarness.guard.getEnvironment(), { native: true, api: "document" });
 assert.equal(readOnlyNative.registerTool, originalReadOnlyRegister);
 await readOnlyHarness.guard.init({
@@ -978,7 +978,7 @@ assert.equal(await lateNative.executeTool("late_tool", "{}"), "late-native-ok");
 assert.ok(
   lateHarness.guard
     .getJourney()
-    .some((entry) => entry.tool === "agentguard_environment" && /migrated/.test(entry.note)),
+    .some((entry) => entry.tool === "pagecontrol_environment" && /migrated/.test(entry.note)),
 );
 assert.deepEqual(lateEnvironments, [
   { native: false, api: "shim" },
@@ -986,7 +986,7 @@ assert.deepEqual(lateEnvironments, [
 ]);
 const lateAdoptionIndex = lateHarness.guard
   .getJourney()
-  .findIndex((entry) => entry.tool === "agentguard_environment");
+  .findIndex((entry) => entry.tool === "pagecontrol_environment");
 assert.ok(lateAdoptionIndex >= 0);
 assert.equal(
   lateHarness.guard
@@ -1071,5 +1071,5 @@ assert.equal(retryHarness.document.modelContext, retryNative);
 assert.equal(await retryHarness.guard.invoke("migration_retry", {}), "retry-ok");
 
 console.log(
-  `AgentGuard SDK smoke test passed (${entries.length} core entries + native, abort, and migration cases).`,
+  `PageControl SDK smoke test passed (${entries.length} core entries + native, abort, and migration cases).`,
 );

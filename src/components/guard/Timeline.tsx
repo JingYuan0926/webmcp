@@ -1,6 +1,6 @@
 import { TimelineRow } from "@/components/guard/TimelineRow";
 
-export function Timeline({ entries }: { entries: AgentGuardEntry[] }) {
+export function Timeline({ entries }: { entries: PageControlEntry[] }) {
   const visibleEntries = entries.slice(-60).reverse();
   return (
     <section className="timeline-section" aria-labelledby="timeline-title">

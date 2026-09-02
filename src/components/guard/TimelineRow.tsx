@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const verdictTone: Record<AgentGuardEntry["verdict"], "ok" | "warn" | "danger"> = {
+const verdictTone: Record<PageControlEntry["verdict"], "ok" | "warn" | "danger"> = {
   allowed: "ok",
   approved: "ok",
   capped: "warn",
@@ -27,7 +27,7 @@ function renderValue(value: unknown): string {
   }
 }
 
-export function TimelineRow({ entry }: { entry: AgentGuardEntry }) {
+export function TimelineRow({ entry }: { entry: PageControlEntry }) {
   const [expanded, setExpanded] = useState(false);
   const detailId = `journey-entry-${entry.id}`;
   const time = new Intl.DateTimeFormat("en-MY", {

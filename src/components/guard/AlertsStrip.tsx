@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import type { GuardAlert } from "@/lib/use-agentguard";
+import type { GuardAlert } from "@/lib/use-pagecontrol";
 
 export function AlertsStrip({ alerts }: { alerts: GuardAlert[] }) {
   const [dismissed, setDismissed] = useState<Set<number>>(() => new Set());

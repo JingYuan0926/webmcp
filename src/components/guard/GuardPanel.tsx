@@ -8,10 +8,10 @@ import { PolicyList } from "@/components/guard/PolicyList";
 import { SpendMeter } from "@/components/guard/SpendMeter";
 import { Timeline } from "@/components/guard/Timeline";
 import { demoSteps, runTestAgent } from "@/lib/demo-agent";
-import { useAgentGuard } from "@/lib/use-agentguard";
+import { usePageControl } from "@/lib/use-pagecontrol";
 
 export function GuardPanel({ onHide }: { onHide: () => void }) {
-  const snapshot = useAgentGuard();
+  const snapshot = usePageControl();
   const [progress, setProgress] = useState<{ step: number; tool: string } | null>(null);
   const [runError, setRunError] = useState("");
   const tampered = snapshot.tools.some((tool) => tool.tampered);
@@ -26,13 +26,13 @@ export function GuardPanel({ onHide }: { onHide: () => void }) {
   }
 
   function togglePause() {
-    if (!window.AgentGuard) return;
-    if (snapshot.guardState.paused) window.AgentGuard.resume();
-    else window.AgentGuard.pause();
+    if (!window.PageControl) return;
+    if (snapshot.guardState.paused) window.PageControl.resume();
+    else window.PageControl.pause();
   }
 
   return (
-    <aside className="guard-panel" aria-label="AgentGuard control panel">
+    <aside className="guard-panel" aria-label="PageControl panel">
       <header className="guard-header">
         <div>
           <div className="guard-wordmark">
@@ -42,7 +42,7 @@ export function GuardPanel({ onHide }: { onHide: () => void }) {
                 <path d="m9 12 2 2 4-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
-            <strong>AgentGuard</strong>
+            <strong>PageControl</strong>
           </div>
           <p className="guard-tagline">The in-page trust layer</p>
         </div>
@@ -55,8 +55,8 @@ export function GuardPanel({ onHide }: { onHide: () => void }) {
             type="button"
             className="guard-hide-button"
             onClick={onHide}
-            aria-label="Hide AgentGuard panel"
-            title="Hide AgentGuard"
+            aria-label="Hide PageControl panel"
+            title="Hide PageControl"
           >
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
               <path d="m14 7-5 5 5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -96,7 +96,7 @@ export function GuardPanel({ onHide }: { onHide: () => void }) {
       {!snapshot.available ? (
         <div className="panel-error" role="status">
           <strong>SDK not loaded</strong>
-          <span>The store still works. Reload to reconnect AgentGuard.</span>
+          <span>The store still works. Reload to reconnect PageControl.</span>
         </div>
       ) : null}
       <SpendMeter budget={snapshot.budget} />

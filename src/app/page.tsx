@@ -8,7 +8,7 @@ import { TopBar } from "@/components/store/TopBar";
 import { StoreProvider } from "@/lib/store";
 import { registerStoreTools } from "@/lib/tools";
 
-function AgentGuardDemo() {
+function PageControlDemo() {
   const [panelOpen, setPanelOpen] = useState(true);
 
   useEffect(() => {
@@ -30,13 +30,13 @@ function AgentGuardDemo() {
           type="button"
           className="show-guard-button"
           onClick={() => setPanelOpen(true)}
-          aria-label="Show AgentGuard panel"
+          aria-label="Show PageControl panel"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path d="M12 3 5 6v5c0 4.6 2.8 8.1 7 10 4.2-1.9 7-5.4 7-10V6l-7-3Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
             <path d="m9 12 2 2 4-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Show AgentGuard
+          Show PageControl
         </button>
       )}
     </div>
@@ -46,7 +46,7 @@ function AgentGuardDemo() {
 export default function Home() {
   return (
     <StoreProvider>
-      <AgentGuardDemo />
+      <PageControlDemo />
     </StoreProvider>
   );
 }

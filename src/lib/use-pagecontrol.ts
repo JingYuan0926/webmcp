@@ -2,32 +2,32 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export type GuardAlert = AgentGuardAlert & { id: number };
+export type GuardAlert = PageControlAlert & { id: number };
 
 export type GuardSnapshot = {
-  entries: AgentGuardEntry[];
-  tools: AgentGuardTool[];
+  entries: PageControlEntry[];
+  tools: PageControlTool[];
   budget: { limit: number; spent: number; currency: string };
-  approvals: AgentGuardApproval[];
+  approvals: PageControlApproval[];
   alerts: GuardAlert[];
   guardState: { paused: boolean };
-  environment: AgentGuardEnvironment;
+  environment: PageControlEnvironment;
   available: boolean;
-  policies: AgentGuardPolicies;
+  policies: PageControlPolicies;
 };
 
-const emptyPolicies: AgentGuardPolicies = { merchant: {}, user: {}, effective: {} };
+const emptyPolicies: PageControlPolicies = { merchant: {}, user: {}, effective: {} };
 const MAX_ORDINARY_ALERTS = 20;
 
-export function useAgentGuard(): GuardSnapshot {
-  const [entries, setEntries] = useState<AgentGuardEntry[]>([]);
-  const [tools, setTools] = useState<AgentGuardTool[]>([]);
+export function usePageControl(): GuardSnapshot {
+  const [entries, setEntries] = useState<PageControlEntry[]>([]);
+  const [tools, setTools] = useState<PageControlTool[]>([]);
   const [budget, setBudget] = useState({ limit: 0, spent: 0, currency: "USD" });
-  const [approvals, setApprovals] = useState<AgentGuardApproval[]>([]);
+  const [approvals, setApprovals] = useState<PageControlApproval[]>([]);
   const [alerts, setAlerts] = useState<GuardAlert[]>([]);
   const nextAlertId = useRef(1);
   const [guardState, setGuardState] = useState({ paused: false });
-  const [environment, setEnvironment] = useState<AgentGuardEnvironment>({
+  const [environment, setEnvironment] = useState<PageControlEnvironment>({
     native: false,
     api: "shim",
   });
@@ -41,7 +41,7 @@ export function useAgentGuard(): GuardSnapshot {
     const cleanups: Array<() => void> = [];
 
     function connect() {
-      const guard = window.AgentGuard;
+      const guard = window.PageControl;
       if (cancelled || connected || !guard) return;
       connected = true;
       if (interval !== null) {
@@ -104,8 +104,8 @@ export function useAgentGuard(): GuardSnapshot {
 
   void policyRevision;
   const policies =
-    typeof window !== "undefined" && window.AgentGuard
-      ? window.AgentGuard.getPolicies()
+    typeof window !== "undefined" && window.PageControl
+      ? window.PageControl.getPolicies()
       : emptyPolicies;
 
   return {

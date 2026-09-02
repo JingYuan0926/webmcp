@@ -1,8 +1,8 @@
-# Brand — AgentGuard
+# Brand — PageControl
 
 _Status: active_
 
-AgentGuard is a calm, technical trust product for the agent-native web. The interface pairs a light US technology storefront with a dark operations console so people can see the boundary between commerce and control.
+PageControl is a calm, technical trust product for the agent-native web. The interface pairs a light US technology storefront with a dark operations console so people can see the boundary between commerce and control.
 
 ## Palette
 
@@ -26,7 +26,7 @@ Semantic colors are reserved for verdicts, alerts, approvals, and system state.
 
 ## Typography
 
-Use the system UI stack for the storefront and a system monospace stack for AgentGuard data, tool names, amounts, hashes, and verdicts. Keep type compact and legible; never use display typography that competes with operational data.
+Use the system UI stack for the storefront and a system monospace stack for PageControl data, tool names, amounts, hashes, and verdicts. Keep type compact and legible; never use display typography that competes with operational data.
 
 ## Voice
 

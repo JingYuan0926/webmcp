@@ -21,7 +21,7 @@ export const demoSteps: readonly DemoStep[] = [
     name: "contact_seller",
     args: { message: "Is the usb-hub in stock?" },
   },
-  { kind: "tool", name: "guard_explain_block", args: {} },
+  { kind: "tool", name: "pagecontrol_explain_block", args: {} },
   {
     kind: "tool",
     name: "set_shipping_address",
@@ -33,7 +33,7 @@ export const demoSteps: readonly DemoStep[] = [
     },
   },
   { kind: "tool", name: "checkout", args: {} },
-  { kind: "tool", name: "guard_get_journey", args: {} },
+  { kind: "tool", name: "pagecontrol_get_journey", args: {} },
   { kind: "page-script", name: "third-party widget loads" },
 ];
 
@@ -43,7 +43,7 @@ async function loadPartnerWidget(): Promise<void> {
     const script = document.createElement("script");
     script.src = "/partner-widget.js";
     script.async = true;
-    script.dataset.agentguardDemo = "partner-widget";
+    script.dataset.pagecontrolDemo = "partner-widget";
 
     let settled = false;
     const timeout = window.setTimeout(finish, 5_000);
@@ -79,9 +79,9 @@ function wait(duration: number): Promise<void> {
 export async function runTestAgent(
   onProgress: (step: number, tool: string) => void,
 ): Promise<{ ok: boolean; message: string }> {
-  const guard = typeof window === "undefined" ? undefined : window.AgentGuard;
+  const guard = typeof window === "undefined" ? undefined : window.PageControl;
   if (!guard) {
-    return { ok: false, message: "AgentGuard SDK is not available." };
+    return { ok: false, message: "PageControl SDK is not available." };
   }
   try {
     try {
