@@ -245,6 +245,7 @@
         var policy = resolvePolicy(record.name).rule;
         return {
           name: record.name,
+          label: record.label,
           description: record.description,
           sensitive:
             policy.mode !== "allow" ||
@@ -394,15 +395,21 @@
     return null;
   }
 
-  function setUserPolicy(name, rule) {
+  function setUserPolicy(name, rule, options) {
     if (typeof name !== "string" || !name) {
       return { ok: false, message: "Choose a tool first." };
     }
     var shapeError = validateRuleShape(rule);
     if (shapeError) return { ok: false, message: shapeError };
+    var merchant = defaultMerchantRule(name);
     var current = resolvePolicy(name).rule;
     if (rule.mode !== undefined && MODE_RANK[rule.mode] < MODE_RANK[current.mode]) {
-      return { ok: false, message: "User rules can only tighten the mode." };
+      if (!options || options.humanConfirmed !== true) {
+        return { ok: false, message: "Confirm before making this rule less strict." };
+      }
+      if (MODE_RANK[rule.mode] < MODE_RANK[merchant.mode]) {
+        return { ok: false, message: "This store protection cannot be weakened." };
+      }
     }
     var caps = ["maxAmount", "maxQty", "maxPerMinute"];
     for (var index = 0; index < caps.length; index += 1) {
@@ -415,12 +422,12 @@
       return { ok: false, message: "User rules cannot remove budget charging." };
     }
     var next = Object.assign({}, userPolicies[name] || {}, clone(rule));
-    if (next.mode && MODE_RANK[next.mode] < MODE_RANK[current.mode]) {
-      return { ok: false, message: "A saved user rule is already stricter." };
+    if (next.mode && MODE_RANK[next.mode] < MODE_RANK[merchant.mode]) {
+      return { ok: false, message: "This store protection cannot be weakened." };
     }
     userPolicies[name] = next;
     emitTools();
-    return { ok: true, message: "Policy tightened for " + name + "." };
+    return { ok: true, message: "Policy updated for " + name + "." };
   }
 
   function setBudgetInternal(limit) {
@@ -429,11 +436,11 @@
     return { ok: true, message: "Budget set to " + budget.currency + " " + limit.toFixed(2) + "." };
   }
 
-  function setBudget(limit) {
+  function setBudget(limit, options) {
     if (typeof limit !== "number" || !Number.isFinite(limit) || limit < 0) {
       return { ok: false, message: "Budget must be a finite, non-negative number." };
     }
-    if (limit > budget.limit) {
+    if (limit > budget.limit && (!options || options.humanConfirmed !== true)) {
       return { ok: false, message: "Raising the budget requires human approval." };
     }
     return setBudgetInternal(limit);
@@ -599,7 +606,7 @@
     var title = document.createElement("h2");
     title.id = "agentguard-title";
     title.className = "agentguard-title";
-    title.textContent = "Allow " + first.public.tool + "?";
+    title.textContent = "Run " + first.public.tool + "?";
     var copy = document.createElement("p");
     copy.className = "agentguard-copy";
     copy.textContent = first.public.argsSummary;
@@ -621,14 +628,14 @@
     var denyButton = document.createElement("button");
     denyButton.type = "button";
     denyButton.className = "agentguard-button";
-    denyButton.textContent = "Deny";
+    denyButton.textContent = "Block";
     denyButton.addEventListener("click", function () {
       deny(first.public.id);
     });
     var allowButton = document.createElement("button");
     allowButton.type = "button";
     allowButton.className = "agentguard-button agentguard-button--allow";
-    allowButton.textContent = "Allow";
+    allowButton.textContent = "Run once";
     allowButton.addEventListener("click", function () {
       approve(first.public.id);
     });
@@ -1146,6 +1153,7 @@
       var policy = resolvePolicy(record.name).rule;
       return {
         name: record.name,
+        label: record.label,
         description: record.description,
         sensitive: policy.mode !== "allow" || Boolean(policy.chargesBudget) || Boolean(record.guardMeta && (record.guardMeta.getCost || record.guardMeta.getQty)),
         tampered: Boolean(record.tampered),
@@ -1163,7 +1171,7 @@
   function stripGuard(definition) {
     var clean = {};
     Object.keys(definition).forEach(function (key) {
-      if (key !== "guard") clean[key] = definition[key];
+      if (key !== "guard" && key !== "label") clean[key] = definition[key];
     });
     return clean;
   }
@@ -1224,6 +1232,7 @@
     }
     var record = {
       name: definition.name,
+      label: definition.label || definition.name,
       description: definition.description || "",
       inputSchema: clone(definition.inputSchema || { type: "object" }),
       schemaHash: nextSchemaHash,
@@ -1579,6 +1588,7 @@
 
     await registerWithBinding(activeBinding, {
       name: "guard_get_journey",
+      label: "Read the activity log",
       description: "Read the last 20 AgentGuard journey entries.",
       inputSchema: { type: "object", properties: {}, required: [] },
       annotations: { readOnlyHint: true, untrustedContentHint: false },
@@ -1599,6 +1609,7 @@
     });
     await registerWithBinding(activeBinding, {
       name: "guard_explain_block",
+      label: "Ask why a call was blocked",
       description: "Explain the most recent call blocked by AgentGuard.",
       inputSchema: { type: "object", properties: {}, required: [] },
       annotations: { readOnlyHint: true, untrustedContentHint: false },
@@ -1608,6 +1619,7 @@
     });
     await registerWithBinding(activeBinding, {
       name: "guard_set_budget",
+      label: "Change the spending limit",
       description: "Lower the agent budget, or request human approval to raise it.",
       inputSchema: {
         type: "object",

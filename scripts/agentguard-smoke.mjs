@@ -185,6 +185,7 @@ const register = (definition) => document.modelContext.registerTool(definition);
 
 await register({
   name: "list_products",
+  label: "Browse the catalog",
   description: "List products.",
   inputSchema: objectSchema(),
   execute: async () => JSON.stringify([...products.values()]),
@@ -330,6 +331,21 @@ guard.on("alert", (alert) => {
 guard.on("tools", (tools) => {
   latestTools = tools;
 });
+assert.equal(
+  latestTools.find((tool) => tool.name === "list_products")?.label,
+  "Browse the catalog",
+  "Tool labels must reach policy-panel subscribers",
+);
+assert.equal(
+  latestTools.find((tool) => tool.name === "search_products")?.label,
+  "search_products",
+  "Tools without a label must fall back to their registered name",
+);
+assert.equal(
+  document.modelContext.getTools().find((tool) => tool.name === "list_products")?.label,
+  undefined,
+  "AgentGuard display labels must not leak into native WebMCP definitions",
+);
 
 async function loadPartnerWidget() {
   vm.runInContext(partnerWidgetSource, context, { filename: "partner-widget.js" });
@@ -363,7 +379,11 @@ const expected = [
   "tampered",
 ];
 assert.deepEqual(firstRunEntries.map((entry) => entry.verdict), expected);
-assert.ok(firstRunEntries.some((entry) => entry.suspicious), "Injection result should be marked");
+assert.equal(
+  firstRunEntries.filter((entry) => entry.suspicious).length,
+  1,
+  "Exactly one injection result should be marked suspicious",
+);
 assert.equal(firstRunEntries.at(-1).tool, "checkout");
 assert.equal(firstRunEntries.at(-1).simulated, false, "The hijack is page script, not an agent call");
 assert.equal(tamperAlerts.length, 1, "The hijack attempt must raise a TAMPER alert");
@@ -453,12 +473,34 @@ assert.equal(
 const policiesTightened = guard.setUserPolicy("add_to_cart", { mode: "approve", maxQty: 3 });
 assert.equal(policiesTightened.ok, true);
 assert.equal(guard.setUserPolicy("add_to_cart", { mode: "allow" }).ok, false);
+assert.equal(
+  guard.setUserPolicy("add_to_cart", { mode: "allow" }, { humanConfirmed: true }).ok,
+  true,
+  "A confirmed user may undo their own stricter mode",
+);
 assert.equal(guard.setUserPolicy("add_to_cart", { maxQty: 4 }).ok, false);
+assert.equal(guard.setUserPolicy("checkout", { mode: "deny" }).ok, true);
+assert.equal(
+  guard.setUserPolicy("checkout", { mode: "allow" }, { humanConfirmed: true }).ok,
+  false,
+  "Confirmation must not weaken the merchant's original mode",
+);
+assert.equal(
+  guard.setUserPolicy("checkout", { mode: "approve" }, { humanConfirmed: true }).ok,
+  true,
+  "A confirmed user may return to the merchant's original mode",
+);
 assert.equal(guard.setUserPolicy("view_cart", { mode: "allow", surprise: true }).ok, false);
 assert.equal(guard.setUserPolicy("view_cart", { mode: "allow" }).ok, true);
 await guard.invoke("view_cart", {});
 assert.equal(guard.getJourney().at(-1).policySource, "merchant", "Equivalent user rules stay merchant-sourced");
 assert.equal(guard.setBudget(400).ok, false, "Public budget raises must fail");
+assert.equal(
+  guard.setBudget(400, { humanConfirmed: true }).ok,
+  true,
+  "An explicit human action may raise the session budget",
+);
+assert.equal(guard.setBudget(300).ok, true, "The test budget should return to its original limit");
 
 assert.match(await guard.invoke("add_to_cart", { id: "wireless-mouse", qty: Number.NaN }), /invalid arguments/);
 assert.match(await guard.invoke("add_to_cart", { id: "wireless-mouse", qty: -1 }), /invalid arguments/);

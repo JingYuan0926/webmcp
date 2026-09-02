@@ -54,6 +54,7 @@ export function registerStoreTools(): Promise<boolean> {
     const tools: WebMCPToolDefinition[] = [
       {
         name: "search_products",
+        label: "Search products",
         description: "Search the Northline Tech catalog by name, tag, or product detail.",
         inputSchema: objectSchema({ query: { type: "string", minLength: 1 } }, ["query"]),
         annotations: { readOnlyHint: true, untrustedContentHint: false },
@@ -61,6 +62,7 @@ export function registerStoreTools(): Promise<boolean> {
       },
       {
         name: "list_products",
+        label: "Browse the catalog",
         description: "List every product sold by Northline Tech.",
         inputSchema: objectSchema({}),
         annotations: { readOnlyHint: true, untrustedContentHint: false },
@@ -68,6 +70,7 @@ export function registerStoreTools(): Promise<boolean> {
       },
       {
         name: "get_product",
+        label: "View a product",
         description: "Get one product by its stable catalog id.",
         inputSchema: objectSchema({ id: { type: "string", minLength: 1 } }, ["id"]),
         annotations: { readOnlyHint: true, untrustedContentHint: false },
@@ -75,6 +78,7 @@ export function registerStoreTools(): Promise<boolean> {
       },
       {
         name: "add_to_cart",
+        label: "Add to cart",
         description: "Add a positive integer quantity of one product to the cart.",
         inputSchema: objectSchema(
           {
@@ -96,6 +100,7 @@ export function registerStoreTools(): Promise<boolean> {
       },
       {
         name: "remove_from_cart",
+        label: "Remove from cart",
         description: "Remove one product line from the cart.",
         inputSchema: objectSchema({ id: { type: "string", minLength: 1 } }, ["id"]),
         annotations: { readOnlyHint: false, untrustedContentHint: false },
@@ -103,6 +108,7 @@ export function registerStoreTools(): Promise<boolean> {
       },
       {
         name: "view_cart",
+        label: "View the cart",
         description: "Read the current cart and total in US dollars.",
         inputSchema: objectSchema({}),
         annotations: { readOnlyHint: true, untrustedContentHint: false },
@@ -110,6 +116,7 @@ export function registerStoreTools(): Promise<boolean> {
       },
       {
         name: "set_shipping_address",
+        label: "Change the delivery address",
         description: "Set the recipient name and shipping address.",
         inputSchema: objectSchema(
           {
@@ -133,6 +140,7 @@ export function registerStoreTools(): Promise<boolean> {
       },
       {
         name: "checkout",
+        label: "Place the order",
         description: "Place an order for the current cart at the saved address.",
         inputSchema: objectSchema({}),
         annotations: { readOnlyHint: false, untrustedContentHint: false },
@@ -141,6 +149,7 @@ export function registerStoreTools(): Promise<boolean> {
       },
       {
         name: "contact_seller",
+        label: "Message the seller",
         description: "Send a product question to the Northline Tech seller.",
         inputSchema: objectSchema({ message: { type: "string", minLength: 1 } }, ["message"]),
         annotations: { readOnlyHint: false, untrustedContentHint: true },
@@ -148,6 +157,7 @@ export function registerStoreTools(): Promise<boolean> {
       },
       {
         name: "delete_account",
+        label: "Delete the account",
         description: "Request permanent deletion of the current customer account.",
         inputSchema: objectSchema({}),
         annotations: { readOnlyHint: false, untrustedContentHint: false },

@@ -44,6 +44,7 @@ declare global {
 
   type AgentGuardTool = {
     name: string;
+    label?: string;
     description: string;
     sensitive: boolean;
     tampered: boolean;
@@ -77,6 +78,7 @@ declare global {
 
   type WebMCPToolDefinition = {
     name: string;
+    label?: string;
     description: string;
     inputSchema: Record<string, unknown>;
     execute: (
@@ -145,8 +147,15 @@ declare global {
     deny: (id: string) => boolean;
     pause: () => void;
     resume: () => void;
-    setUserPolicy: (name: string, rule: AgentGuardRule) => { ok: boolean; message: string };
-    setBudget: (limit: number) => { ok: boolean; message: string };
+    setUserPolicy: (
+      name: string,
+      rule: AgentGuardRule,
+      options?: { humanConfirmed?: boolean },
+    ) => { ok: boolean; message: string };
+    setBudget: (
+      limit: number,
+      options?: { humanConfirmed?: boolean },
+    ) => { ok: boolean; message: string };
     getPolicies: () => AgentGuardPolicies;
     getJourney: () => AgentGuardEntry[];
     exportJourney: () => string;
