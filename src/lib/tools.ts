@@ -51,15 +51,28 @@ export function registerStoreTools(): Promise<boolean> {
       },
     });
 
-    const tools: WebMCPToolDefinition[] = [
-      {
-        name: "search_products",
-        label: "Search products",
-        description: "Search the Northline Tech catalog by name, tag, or product detail.",
-        inputSchema: objectSchema({ query: { type: "string", minLength: 1 } }, ["query"]),
-        annotations: { readOnlyHint: true, untrustedContentHint: false },
-        execute: async (inputs) => JSON.stringify(storeApi.search(asString(inputs.query))),
+    if (!document.modelContext) {
+      throw new Error("PageControl could not initialize the WebMCP tool registry.");
+    }
+
+    // PageControl wraps the native API, so this literal registration still
+    // enters the same guarded execution pipeline as PageControl.registerTool.
+    await document.modelContext.registerTool({
+      name: "search_products",
+      label: "Search products",
+      description: "Search the product catalog",
+      inputSchema: {
+        type: "object",
+        properties: {
+          query: { type: "string", minLength: 1 },
+        },
+        required: ["query"],
       },
+      annotations: { readOnlyHint: true, untrustedContentHint: false },
+      execute: async (input) => JSON.stringify(storeApi.search(asString(input.query))),
+    });
+
+    const tools: WebMCPToolDefinition[] = [
       {
         name: "list_products",
         label: "Browse the catalog",
