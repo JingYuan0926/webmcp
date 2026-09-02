@@ -34,8 +34,8 @@ export function registerStoreTools(): Promise<boolean> {
     }
 
     await guard.init({
-      appName: "Kedai Tech",
-      budget: { limit: 300, currency: "RM" },
+      appName: "Northline Tech",
+      budget: { limit: 300, currency: "USD" },
       defaultMode: "allow",
       defaultMaxPerMinute: 30,
       tools: {
@@ -54,14 +54,14 @@ export function registerStoreTools(): Promise<boolean> {
     const tools: WebMCPToolDefinition[] = [
       {
         name: "search_products",
-        description: "Search the Kedai Tech catalog by name, tag, or product detail.",
+        description: "Search the Northline Tech catalog by name, tag, or product detail.",
         inputSchema: objectSchema({ query: { type: "string", minLength: 1 } }, ["query"]),
         annotations: { readOnlyHint: true, untrustedContentHint: false },
         execute: async (inputs) => JSON.stringify(storeApi.search(asString(inputs.query))),
       },
       {
         name: "list_products",
-        description: "List every product sold by Kedai Tech.",
+        description: "List every product sold by Northline Tech.",
         inputSchema: objectSchema({}),
         annotations: { readOnlyHint: true, untrustedContentHint: false },
         execute: async () => JSON.stringify(storeApi.list()),
@@ -103,14 +103,14 @@ export function registerStoreTools(): Promise<boolean> {
       },
       {
         name: "view_cart",
-        description: "Read the current cart and total in Malaysian ringgit.",
+        description: "Read the current cart and total in US dollars.",
         inputSchema: objectSchema({}),
         annotations: { readOnlyHint: true, untrustedContentHint: false },
         execute: async () => JSON.stringify(storeApi.cart()),
       },
       {
         name: "set_shipping_address",
-        description: "Set the shipping name and Malaysian postal address.",
+        description: "Set the recipient name and shipping address.",
         inputSchema: objectSchema(
           {
             name: { type: "string", minLength: 1 },
@@ -141,7 +141,7 @@ export function registerStoreTools(): Promise<boolean> {
       },
       {
         name: "contact_seller",
-        description: "Send a product question to the Kedai Tech seller.",
+        description: "Send a product question to the Northline Tech seller.",
         inputSchema: objectSchema({ message: { type: "string", minLength: 1 } }, ["message"]),
         annotations: { readOnlyHint: false, untrustedContentHint: true },
         execute: async (inputs) => storeApi.contactSeller(asString(inputs.message)),

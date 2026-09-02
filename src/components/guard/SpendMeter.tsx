@@ -1,4 +1,4 @@
-import { formatRM } from "@/lib/catalog";
+import { formatUSD } from "@/lib/catalog";
 
 type SpendMeterProps = {
   budget: { limit: number; spent: number; currency: string };
@@ -16,7 +16,7 @@ export function SpendMeter({ budget }: SpendMeterProps) {
           <p className="panel-eyebrow">Session budget</p>
           <h2 id="spend-title">Spend meter</h2>
         </div>
-        <strong className={`meter-value meter-value--${level}`}>{formatRM(budget.spent)}</strong>
+        <strong className={`meter-value meter-value--${level}`}>{formatUSD(budget.spent)}</strong>
       </div>
       <div
         className="meter-track"
@@ -30,9 +30,8 @@ export function SpendMeter({ budget }: SpendMeterProps) {
       </div>
       <div className="meter-meta">
         <span>{Math.round(ratio * 100)}% used</span>
-        <span>{formatRM(budget.limit)} limit</span>
+        <span>{formatUSD(budget.limit)} limit</span>
       </div>
     </section>
   );
 }
-

@@ -1,13 +1,14 @@
 "use client";
 
+import Image from "next/image";
 import { useState, type CSSProperties } from "react";
 
-import { formatRM, type Product } from "@/lib/catalog";
+import { formatUSD, type Product } from "@/lib/catalog";
 import { flashed, useStore } from "@/lib/store";
 
-type ProductCardProps = { product: Product };
+type ProductCardProps = { product: Product; preload?: boolean };
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, preload = false }: ProductCardProps) {
   const { state, api } = useStore();
   const [message, setMessage] = useState("");
   const style = { "--product-hue": product.hue } as CSSProperties;
@@ -20,14 +21,21 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <article className={`product-card${isFlashed ? " is-flashing" : ""}`}>
-      <div className="product-art" style={style} aria-hidden="true">
-        <span>{product.initials}</span>
+      <div className="product-art" style={style}>
+        <Image
+          src={product.image}
+          alt={product.imageAlt}
+          fill
+          preload={preload}
+          sizes="(max-width: 768px) 100vw, (max-width: 1152px) 50vw, 28vw"
+          className="product-image"
+        />
         <small>{product.tag}</small>
       </div>
       <div className="product-copy">
         <div className="product-heading">
           <h3>{product.name}</h3>
-          <p className="price">{formatRM(product.price)}</p>
+          <p className="price">{formatUSD(product.price)}</p>
         </div>
         <p>{product.blurb}</p>
       </div>
@@ -40,4 +48,3 @@ export function ProductCard({ product }: ProductCardProps) {
     </article>
   );
 }
-

@@ -17,10 +17,9 @@ export function ProductGrid({ products }: { products: Product[] }) {
 
   return (
     <div className="product-grid">
-      {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+      {products.map((product, index) => (
+        <ProductCard key={product.id} product={product} preload={index === 0} />
       ))}
     </div>
   );
 }
-

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { formatRM } from "@/lib/catalog";
+import { formatUSD } from "@/lib/catalog";
 import { flashed, useStore } from "@/lib/store";
 
 export function CartCard() {
@@ -39,7 +39,7 @@ export function CartCard() {
               <div>
                 <strong>{item.product.name}</strong>
                 <span>
-                  {item.qty} × {formatRM(item.product.price)}
+                  {item.qty} × {formatUSD(item.product.price)}
                 </span>
               </div>
               <button
@@ -64,7 +64,7 @@ export function CartCard() {
 
       <div className="cart-total">
         <span>Total</span>
-        <strong className="price">{formatRM(total)}</strong>
+        <strong className="price">{formatUSD(total)}</strong>
       </div>
       <button
         type="button"

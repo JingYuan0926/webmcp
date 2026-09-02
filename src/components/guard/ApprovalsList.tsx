@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { formatRM } from "@/lib/catalog";
+import { formatUSD } from "@/lib/catalog";
 
 function Countdown({ expiresAt }: { expiresAt: number }) {
   const [seconds, setSeconds] = useState(() => Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000)));
@@ -37,7 +37,7 @@ export function ApprovalsList({ approvals }: { approvals: AgentGuardApproval[] }
             </div>
             <p>{approval.argsSummary}</p>
             {typeof approval.cost === "number" ? (
-              <span className="approval-cost">Cost {formatRM(approval.cost)}</span>
+              <span className="approval-cost">Cost {formatUSD(approval.cost)}</span>
             ) : null}
             <div className="approval-actions">
               <button type="button" className="panel-button panel-button--ghost" onClick={() => window.AgentGuard?.deny(approval.id)}>
@@ -53,4 +53,3 @@ export function ApprovalsList({ approvals }: { approvals: AgentGuardApproval[] }
     </section>
   );
 }
-

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 
-import { formatRM } from "@/lib/catalog";
+import { formatUSD } from "@/lib/catalog";
 
 const modeRank: Record<AgentGuardMode, number> = { allow: 0, approve: 1, deny: 2 };
 const modes: AgentGuardMode[] = ["allow", "approve", "deny"];
@@ -25,10 +25,12 @@ function LockIcon() {
 
 function PolicyRow({
   name,
+  tampered,
   merchant,
   effective,
 }: {
   name: string;
+  tampered: boolean;
   merchant: AgentGuardRule;
   effective: AgentGuardRule;
 }) {
@@ -83,14 +85,17 @@ function PolicyRow({
       <summary>
         <span className="policy-lock"><LockIcon /></span>
         <span className="policy-name">{name}</span>
-        <span className={`mode-chip mode-chip--${currentMode}`}>{currentMode}</span>
+        <span className="policy-status">
+          {tampered ? <span className="tool-risk-badge">Flagged</span> : null}
+          <span className={`mode-chip mode-chip--${currentMode}`}>{currentMode}</span>
+        </span>
         <svg className="policy-chevron" viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
           <path d="m6 8 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </summary>
       <div className="policy-locked-values">
         <span>Merchant floor</span>
-        {typeof merchant.maxAmount === "number" ? <b>{formatRM(merchant.maxAmount)}</b> : null}
+        {typeof merchant.maxAmount === "number" ? <b>{formatUSD(merchant.maxAmount)}</b> : null}
         {typeof merchant.maxQty === "number" ? <b>qty {merchant.maxQty}</b> : null}
         {typeof merchant.maxPerMinute === "number" ? <b>{merchant.maxPerMinute}/min</b> : null}
         {merchant.chargesBudget ? <b>charges budget</b> : null}
@@ -148,9 +153,7 @@ export function PolicyList({
     };
   }, [budget.limit]);
 
-  const toolNames = tools
-    .map((tool) => tool.name)
-    .filter((name) => !name.startsWith("guard_"));
+  const visibleTools = tools.filter((tool) => !tool.name.startsWith("guard_"));
 
   function submitBudget(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -172,19 +175,20 @@ export function PolicyList({
         <span className="panel-caption">User can tighten</span>
       </div>
       <div className="policy-list">
-        {toolNames.map((name) => (
+        {visibleTools.map((tool) => (
           <PolicyRow
-            key={name}
-            name={name}
-            merchant={policies.merchant[name] ?? { mode: "allow" }}
-            effective={policies.effective[name] ?? { mode: "allow" }}
+            key={tool.name}
+            name={tool.name}
+            tampered={tool.tampered}
+            merchant={policies.merchant[tool.name] ?? { mode: "allow" }}
+            effective={policies.effective[tool.name] ?? { mode: "allow" }}
           />
         ))}
       </div>
       <form className="budget-policy" onSubmit={submitBudget}>
         <div>
           <label htmlFor="budget-limit">Lower session budget</label>
-          <span>Current {formatRM(budget.limit)}</span>
+          <span>Current {formatUSD(budget.limit)}</span>
         </div>
         <div className="budget-policy-controls">
           <input
