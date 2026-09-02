@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint src scripts public/agentguard.js public/partner-widget.js next.config.ts eslint.config.mjs",
     "test:sdk": "node scripts/agentguard-smoke.mjs",
     "journey:sample": "node scripts/agentguard-smoke.mjs --write-sample"
   },
