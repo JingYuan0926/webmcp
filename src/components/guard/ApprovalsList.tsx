@@ -41,10 +41,10 @@ export function ApprovalsList({ approvals }: { approvals: AgentGuardApproval[] }
             ) : null}
             <div className="approval-actions">
               <button type="button" className="panel-button panel-button--ghost" onClick={() => window.AgentGuard?.deny(approval.id)}>
-                Deny
+                Block
               </button>
               <button type="button" className="panel-button panel-button--allow" onClick={() => window.AgentGuard?.approve(approval.id)}>
-                Allow
+                Run once
               </button>
             </div>
           </article>

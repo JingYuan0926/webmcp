@@ -971,20 +971,6 @@ summary:focus-visible {
   font-size: 0.75rem;
 }
 
-.panel-webmcp-badge {
-  min-height: 1.75rem;
-  margin: var(--space-2) 0 0 2.5rem;
-  border-color: var(--panel-line);
-  background: var(--panel-card);
-  color: var(--panel-muted);
-}
-
-.guard-panel .webmcp-badge--native {
-  border-color: color-mix(in srgb, var(--ok) 42%, var(--panel-line));
-  background: color-mix(in srgb, var(--ok) 8%, var(--panel-card));
-  color: var(--ok);
-}
-
 .native-webmcp-note {
   margin: 0;
   padding: var(--space-3) var(--space-5);
@@ -1043,12 +1029,6 @@ summary:focus-visible {
 .guard-live strong {
   font-size: 0.75rem;
   text-transform: uppercase;
-}
-
-.guard-live small {
-  grid-column: 1 / -1;
-  color: var(--panel-muted);
-  font-size: 0.75rem;
 }
 
 .panel-error {
@@ -1154,6 +1134,36 @@ summary:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
+.meter-limit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.budget-edit-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--panel-line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-card);
+  color: var(--panel-muted);
+}
+
+.budget-edit-button:hover {
+  border-color: color-mix(in srgb, var(--ok) 42%, var(--panel-line));
+  color: var(--panel-ink);
+}
+
+.budget-update-message {
+  margin: var(--space-3) 0 0;
+  color: var(--ok);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
 .panel-count {
   min-width: 1.6rem;
   height: 1.6rem;
@@ -1244,6 +1254,10 @@ summary:focus-visible {
 .export-button:focus-visible,
 .timeline-summary:focus-visible,
 .alert-row:focus-visible,
+.policy-detail-trigger:focus-visible,
+.policy-mode-trigger:focus-visible,
+.policy-mode-option:focus-visible,
+.budget-edit-button:focus-visible,
 .guard-panel input:focus-visible,
 .guard-panel select:focus-visible,
 .guard-panel summary:focus-visible {
@@ -1360,6 +1374,11 @@ summary:focus-visible {
   color: var(--danger);
 }
 
+.mode-chip {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .injection-badge {
   border: 1px solid color-mix(in srgb, var(--danger) 55%, var(--panel-line));
   background: color-mix(in srgb, var(--danger) 12%, var(--panel-card));
@@ -1371,8 +1390,7 @@ summary:focus-visible {
   color: var(--panel-muted);
 }
 
-.timeline-summary[aria-expanded="true"] .timeline-chevron,
-.policy-row[open] .policy-chevron {
+.timeline-summary[aria-expanded="true"] .timeline-chevron {
   transform: rotate(180deg);
 }
 
@@ -1482,6 +1500,21 @@ summary:focus-visible {
   margin-top: var(--space-4);
 }
 
+.policy-hint {
+  margin: var(--space-2) 0 0;
+  color: var(--panel-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.policy-subheading {
+  margin: var(--space-3) 0 0;
+  color: var(--panel-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .policy-row {
   overflow: hidden;
   border: 1px solid var(--panel-line);
@@ -1489,36 +1522,132 @@ summary:focus-visible {
   background: var(--panel-card);
 }
 
-.policy-row summary {
-  min-height: 2.75rem;
+.policy-row-main {
+  min-height: 4rem;
   display: grid;
-  grid-template-columns: 1.25rem minmax(0, 1fr) auto 1rem;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  list-style: none;
 }
 
-.policy-row summary::-webkit-details-marker {
-  display: none;
-}
-
-.policy-lock {
+.policy-action-icon {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--panel-bg);
   color: var(--panel-muted);
 }
 
-.policy-name {
-  overflow: hidden;
-  font-size: 0.75rem;
-  font-weight: 750;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.policy-detail-trigger {
+  min-width: 0;
+  min-height: 2.75rem;
+  display: grid;
+  align-content: center;
+  gap: var(--space-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  background: transparent;
+  text-align: left;
+}
+
+.policy-label {
+  color: var(--panel-ink);
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.policy-detail-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--panel-muted);
+  font-size: 0.6875rem;
+  line-height: 1.25;
 }
 
 .policy-status {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.policy-mode-trigger {
+  min-height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0 var(--space-3);
+  font-family: var(--font-data);
+  font-size: 0.75rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.policy-mode-menu {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-top: 1px solid var(--panel-line);
+  background: var(--panel-bg);
+}
+
+.policy-mode-option {
+  min-height: 2.5rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0 var(--space-2);
+  font-family: var(--font-data);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.policy-mode-option.is-selected {
+  border-color: currentColor;
+}
+
+.policy-mode-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.policy-confirmation {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--warn) 38%, var(--panel-line));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--warn) 7%, var(--panel-card));
+}
+
+.policy-confirmation strong {
+  color: var(--panel-ink);
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+}
+
+.policy-confirmation p {
+  margin: 0;
+  color: var(--panel-muted);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+}
+
+.policy-confirmation > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-2);
 }
 
@@ -1534,23 +1663,49 @@ summary:focus-visible {
   text-transform: uppercase;
 }
 
-.policy-locked-values {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 0 var(--space-3) var(--space-3) 2.75rem;
-  color: var(--panel-muted);
-  font-size: 0.75rem;
+.policy-detail-trigger[aria-expanded="true"] .policy-chevron {
+  transform: rotate(180deg);
 }
 
-.policy-locked-values b {
-  padding: 0.125rem var(--space-2);
-  border-radius: 999px;
+.policy-mode-trigger[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.policy-details {
+  border-top: 1px solid var(--panel-line);
   background: var(--panel-bg);
+}
+
+.policy-function {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3);
+}
+
+.policy-function > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.policy-function dt {
+  color: var(--panel-muted);
+  font-size: 0.6875rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.policy-function dd {
+  margin: 0;
   color: var(--panel-ink);
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.policy-function code {
+  font-family: var(--font-data);
+  overflow-wrap: anywhere;
 }
 
 .policy-form {
@@ -1573,6 +1728,12 @@ summary:focus-visible {
   color: var(--panel-muted);
   font-size: 0.75rem;
   font-weight: 700;
+}
+
+.panel-field small {
+  color: var(--panel-muted);
+  font-size: 0.6875rem;
+  line-height: 1.4;
 }
 
 .panel-field input,
@@ -1680,7 +1841,9 @@ summary:focus-visible {
   }
 
   .timeline-summary:hover,
-  .policy-row summary:hover,
+  .policy-detail-trigger:hover,
+  .policy-mode-trigger:hover:not(:disabled),
+  .policy-mode-option:hover:not(:disabled),
   .export-button:hover,
   .alert-row:hover {
     background: color-mix(in srgb, var(--panel-ink) 4%, transparent);
@@ -1696,7 +1859,9 @@ summary:focus-visible {
   .icon-button,
   .product-card,
   .timeline-summary,
-  .policy-row summary,
+  .policy-detail-trigger,
+  .policy-mode-trigger,
+  .policy-mode-option,
   .panel-button,
   .alert-row,
   .export-button,

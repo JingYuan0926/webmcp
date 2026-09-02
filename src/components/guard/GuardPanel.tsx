@@ -45,22 +45,11 @@ export function GuardPanel({ onHide }: { onHide: () => void }) {
             <strong>AgentGuard</strong>
           </div>
           <p className="guard-tagline">The in-page trust layer</p>
-          <span
-            className={`webmcp-badge panel-webmcp-badge${snapshot.environment.native ? " webmcp-badge--native" : ""}`}
-            aria-live="polite"
-          >
-            {!snapshot.available
-              ? "WebMCP: Checking"
-              : snapshot.environment.native
-              ? "WebMCP: Native"
-              : "WebMCP: Shim — demo fallback"}
-          </span>
         </div>
         <div className="guard-header-actions">
           <div className="guard-live">
             <span className={tampered || snapshot.guardState.paused ? "is-alert" : ""} aria-hidden="true" />
             <strong>{status}</strong>
-            <small>{snapshot.entries.length} entries</small>
           </div>
           <button
             type="button"
@@ -117,7 +106,6 @@ export function GuardPanel({ onHide }: { onHide: () => void }) {
       <PolicyList
         tools={snapshot.tools}
         policies={snapshot.policies}
-        budget={snapshot.budget}
       />
     </aside>
   );
