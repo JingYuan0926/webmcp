@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 
 import { GuardPanel } from "@/components/guard/GuardPanel";
 import { StorePane } from "@/components/store/StorePane";
-import { TopBar } from "@/components/store/TopBar";
 import { StoreProvider } from "@/lib/store";
 import { registerStoreTools } from "@/lib/tools";
 
@@ -45,7 +44,6 @@ function PageControlDemo() {
   return (
     <div className="app-shell">
       <section className="store-column" aria-label="Northline Tech store">
-        <TopBar />
         <StorePane />
       </section>
       <div className="pagecontrol-widget" ref={widgetRef}>
