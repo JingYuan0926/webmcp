@@ -43,6 +43,7 @@ const toolLabels: Record<string, string> = {
   delete_account: "Delete account",
   pagecontrol_explain_block: "Explain blocked action",
   pagecontrol_get_journey: "Read activity history",
+  pagecontrol_ready: "Connect PageCTRL",
 };
 
 function asRecord(value: unknown): Record<string, unknown> | null {

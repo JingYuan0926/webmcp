@@ -1513,8 +1513,24 @@ await earlyToolsHarness.window.NorthlineWebMCPReady;
 const earlyToolNames = earlyToolsHarness.document.modelContext
   .getTools()
   .map((tool) => tool.name);
+assert.ok(earlyToolNames.includes("pagecontrol_ready"));
 assert.ok(earlyToolNames.includes("search_products"));
 assert.ok(earlyToolNames.includes("list_products"));
+assert.ok(earlyToolNames.indexOf("pagecontrol_ready") < earlyToolNames.indexOf("search_products"));
+assert.ok(earlyToolNames.indexOf("pagecontrol_ready") < earlyToolNames.indexOf("list_products"));
+let releaseCompleteSurface;
+earlyToolsHarness.window.NorthlineStoreToolsReady = new Promise((resolve) => {
+  releaseCompleteSurface = resolve;
+});
+const readyCall = earlyToolsHarness.document.modelContext.executeTool(
+  "pagecontrol_ready",
+  "{}",
+);
+releaseCompleteSurface(true);
+const readyResult = JSON.parse(await readyCall);
+assert.equal(readyResult.ready, true);
+assert.equal(readyResult.count, earlyToolNames.length);
+assert.deepEqual(readyResult.tools, earlyToolNames);
 const firstSearch = earlyToolsHarness.document.modelContext.executeTool(
   "search_products",
   JSON.stringify({ query: "mouse" }),

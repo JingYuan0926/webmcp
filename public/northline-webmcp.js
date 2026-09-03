@@ -32,6 +32,39 @@
     });
   }
 
+  function waitForCompleteToolSurface() {
+    var deadline = Date.now() + 5000;
+    return new Promise(function (resolve, reject) {
+      function attempt() {
+        var ready = window.NorthlineStoreToolsReady;
+        if (!ready) {
+          if (Date.now() >= deadline) {
+            reject(new Error("The complete storefront tool list is still loading. Try again."));
+            return;
+          }
+          window.setTimeout(attempt, 25);
+          return;
+        }
+
+        Promise.resolve(ready).then(function (registered) {
+          if (!registered) {
+            reject(new Error("The storefront tools could not be registered."));
+            return;
+          }
+          var context = document.modelContext;
+          var tools = context && typeof context.getTools === "function" ? context.getTools() : [];
+          Promise.resolve(tools).then(function (definitions) {
+            var names = Array.isArray(definitions)
+              ? definitions.map(function (definition) { return definition.name; }).filter(Boolean)
+              : [];
+            resolve(JSON.stringify({ ready: true, count: names.length, tools: names }));
+          }, reject);
+        }, reject);
+      }
+      attempt();
+    });
+  }
+
   var config = {
     appName: "Northline Tech",
     budget: { limit: 300, currency: "USD" },
@@ -55,9 +88,23 @@
     .init(config)
     .then(function () {
       return guard.registerTool({
+        name: "pagecontrol_ready",
+        label: "Connect PageCTRL",
+        description:
+          "Call this first after opening the site. Wait for the complete WebMCP tool surface and return every available tool name.",
+        inputSchema: { type: "object", properties: {}, required: [] },
+        annotations: { readOnlyHint: true, untrustedContentHint: false },
+        execute: function () {
+          return waitForCompleteToolSurface();
+        },
+      });
+    })
+    .then(function () {
+      return guard.registerTool({
         name: "search_products",
         label: "Search products",
-        description: "Search the Northline Tech product catalog.",
+        description:
+          "Search the Northline Tech product catalog. After navigation, call pagecontrol_ready first to confirm the complete tool surface.",
         inputSchema: {
           type: "object",
           properties: { query: { type: "string", minLength: 1 } },
