@@ -178,7 +178,16 @@ export function registerStoreTools(): Promise<boolean> {
             const product = storeApi.get(asString(inputs.id));
             return product ? product.price * asNumber(inputs.qty) : Number.NaN;
           },
-          getQty: (inputs) => asNumber(inputs.qty),
+          // The cap is on the quantity of this product in the cart, not on the
+          // size of one call. Returning only the requested amount let an agent
+          // add five at a time until it had twenty-five.
+          getQty: (inputs) => {
+            const product = storeApi.get(asString(inputs.id));
+            if (!product) return Number.NaN;
+            const existing =
+              storeApi.cart().items.find((line) => line.product.id === product.id)?.qty ?? 0;
+            return existing + asNumber(inputs.qty);
+          },
         },
         execute: async (inputs) =>
           JSON.stringify(storeApi.addToCart(asString(inputs.id), asNumber(inputs.qty))),

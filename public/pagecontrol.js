@@ -797,6 +797,55 @@
     (document.head || document.documentElement).appendChild(style);
   }
 
+  /**
+   * A read-only popup, separate from the approval modal so it can never
+   * interfere with a pending decision. Used when the agent asks the guard to
+   * explain itself: the answer goes to the agent as text, and this puts the
+   * same words in front of the human watching.
+   */
+  function showNotice(title, body) {
+    try {
+      ensureApprovalStyles();
+      var existing = document.getElementById("pagecontrol-notice");
+      if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+
+      var overlay = document.createElement("div");
+      overlay.id = "pagecontrol-notice";
+      overlay.className = "pagecontrol-overlay";
+
+      var card = document.createElement("div");
+      card.className = "pagecontrol-card";
+
+      var heading = document.createElement("h2");
+      heading.textContent = title;
+      card.appendChild(heading);
+
+      var copy = document.createElement("p");
+      copy.className = "pagecontrol-copy";
+      copy.textContent = body;
+      card.appendChild(copy);
+
+      var actions = document.createElement("div");
+      actions.className = "pagecontrol-actions";
+      var close = document.createElement("button");
+      close.type = "button";
+      close.className = "pagecontrol-button pagecontrol-button--allow";
+      close.textContent = "Close";
+      var dismiss = function () {
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      };
+      close.addEventListener("click", dismiss);
+      actions.appendChild(close);
+      card.appendChild(actions);
+
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+      close.focus();
+    } catch {
+      // A notice is never worth breaking a tool call over.
+    }
+  }
+
   function removeApprovalModal() {
     var overlay = document.getElementById("pagecontrol-overlay");
     if (overlay) overlay.remove();
@@ -1233,9 +1282,9 @@
         result: null,
         durationMs: performance.now() - startedAt,
         policySource: resolved.source,
-        note: name + " qty " + qty + " exceeds the merchant limit of " + policy.maxQty + " per call.",
+        note: name + " would take the cart to " + qty + ", over the merchant limit of " + policy.maxQty + ".",
         simulated: simulated,
-        blockReason: "capped: " + name + " qty " + qty + " exceeds the merchant limit of " + policy.maxQty + " per call",
+        blockReason: "capped: " + name + " would take the cart to " + qty + ", over the merchant limit of " + policy.maxQty,
       });
     }
     if (typeof policy.maxAmount === "number" && typeof cost === "number" && cost > policy.maxAmount) {
@@ -1966,7 +2015,9 @@
       inputSchema: { type: "object", properties: {}, required: [] },
       annotations: { readOnlyHint: true, untrustedContentHint: false },
       execute: async function () {
-        return explainLast();
+        var explanation = explainLast();
+        showNotice("Why the agent was blocked", explanation);
+        return explanation;
       },
     });
     await registerWithBinding(activeBinding, {
