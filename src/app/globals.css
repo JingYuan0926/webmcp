@@ -1135,25 +1135,12 @@ summary:focus-visible {
   gap: var(--space-1);
 }
 
+/* The one place the panel keeps real weight: it is the wordmark, and it is
+   now carrying the header on its own. */
 .guard-wordmark strong {
   font-size: 1.0625rem;
-  font-weight: 550;
+  font-weight: 700;
   letter-spacing: -0.03em;
-}
-
-/* The logo carries its own colour and silhouette, so it needs no tile behind
-   it — just space to sit in. */
-.guard-mark {
-  width: 1.875rem;
-  height: 1.875rem;
-  display: grid;
-  place-items: center;
-}
-
-.guard-mark img {
-  width: 1.875rem;
-  height: 1.875rem;
-  object-fit: contain;
 }
 
 .guard-tagline {

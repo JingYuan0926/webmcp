@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 
 import { AgentAuthority } from "@/components/guard/AgentAuthority";
@@ -58,9 +57,6 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
         <header className="guard-header">
           <div>
             <div className="guard-wordmark">
-              <span className="guard-mark" aria-hidden="true">
-                <Image src="/logo.png" alt="" width={30} height={30} priority />
-              </span>
               <strong id="pagecontrol-title">PageCtrl</strong>
             </div>
             <p className="guard-tagline">Review what your agent can access and do.</p>
