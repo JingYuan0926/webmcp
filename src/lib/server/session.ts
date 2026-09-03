@@ -15,6 +15,9 @@ export type Session = {
   stripeCustomerId: string | null;
   paymentMethodId: string | null;
   card: SavedCard | null;
+  spentMinor: number;
+  reservedMinor: number;
+  budgetMinor: number;
 };
 
 const COOKIE = "nt_session";
@@ -30,8 +33,21 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
  */
 const sessions = new Map<string, Session>();
 
+function sessionBudgetMinor(): number {
+  const configured = Number.parseInt(process.env.PAGECONTROL_SESSION_BUDGET_MINOR || "30000", 10);
+  return Number.isSafeInteger(configured) && configured >= 0 ? configured : 30_000;
+}
+
 function blank(id: string): Session {
-  return { id, stripeCustomerId: null, paymentMethodId: null, card: null };
+  return {
+    id,
+    stripeCustomerId: null,
+    paymentMethodId: null,
+    card: null,
+    spentMinor: 0,
+    reservedMinor: 0,
+    budgetMinor: sessionBudgetMinor(),
+  };
 }
 
 /** Reads the existing session without minting one. */
@@ -86,6 +102,28 @@ export function saveCard(
 export function forgetCard(session: Session): void {
   session.paymentMethodId = null;
   session.card = null;
+  sessions.set(session.id, session);
+}
+
+/** Reserves spend synchronously so overlapping checkouts cannot race the cap. */
+export function reserveSessionSpend(session: Session, amountMinor: number): boolean {
+  if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0) return false;
+  if (session.spentMinor + session.reservedMinor + amountMinor > session.budgetMinor) {
+    return false;
+  }
+  session.reservedMinor += amountMinor;
+  sessions.set(session.id, session);
+  return true;
+}
+
+export function commitSessionSpend(session: Session, amountMinor: number): void {
+  session.reservedMinor = Math.max(0, session.reservedMinor - amountMinor);
+  session.spentMinor += amountMinor;
+  sessions.set(session.id, session);
+}
+
+export function releaseSessionSpend(session: Session, amountMinor: number): void {
+  session.reservedMinor = Math.max(0, session.reservedMinor - amountMinor);
   sessions.set(session.id, session);
 }
 

@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 
 import { requestOrigin, verifyAndConsumeCheckoutGrant } from "@/lib/server/pagecontrol-grants";
 import { claimQuote, quoteTotalDecimal, releaseQuote } from "@/lib/server/quotes";
-import { publicCard, readSession } from "@/lib/server/session";
+import {
+  commitSessionSpend,
+  publicCard,
+  readSession,
+  releaseSessionSpend,
+  reserveSessionSpend,
+} from "@/lib/server/session";
 import {
   LIVE_KEY_MESSAGE,
   liveKeyBlocked,
@@ -34,6 +40,7 @@ const FAILURES: Record<string, string> = {
   grant_mismatch: "The signed approval does not match this exact order.",
   grant_used: "That signed approval was already used.",
   grant_unavailable: "The approval proof service is unavailable. Nothing was charged.",
+  server_budget_exceeded: "This order exceeds the server-enforced session budget.",
   card_declined: "The card was declined. Nothing was charged.",
   authentication_required:
     "The bank asked the cardholder to authenticate. A human must finish this payment in the browser.",
@@ -76,6 +83,10 @@ export async function POST(request: Request) {
     releaseQuote(quote.id);
     return fail(approval.code, approval.code === "grant_unavailable" ? 503 : 403);
   }
+  if (!reserveSessionSpend(session, quote.amountMinor)) {
+    releaseQuote(quote.id);
+    return fail("server_budget_exceeded", 403);
+  }
 
   try {
     const intent = await stripe().paymentIntents.create(
@@ -100,10 +111,13 @@ export async function POST(request: Request) {
     );
 
     if (intent.status !== "succeeded") {
+      releaseSessionSpend(session, quote.amountMinor);
       releaseQuote(quote.id);
       console.error("[checkout/confirm] unexpected status", intent.status);
       return fail("payment_failed", 402);
     }
+
+    commitSessionSpend(session, quote.amountMinor);
 
     return NextResponse.json({
       ok: true,
@@ -115,6 +129,7 @@ export async function POST(request: Request) {
       lines: quote.lines.map((line) => ({ id: line.id, name: line.name, qty: line.qty })),
     });
   } catch (error) {
+    releaseSessionSpend(session, quote.amountMinor);
     const stripeError = error as {
       code?: string;
       type?: string;
