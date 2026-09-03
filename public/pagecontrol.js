@@ -6,6 +6,8 @@
   }
 
   var VERSION = "1.0.0";
+  var JOURNEY_STORAGE_KEY = "pagectrl.journey.v1:" +
+    (window.location && window.location.pathname ? window.location.pathname : "/");
   var APPROVAL_TTL_MS = 60000;
   var EXECUTION_TTL_MS = 20000;
   var MODE_RANK = { allow: 0, approve: 1, deny: 2 };
@@ -56,7 +58,7 @@
   var sequence = 0;
   var lastHash = "genesis";
   var lastBlock = "No call has been blocked.";
-  var hashQueue = Promise.resolve();
+  var hashQueue = restoreJourney();
   var displayedApprovalId = null;
   var previousFocus = null;
   var approvalKeyHandler = null;
@@ -203,6 +205,81 @@
         .join("");
     }
     return sha256Fallback(input);
+  }
+
+  function getJourneyStorage() {
+    try {
+      return window.sessionStorage || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function journeyHashPayload(entry) {
+    return {
+      seq: entry.seq,
+      ts: entry.ts,
+      callId: entry.callId,
+      tool: entry.tool,
+      verdict: entry.verdict,
+      args: entry.args,
+      result: entry.result,
+      prevHash: entry.prevHash,
+    };
+  }
+
+  async function restoreJourney() {
+    var storage = getJourneyStorage();
+    if (!storage) return;
+    try {
+      var raw = storage.getItem(JOURNEY_STORAGE_KEY);
+      if (!raw) return;
+      var saved = JSON.parse(raw);
+      var entries = saved && Array.isArray(saved.journey) ? saved.journey : null;
+      if (!entries || entries.length > 500) throw new Error("Invalid saved journey.");
+
+      var previousHash = "genesis";
+      for (var index = 0; index < entries.length; index += 1) {
+        var entry = entries[index];
+        if (
+          !entry ||
+          entry.seq !== index + 1 ||
+          entry.prevHash !== previousHash ||
+          typeof entry.hash !== "string" ||
+          !/^[a-f0-9]{64}$/.test(entry.hash)
+        ) {
+          throw new Error("Invalid saved journey chain.");
+        }
+        var expectedHash = await sha256(JSON.stringify(journeyHashPayload(entry)));
+        if (entry.hash !== expectedHash) throw new Error("Saved journey hash mismatch.");
+        previousHash = entry.hash;
+      }
+
+      journey = clone(entries);
+      sequence = journey.length;
+      lastHash = previousHash;
+      journey.forEach(function (entry) {
+        emit("entry", entry);
+      });
+    } catch {
+      journey = [];
+      sequence = 0;
+      lastHash = "genesis";
+      try {
+        storage.removeItem(JOURNEY_STORAGE_KEY);
+      } catch {}
+    }
+  }
+
+  function persistJourney() {
+    var storage = getJourneyStorage();
+    if (!storage) return;
+    try {
+      storage.setItem(
+        JOURNEY_STORAGE_KEY,
+        JSON.stringify({ version: VERSION, journey: journey }),
+      );
+    } catch {}
   }
 
   function redactString(value) {
@@ -402,19 +479,11 @@
         simulated: Boolean(partial.simulated),
         suspicious: Boolean(partial.suspicious),
       };
-      var hashPayload = {
-        seq: entry.seq,
-        ts: entry.ts,
-        callId: entry.callId,
-        tool: entry.tool,
-        verdict: entry.verdict,
-        args: entry.args,
-        result: entry.result,
-        prevHash: entry.prevHash,
-      };
+      var hashPayload = journeyHashPayload(entry);
       entry.hash = await sha256(JSON.stringify(hashPayload));
       lastHash = entry.hash;
       journey.push(entry);
+      persistJourney();
       emit("entry", entry);
       return entry;
     });

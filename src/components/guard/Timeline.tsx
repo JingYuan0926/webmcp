@@ -21,7 +21,7 @@ export function Timeline({ entries }: { entries: PageControlEntry[] }) {
             <path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
           </svg>
           <strong>No WebMCP tool calls in this tab</strong>
-          <span>Use an agent or run the security demo. This in-memory log resets when the page reloads.</span>
+          <span>Use an agent or run the security demo. This tab-scoped log survives reloads and clears when the tab closes.</span>
         </div>
       )}
     </section>

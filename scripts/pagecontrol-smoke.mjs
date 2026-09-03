@@ -689,10 +689,26 @@ function createNativeModelContext({ failTool, failTimes = Number.POSITIVE_INFINI
   };
 }
 
+function createMemoryStorage() {
+  const values = new Map();
+  return {
+    getItem(key) {
+      return values.has(key) ? values.get(key) : null;
+    },
+    setItem(key, value) {
+      values.set(key, String(value));
+    },
+    removeItem(key) {
+      values.delete(key);
+    },
+  };
+}
+
 function createIsolatedBrowser({
   documentContext,
   navigatorContext,
   readOnlyDocumentContext = false,
+  sessionStorage,
 } = {}) {
   ids.clear();
   const isolatedDocument = {
@@ -734,6 +750,7 @@ function createIsolatedBrowser({
     removeEventListener: isolatedEvents.removeEventListener.bind(isolatedEvents),
     dispatchEvent: isolatedEvents.dispatchEvent.bind(isolatedEvents),
   };
+  if (sessionStorage) isolatedWindow.sessionStorage = sessionStorage;
   isolatedWindow.window = isolatedWindow;
   const isolatedNavigator = {};
   if (navigatorContext) isolatedNavigator.modelContext = navigatorContext;
@@ -782,6 +799,50 @@ function createIsolatedBrowser({
     context: isolatedContext,
   };
 }
+
+// A real page reload creates a new SDK instance. The redacted tab-scoped
+// record must be verified, restored, and extended from its previous hash.
+const reloadStorage = createMemoryStorage();
+const beforeReloadHarness = createIsolatedBrowser({ sessionStorage: reloadStorage });
+await beforeReloadHarness.guard.init({
+  appName: "Reload persistence test",
+  budget: { limit: 100, currency: "USD" },
+  defaultMode: "allow",
+  defaultMaxPerMinute: 30,
+  tools: {},
+});
+await beforeReloadHarness.guard.registerTool({
+  name: "reload_probe",
+  description: "Record before and after a page reload.",
+  inputSchema: objectSchema(),
+  execute: async () => "ok",
+});
+await beforeReloadHarness.guard.invoke("reload_probe", { phase: "before" });
+const storedEntry = beforeReloadHarness.guard.getJourney().at(-1);
+
+const afterReloadHarness = createIsolatedBrowser({ sessionStorage: reloadStorage });
+await afterReloadHarness.guard.init({
+  appName: "Reload persistence test",
+  budget: { limit: 100, currency: "USD" },
+  defaultMode: "allow",
+  defaultMaxPerMinute: 30,
+  tools: {},
+});
+await afterReloadHarness.guard.registerTool({
+  name: "reload_probe",
+  description: "Record before and after a page reload.",
+  inputSchema: objectSchema(),
+  execute: async () => "ok",
+});
+await afterReloadHarness.guard.invoke("reload_probe", { phase: "after" });
+const restoredJourney = afterReloadHarness.guard.getJourney();
+assert.equal(restoredJourney.length, 2, "A same-tab reload must restore the prior journey");
+assert.equal(restoredJourney[0].hash, storedEntry.hash);
+assert.equal(
+  restoredJourney[1].prevHash,
+  storedEntry.hash,
+  "The post-reload entry must continue the persisted hash chain",
+);
 
 // A truthy but unusable pre-existing context must not prevent the guard from loading.
 const brokenContextHarness = createIsolatedBrowser({ documentContext: {} });
@@ -1513,24 +1574,8 @@ await earlyToolsHarness.window.NorthlineWebMCPReady;
 const earlyToolNames = earlyToolsHarness.document.modelContext
   .getTools()
   .map((tool) => tool.name);
-assert.ok(earlyToolNames.includes("pagecontrol_ready"));
 assert.ok(earlyToolNames.includes("search_products"));
 assert.ok(earlyToolNames.includes("list_products"));
-assert.ok(earlyToolNames.indexOf("pagecontrol_ready") < earlyToolNames.indexOf("search_products"));
-assert.ok(earlyToolNames.indexOf("pagecontrol_ready") < earlyToolNames.indexOf("list_products"));
-let releaseCompleteSurface;
-earlyToolsHarness.window.NorthlineStoreToolsReady = new Promise((resolve) => {
-  releaseCompleteSurface = resolve;
-});
-const readyCall = earlyToolsHarness.document.modelContext.executeTool(
-  "pagecontrol_ready",
-  "{}",
-);
-releaseCompleteSurface(true);
-const readyResult = JSON.parse(await readyCall);
-assert.equal(readyResult.ready, true);
-assert.equal(readyResult.count, earlyToolNames.length);
-assert.deepEqual(readyResult.tools, earlyToolNames);
 const firstSearch = earlyToolsHarness.document.modelContext.executeTool(
   "search_products",
   JSON.stringify({ query: "mouse" }),

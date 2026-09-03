@@ -219,7 +219,6 @@ declare global {
     PageControl?: PageControlApi;
     FastShipDeliveryTracker?: { ready?: Promise<void> };
     NorthlineWebMCPReady?: Promise<boolean>;
-    NorthlineStoreToolsReady?: Promise<boolean>;
     NorthlineToolBridge?: {
       searchProducts: (query: string) => string;
       listProducts: () => string;

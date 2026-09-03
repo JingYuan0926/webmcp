@@ -366,10 +366,5 @@ export function registerStoreTools(): Promise<boolean> {
     throw error;
   });
 
-  // The pre-hydration pagecontrol_ready tool waits on this promise. Publishing
-  // the same single-flight promise also makes React StrictMode re-evaluation
-  // harmless: every caller observes one registration and one final surface.
-  window.NorthlineStoreToolsReady = registrationPromise;
-
   return registrationPromise;
 }

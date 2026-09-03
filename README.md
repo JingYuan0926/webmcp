@@ -189,7 +189,7 @@ Open `http://localhost:3000`. Test native WebMCP in ChatGPT's in-app browser or 
 - `src/app/globals.css` — product tokens, responsive layout, interaction states, and reduced-motion rules.
 - `src/lib/catalog.ts` — typed Northline Tech product catalog.
 - `src/lib/store.tsx` — React store, session-only cart, receipt persistence, and imperative tool facade.
-- `public/northline-webmcp.js` — pre-hydration bootstrap for `pagecontrol_ready` and the first catalog request.
+- `public/northline-webmcp.js` — pre-hydration catalog-tool bootstrap for the first agent request.
 - `src/lib/tools.ts` — merchant policy and eleven WebMCP store tools.
 - `src/lib/payments-client.ts` — quote cache, the synchronous pin the guard reads, and the charge call.
 - `src/lib/server/` — Stripe client, signed-grant verification, server spend ledger, cookie session, and quote pricing.

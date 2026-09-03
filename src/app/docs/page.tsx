@@ -431,7 +431,7 @@ export default function DocsPage() {
               <h2>Trust and privacy boundary</h2>
               <div className="sdk-docs-grid">
                 <div><strong>Zero SDK network calls</strong><p>The browser SDK calls no PageCTRL backend and sends no telemetry.</p></div>
-                <div><strong>Memory-only journey</strong><p>The record disappears with the tab unless the user exports it.</p></div>
+                <div><strong>Tab-scoped journey</strong><p>The redacted record survives a reload and disappears with the tab unless the user exports it.</p></div>
                 <div><strong>Redacted before logging</strong><p>Email addresses and long card-number-like strings are masked first.</p></div>
                 <div><strong>Honest boundary</strong><p>An in-page guard cannot protect a user from the page owner itself.</p></div>
               </div>
