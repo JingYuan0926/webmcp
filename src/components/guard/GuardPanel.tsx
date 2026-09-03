@@ -57,7 +57,7 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
         <header className="guard-header">
           <div>
             <div className="guard-wordmark">
-              <strong id="pagecontrol-title">PageCtrl</strong>
+              <strong id="pagecontrol-title">PageCTRL</strong>
             </div>
             <p className="guard-tagline">Review what your agent can access and do.</p>
           </div>
