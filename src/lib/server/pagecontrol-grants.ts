@@ -101,8 +101,18 @@ export async function issueCheckoutGrant(
       cache: "no-store",
       signal: AbortSignal.timeout(5_000),
     });
-    const payload = (await response.json()) as { token?: unknown };
+    const payload = (await response.json()) as { token?: unknown; error?: unknown };
     if (!response.ok || typeof payload.token !== "string") {
+      // Distinguish a refused origin from a service that is genuinely down.
+      // Running the shop on an origin the signing service does not permit is a
+      // configuration problem, not an outage, and saying so saves an hour.
+      const serviceError = typeof payload.error === "string" ? payload.error : "";
+      console.error(
+        `[pagecontrol] grant request failed: status=${response.status} error=${serviceError || "(none)"} origin=${origin}`,
+      );
+      if (serviceError === "origin_not_permitted") {
+        return { ok: false, code: "grant_origin_not_permitted" };
+      }
       return { ok: false, code: "grant_unavailable" };
     }
     return { ok: true, token: payload.token };
@@ -139,31 +149,52 @@ export async function verifyAndConsumeCheckoutGrant(
     const nowSeconds = Math.floor(Date.now() / 1000);
     // The signing service and this app are separate deployments with separate
     // clocks. Five seconds of allowance was tight enough that ordinary drift
-    // rejected valid grants; the 60-second expiry still bounds the window.
+    // rejected valid grants; the 60-second lifetime still bounds the window.
     const CLOCK_SKEW_SECONDS = 60;
+
+    // Each binding is checked on its own so a failure names the exact field and
+    // both values. The reason is logged server-side only; the client still gets
+    // the opaque grant_mismatch, which tells an attacker nothing.
     const failures: string[] = [];
-    if (claims.iss !== apiUrl()) failures.push("iss");
-    if (claims.aud !== expected.origin) failures.push("aud");
-    if (claims.origin !== expected.origin) failures.push("origin");
-    if (claims.tool !== "checkout") failures.push("tool");
-    if (claims.quoteId !== quoteRef(expected.quote.id)) failures.push("quoteId");
-    if (claims.amountMinor !== expected.quote.amountMinor) failures.push("amountMinor");
-    if (claims.sessionId !== expected.quote.sessionId) failures.push("sessionId");
-    if (!Number.isInteger(claims.iat) || claims.iat > nowSeconds + CLOCK_SKEW_SECONDS) {
-      failures.push("iat");
-    }
-    if (!Number.isInteger(claims.exp) || claims.exp <= nowSeconds - CLOCK_SKEW_SECONDS) {
-      failures.push("exp");
-    }
-    if (claims.exp - claims.iat > 60) failures.push("lifetime");
-    if (typeof claims.nonce !== "string" || claims.nonce.length < 16) failures.push("nonce");
-    if (typeof claims.jti !== "string" || claims.jti.length < 16) failures.push("jti");
+    const check = (field: string, ok: boolean, detail?: string): void => {
+      if (!ok) failures.push(detail ? `${field} (${detail})` : field);
+    };
+
+    check("iss", claims.iss === apiUrl(), `signed=${claims.iss} expected=${apiUrl()}`);
+    check("aud", claims.aud === expected.origin, `signed=${claims.aud} expected=${expected.origin}`);
+    check("origin", claims.origin === expected.origin, `signed=${claims.origin} expected=${expected.origin}`);
+    check("tool", claims.tool === "checkout", `signed=${claims.tool}`);
+    check(
+      "quoteId",
+      claims.quoteId === quoteRef(expected.quote.id),
+      `signed=${claims.quoteId} expected=${quoteRef(expected.quote.id)}`,
+    );
+    check(
+      "amountMinor",
+      claims.amountMinor === expected.quote.amountMinor,
+      `signed=${claims.amountMinor} expected=${expected.quote.amountMinor}`,
+    );
+    check(
+      "sessionId",
+      claims.sessionId === expected.quote.sessionId,
+      `signed=${claims.sessionId} expected=${expected.quote.sessionId}`,
+    );
+    check(
+      "iat",
+      Number.isInteger(claims.iat) && claims.iat <= nowSeconds + CLOCK_SKEW_SECONDS,
+      `iat=${claims.iat} now=${nowSeconds} skew=${claims.iat - nowSeconds}s`,
+    );
+    check(
+      "exp",
+      Number.isInteger(claims.exp) && claims.exp > nowSeconds - CLOCK_SKEW_SECONDS,
+      `exp=${claims.exp} now=${nowSeconds} expiredBy=${nowSeconds - claims.exp}s`,
+    );
+    check("lifetime", claims.exp - claims.iat <= 60, `lifetime=${claims.exp - claims.iat}s`);
+    check("nonce", typeof claims.nonce === "string" && claims.nonce.length >= 16);
+    check("jti", typeof claims.jti === "string" && claims.jti.length >= 16);
 
     if (failures.length) {
-      // Named in the server log only; the agent gets the opaque code.
-      console.error("[grant] mismatched claims:", failures.join(","), {
-        skewSeconds: claims.iat - nowSeconds,
-      });
+      console.error(`[pagecontrol] grant_mismatch: ${failures.join(" | ")}`);
       return { ok: false, code: "grant_mismatch" };
     }
 

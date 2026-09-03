@@ -41,6 +41,8 @@ const FAILURES: Record<string, string> = {
   grant_mismatch: "The signed approval does not match this exact order.",
   grant_used: "That signed approval was already used.",
   grant_unavailable: "The approval proof service is unavailable. Nothing was charged.",
+  grant_origin_not_permitted:
+    "This origin is not authorised to request approvals. Add it to PAGECONTROL_ALLOWED_ORIGINS on the signing service. Nothing was charged.",
   server_budget_exceeded: "This order exceeds the server-enforced session budget.",
   card_declined: "The card was declined. Nothing was charged.",
   authentication_required:
