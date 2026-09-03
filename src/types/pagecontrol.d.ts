@@ -16,6 +16,14 @@ declare global {
     callId: string;
   };
 
+  /** One line of a structured approval summary. */
+  type PageControlSummaryRow = {
+    icon?: "item" | "ship" | "card";
+    text: string;
+    /** Selects an SDK-drawn network mark, e.g. "visa". */
+    brand?: string;
+  };
+
   type PageControlExecutionContext = {
     signal?: AbortSignal;
     pageControl?: {
@@ -28,6 +36,8 @@ declare global {
   type PageControlEntry = {
     id: string;
     seq: number;
+    /** Shared by every entry one guarded call produces. */
+    callId: string | null;
     ts: string;
     tool: string;
     verdict:
@@ -71,7 +81,7 @@ declare global {
     expiresAt: number;
     cost?: number;
     /** Plain-language description of the pending action, from `guard.getSummary`. */
-    summary?: string;
+    summary?: string | PageControlSummaryRow[];
   };
 
   type PageControlAlert = {
@@ -113,10 +123,14 @@ declare global {
       /**
        * Describes what the call will actually do, for the human approval card.
        * Use it when a tool's arguments do not carry the meaning — a
-       * zero-argument checkout, for instance. Throwing here blocks the call
-       * before it reaches a human.
+       * zero-argument checkout, for instance. Return a string, or rows so the
+       * dialog can show an icon and a card brand. Throwing here blocks the
+       * call before it reaches a human.
        */
-      getSummary?: (inputs: Record<string, unknown>, context: PageControlGuardContext) => string;
+      getSummary?: (
+        inputs: Record<string, unknown>,
+        context: PageControlGuardContext,
+      ) => string | PageControlSummaryRow[];
     };
   };
 

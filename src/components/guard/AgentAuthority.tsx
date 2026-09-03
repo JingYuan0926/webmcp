@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import { AuthorityRow } from "@/components/guard/AuthorityRow";
-import { ShipIcon, WalletIcon } from "@/components/guard/AuthorityIcons";
+import { LocationIcon, WalletIcon } from "@/components/guard/AuthorityIcons";
 import { CardRow } from "@/components/guard/CardRow";
 import { formatUSD } from "@/lib/catalog";
 import { hasCard, subscribe } from "@/lib/payments-client";
@@ -218,7 +218,7 @@ function AddressRow({
           : "Not set"
       }
       empty={!initialAddress}
-      icon={<ShipIcon />}
+      icon={<LocationIcon />}
       editorId="address-editor"
       editLabel="Edit shipping address"
       open={open}

@@ -1384,6 +1384,89 @@ assert.match(
   /Derived summary must be a non-empty string/,
 );
 
+// A structured summary lets the dialog show an icon and a card brand per line.
+// Rows are bounded and sanitised: an unknown brand is dropped rather than
+// selecting arbitrary markup, and an over-long list is refused outright.
+const rowsHarness = createIsolatedBrowser();
+await rowsHarness.guard.init({
+  appName: "Summary rows test",
+  budget: { limit: 100, currency: "USD" },
+  defaultMode: "allow",
+  defaultMaxPerMinute: 60,
+  tools: { row_buy: { mode: "approve" }, row_flood: { mode: "approve" } },
+});
+await rowsHarness.document.modelContext.registerTool({
+  name: "row_buy",
+  description: "Approve with structured rows.",
+  inputSchema: objectSchema(),
+  guard: {
+    getSummary: () => [
+      { icon: "item", text: "1 × Braided USB-C Cable" },
+      { icon: "ship", text: "Ada, 1 Main St, Springfield 12345" },
+      { icon: "card", brand: "VISA", text: "···· 4242" },
+      { icon: "nope", brand: "totally-not-a-network", text: "fallback row" },
+    ],
+  },
+  execute: async () => "bought",
+});
+await rowsHarness.document.modelContext.registerTool({
+  name: "row_flood",
+  description: "Return more rows than the dialog accepts.",
+  inputSchema: objectSchema(),
+  guard: { getSummary: () => Array.from({ length: 9 }, (_, i) => ({ text: `row ${i}` })) },
+  execute: async () => "should not run",
+});
+
+let rowsApproval = null;
+rowsHarness.guard.on("approval", ({ pending }) => {
+  if (!pending.length || rowsApproval) return;
+  rowsApproval = pending[0];
+  decideThroughPanel(rowsHarness.document, pending[0]);
+});
+assert.equal(await rowsHarness.guard.invoke("row_buy", {}), "bought");
+assert.ok(Array.isArray(rowsApproval.summary), "A row summary must reach the approval as an array");
+assert.equal(rowsApproval.summary.length, 4);
+assert.deepEqual(rowsApproval.summary[0], { icon: "item", text: "1 × Braided USB-C Cable", brand: null });
+assert.equal(rowsApproval.summary[2].brand, "visa", "A known brand is normalised to lower case");
+assert.equal(rowsApproval.summary[3].icon, null, "An unknown icon is dropped");
+assert.equal(rowsApproval.summary[3].brand, null, "An unknown brand is dropped, never rendered");
+assert.equal(rowsApproval.argsSummary, "{}", "The raw arguments are still empty");
+
+assert.match(
+  await rowsHarness.guard.invoke("row_flood", {}),
+  /Derived summary must be a non-empty string/,
+  "More than eight rows must block before a human sees it",
+);
+
+// Every record a single guarded call writes shares one callId, so a checkpoint
+// and its outcome can be shown as one action without merging the hash chain.
+const pairHarness = createIsolatedBrowser();
+await pairHarness.guard.init({
+  appName: "Call pairing test",
+  budget: { limit: 100, currency: "USD" },
+  defaultMode: "allow",
+  defaultMaxPerMinute: 60,
+  tools: { paired: { mode: "approve" } },
+});
+await pairHarness.document.modelContext.registerTool({
+  name: "paired",
+  description: "Approve once.",
+  inputSchema: objectSchema(),
+  execute: async () => "done",
+});
+pairHarness.guard.on("approval", ({ pending }) => {
+  for (const approval of pending) decideThroughPanel(pairHarness.document, approval);
+});
+assert.equal(await pairHarness.guard.invoke("paired", {}), "done");
+const pairEntries = pairHarness.guard.getJourney().filter((entry) => entry.tool === "paired");
+assert.equal(pairEntries.length, 2, "The journal still records both the checkpoint and the outcome");
+assert.equal(pairEntries[0].verdict, "approval_pending");
+assert.equal(pairEntries[1].verdict, "approved");
+assert.ok(pairEntries[0].callId, "Entries must carry a callId");
+assert.equal(pairEntries[0].callId, pairEntries[1].callId, "Both records share one callId");
+assert.notEqual(pairEntries[0].hash, pairEntries[1].hash, "The chain stays append-only");
+assert.equal(pairEntries[1].prevHash, pairEntries[0].hash, "The outcome chains onto the checkpoint");
+
 console.log(
-  `PageControl SDK smoke test passed (${entries.length} core entries + native, abort, migration, approval-binding, and intent-summary cases).`,
+  `PageControl SDK smoke test passed (${entries.length} core entries + native, abort, migration, approval-binding, intent-summary, and call-pairing cases).`,
 );

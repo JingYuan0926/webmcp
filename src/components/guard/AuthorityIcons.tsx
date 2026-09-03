@@ -1,5 +1,8 @@
 "use client";
 
+import Image from "next/image";
+import { useState } from "react";
+
 const stroke = {
   fill: "none",
   stroke: "currentColor",
@@ -28,7 +31,8 @@ export function CardIcon() {
   );
 }
 
-export function ShipIcon() {
+/** Parcel — a cart line. */
+export function BoxIcon() {
   return (
     <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
       <path d="M2.5 6.2 10 3l7.5 3.2v7.6L10 17l-7.5-3.2Z" {...stroke} />
@@ -37,68 +41,55 @@ export function ShipIcon() {
   );
 }
 
+/** Map pin — shipping destination. */
+export function LocationIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
+      <path d="M10 17.5s5.5-4.6 5.5-9a5.5 5.5 0 0 0-11 0c0 4.4 5.5 9 5.5 9Z" {...stroke} />
+      <circle cx="10" cy="8.4" r="2.1" {...stroke} />
+    </svg>
+  );
+}
+
+/** Opens in a new tab. */
+export function ExternalLinkIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
+      <path d="M11 4h5v5" {...stroke} />
+      <path d="M16 4l-6.5 6.5" {...stroke} />
+      <path d="M15 12.5V15a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 15V6.5A1.5 1.5 0 0 1 5 5h2.5" {...stroke} />
+    </svg>
+  );
+}
+
+const KNOWN = new Set(["visa", "mastercard", "amex"]);
+
+function assetFor(brand: string): string {
+  const key = brand.trim().toLowerCase().replace(/\s|_/g, "");
+  const normalised = key === "americanexpress" ? "amex" : key;
+  return KNOWN.has(normalised) ? normalised : "card";
+}
+
 /**
- * A compact brand mark for a saved card. These are simplified marks drawn from
- * each network's basic geometry, not the licensed logos — enough to recognise
- * the card at a glance beside its last four digits.
+ * The card network's mark, loaded from /brands. Those files are placeholders —
+ * dropping the licensed artwork in at the same path and viewBox replaces them
+ * everywhere without a code change. See public/brands/README.md.
  */
-export function CardBrandIcon({ brand }: { brand: string }) {
-  const key = brand.trim().toLowerCase();
+export function CardBrandIcon({ brand, height = 16 }: { brand: string; height?: number }) {
+  const [failed, setFailed] = useState(false);
   const label = brand.charAt(0).toUpperCase() + brand.slice(1);
-
-  if (key === "mastercard") {
-    return (
-      <span className="card-brand" role="img" aria-label={label}>
-        <svg viewBox="0 0 28 18" width="26" height="17" aria-hidden="true">
-          <rect width="28" height="18" rx="3" fill="#f4f5f7" />
-          <circle cx="11.4" cy="9" r="5" fill="#eb001b" />
-          <circle cx="16.6" cy="9" r="5" fill="#f79e1b" opacity="0.9" />
-        </svg>
-      </span>
-    );
-  }
-
-  if (key === "amex" || key === "american_express") {
-    return (
-      <span className="card-brand" role="img" aria-label={label}>
-        <svg viewBox="0 0 28 18" width="26" height="17" aria-hidden="true">
-          <rect width="28" height="18" rx="3" fill="#1f72cd" />
-          <text x="14" y="12.2" textAnchor="middle" fontSize="6.6" fontWeight="700" fill="#fff" fontFamily="system-ui, sans-serif">
-            AMEX
-          </text>
-        </svg>
-      </span>
-    );
-  }
-
-  if (key === "visa") {
-    return (
-      <span className="card-brand" role="img" aria-label={label}>
-        <svg viewBox="0 0 28 18" width="26" height="17" aria-hidden="true">
-          <rect width="28" height="18" rx="3" fill="#f4f5f7" />
-          <text
-            x="14"
-            y="12.4"
-            textAnchor="middle"
-            fontSize="7.4"
-            fontWeight="700"
-            fontStyle="italic"
-            fill="#1a1f71"
-            fontFamily="system-ui, sans-serif"
-          >
-            VISA
-          </text>
-        </svg>
-      </span>
-    );
-  }
+  const src = `/brands/${failed ? "card" : assetFor(brand)}.svg`;
 
   return (
-    <span className="card-brand" role="img" aria-label={label}>
-      <svg viewBox="0 0 28 18" width="26" height="17" aria-hidden="true">
-        <rect x="0.5" y="0.5" width="27" height="17" rx="2.5" fill="#f4f5f7" stroke="#d7dbe0" />
-        <path d="M0.5 6h27" stroke="#d7dbe0" strokeWidth="1" />
-      </svg>
+    <span className="card-brand" title={label}>
+      <Image
+        src={src}
+        alt={label}
+        width={Math.round(height * 3)}
+        height={height}
+        unoptimized
+        onError={() => setFailed(true)}
+      />
     </span>
   );
 }
