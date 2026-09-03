@@ -4,6 +4,7 @@ import { requestOrigin, verifyAndConsumeCheckoutGrant } from "@/lib/server/pagec
 import { claimQuote, quoteTotalDecimal, releaseQuote } from "@/lib/server/quotes";
 import {
   commitSessionSpend,
+  persistSession,
   publicCard,
   readSession,
   releaseSessionSpend,
@@ -112,16 +113,18 @@ export async function POST(request: Request) {
 
     if (intent.status !== "succeeded") {
       releaseSessionSpend(session, quote.amountMinor);
+      await persistSession(session);
       releaseQuote(quote.id);
       console.error("[checkout/confirm] unexpected status", intent.status);
       return fail("payment_failed", 402);
     }
 
     commitSessionSpend(session, quote.amountMinor);
+    await persistSession(session);
 
     return NextResponse.json({
       ok: true,
-      orderId: `NT-${quote.id.slice(2, 10).toUpperCase()}`,
+      orderId: `NT-${quote.ref.replace(/-/g, "").slice(0, 8).toUpperCase()}`,
       total: quoteTotalDecimal(quote),
       currency: quote.currency.toUpperCase(),
       card: publicCard(session),

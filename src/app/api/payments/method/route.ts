@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { stripe, stripeConfigured } from "@/lib/server/stripe";
 import {
   forgetCard,
+  persistSession,
   publicCard,
   readSession,
   requireSession,
@@ -105,6 +106,7 @@ export async function POST(request: Request) {
       expYear: method.card.exp_year,
     });
 
+    await persistSession(session);
     return NextResponse.json({ ok: true, card: publicCard(session) });
   } catch (error) {
     console.error("[payments/method]", error);
@@ -118,6 +120,9 @@ export async function POST(request: Request) {
 /** Forgets the card without deleting the Stripe customer. */
 export async function DELETE() {
   const session = await readSession();
-  if (session) forgetCard(session);
+  if (session) {
+    forgetCard(session);
+    await persistSession(session);
+  }
   return NextResponse.json({ ok: true, card: null });
 }
