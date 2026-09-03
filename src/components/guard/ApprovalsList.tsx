@@ -30,7 +30,7 @@ export function ApprovalsList({ approvals }: { approvals: PageControlApproval[] 
       </div>
       <div className="approval-list">
         {approvals.map((approval) => (
-          <article key={approval.id} className="approval-card">
+          <article key={approval.handle} className="approval-card">
             <div className="approval-topline">
               <strong>{approval.tool}</strong>
               <Countdown expiresAt={approval.expiresAt} />
@@ -42,10 +42,20 @@ export function ApprovalsList({ approvals }: { approvals: PageControlApproval[] 
               <span className="approval-cost">Cost {formatUSD(approval.cost)}</span>
             ) : null}
             <div className="approval-actions">
-              <button type="button" className="panel-button panel-button--ghost" onClick={() => window.PageControl?.deny(approval.id)}>
+              <button
+                type="button"
+                className="panel-button panel-button--ghost"
+                data-pagecontrol-approval-handle={approval.handle}
+                data-pagecontrol-decision="deny"
+              >
                 Block
               </button>
-              <button type="button" className="panel-button panel-button--allow" onClick={() => window.PageControl?.approve(approval.id)}>
+              <button
+                type="button"
+                className="panel-button panel-button--allow"
+                data-pagecontrol-approval-handle={approval.handle}
+                data-pagecontrol-decision="approve"
+              >
                 Run once
               </button>
             </div>

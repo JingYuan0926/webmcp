@@ -51,7 +51,8 @@ declare global {
   };
 
   type PageControlApproval = {
-    id: string;
+    /** Opaque display handle. It cannot settle the internal approval. */
+    handle: string;
     tool: string;
     argsSummary: string;
     expiresAt: number;
@@ -158,7 +159,9 @@ declare global {
       args: Record<string, unknown>,
       options?: { simulated?: boolean },
     ) => Promise<string>;
+    /** Setup-only helper. Always refuses after `seal()`. */
     approve: (id: string) => boolean;
+    /** Setup-only helper. Always refuses after `seal()`. */
     deny: (id: string) => boolean;
     pause: () => void;
     resume: () => void;
@@ -167,6 +170,7 @@ declare global {
       rule: PageControlRule,
       options?: { humanConfirmed?: boolean },
     ) => { ok: boolean; message: string };
+    /** Setup-only helper. The trusted panel owns budget changes after `seal()`. */
     setBudget: (
       limit: number,
       options?: { humanConfirmed?: boolean },

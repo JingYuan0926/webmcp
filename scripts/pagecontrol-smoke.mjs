@@ -54,6 +54,10 @@ class FakeElement {
     this[name] = String(value);
   }
 
+  getAttribute(name) {
+    return Object.prototype.hasOwnProperty.call(this, name) ? this[name] : null;
+  }
+
   addEventListener(name, callback) {
     if (!this.listeners.has(name)) this.listeners.set(name, new Set());
     this.listeners.get(name).add(callback);
@@ -77,6 +81,32 @@ const document = {
     return ids.get(id) || null;
   },
 };
+
+function attachDocumentEvents(targetDocument) {
+  const listeners = new Map();
+  targetDocument.addEventListener = (name, callback) => {
+    if (!listeners.has(name)) listeners.set(name, new Set());
+    listeners.get(name).add(callback);
+  };
+  targetDocument.removeEventListener = (name, callback) => {
+    listeners.get(name)?.delete(callback);
+  };
+  targetDocument.dispatchTrusted = (name, target) => {
+    const event = {
+      isTrusted: true,
+      target,
+      defaultPrevented: false,
+      preventDefault() {
+        this.defaultPrevented = true;
+      },
+    };
+    for (const callback of listeners.get(name) || []) callback(event);
+    return event;
+  };
+  return targetDocument;
+}
+
+attachDocumentEvents(document);
 document.documentElement = new FakeElement("html", document);
 document.head = new FakeElement("head", document);
 document.body = new FakeElement("body", document);
@@ -151,6 +181,13 @@ const firstContext = document.modelContext;
 vm.runInContext(sdkSource, context, { filename: "pagecontrol-double-load.js" });
 assert.equal(window.PageControl, guard, "A second script load must preserve the SDK instance");
 assert.equal(document.modelContext, firstContext, "A second script load must not patch twice");
+
+function decideThroughPanel(targetDocument, approval, decision = "approve") {
+  const button = targetDocument.createElement("button");
+  button.setAttribute("data-pagecontrol-approval-handle", approval.handle);
+  button.setAttribute("data-pagecontrol-decision", decision);
+  targetDocument.dispatchTrusted("click", button);
+}
 
 const products = new Map([
   ["wireless-mouse", { id: "wireless-mouse", name: "Wireless Mouse", price: 29.99 }],
@@ -306,8 +343,16 @@ const partnerSlot = document.createElement("div");
 partnerSlot.id = "partner-slot";
 document.body.appendChild(partnerSlot);
 
+let publicApprovalBypassResult = null;
+let publicApprovalLeakedId = false;
 const approvals = guard.on("approval", ({ pending }) => {
-  for (const approval of pending) guard.approve(approval.id);
+  for (const approval of pending) {
+    publicApprovalLeakedId ||= Object.prototype.hasOwnProperty.call(approval, "id");
+    if (publicApprovalBypassResult === null) {
+      publicApprovalBypassResult = guard.approve(approval.handle);
+    }
+    decideThroughPanel(document, approval);
+  }
 });
 
 const demoToolSteps = [
@@ -363,6 +408,9 @@ async function runDemoSequence() {
 }
 
 const firstRunEntries = await runDemoSequence();
+
+assert.equal(publicApprovalBypassResult, false, "A page script cannot settle an approval after seal");
+assert.equal(publicApprovalLeakedId, false, "Public approval events must not expose settlement ids");
 
 const expected = [
   "allowed",
@@ -494,13 +542,12 @@ assert.equal(guard.setUserPolicy("view_cart", { mode: "allow", surprise: true })
 assert.equal(guard.setUserPolicy("view_cart", { mode: "allow" }).ok, true);
 await guard.invoke("view_cart", {});
 assert.equal(guard.getJourney().at(-1).policySource, "merchant", "Equivalent user rules stay merchant-sourced");
-assert.equal(guard.setBudget(400).ok, false, "Public budget raises must fail");
+assert.equal(guard.setBudget(400).ok, false, "Public budget changes must fail after seal");
 assert.equal(
   guard.setBudget(400, { humanConfirmed: true }).ok,
-  true,
-  "An explicit human action may raise the session budget",
+  false,
+  "Caller-supplied confirmation must not unlock the sealed public budget control",
 );
-assert.equal(guard.setBudget(300).ok, true, "The test budget should return to its original limit");
 
 assert.match(await guard.invoke("add_to_cart", { id: "wireless-mouse", qty: Number.NaN }), /invalid arguments/);
 assert.match(await guard.invoke("add_to_cart", { id: "wireless-mouse", qty: -1 }), /invalid arguments/);
@@ -524,14 +571,14 @@ assert.ok(
 assert.match(await guard.invoke("unregister_me", {}), /unknown tool/);
 
 approvals();
-let pausedApprovalId = null;
+let pausedApprovalHandle = null;
 let notifyPendingApproval;
 const pendingApproval = new Promise((resolve) => {
   notifyPendingApproval = resolve;
 });
 const pauseListener = guard.on("approval", ({ pending }) => {
-  if (!pausedApprovalId && pending[0]) {
-    pausedApprovalId = pending[0].id;
+  if (!pausedApprovalHandle && pending[0]) {
+    pausedApprovalHandle = pending[0].handle;
     notifyPendingApproval();
   }
 });
@@ -542,7 +589,7 @@ const pausedInvocation = guard.invoke(
 );
 await pendingApproval;
 guard.pause();
-assert.equal(guard.approve(pausedApprovalId), false, "A paused approval must already be settled");
+assert.equal(guard.approve(pausedApprovalHandle), false, "A sealed public API must not settle approvals");
 assert.match(await pausedInvocation, /\(paused\)/);
 assert.equal(addressExecutions, beforePause, "Pause must prevent approved work from executing");
 guard.resume();
@@ -550,7 +597,7 @@ pauseListener();
 
 const beforeDeny = addressExecutions;
 const denyListener = guard.on("approval", ({ pending }) => {
-  for (const approval of pending) guard.deny(approval.id);
+  for (const approval of pending) decideThroughPanel(document, approval, "deny");
 });
 assert.match(
   await guard.invoke("set_shipping_address", { name: "N", line1: "L", city: "C", postcode: "1" }),
@@ -635,6 +682,7 @@ function createIsolatedBrowser({
       return ids.get(id) || null;
     },
   };
+  attachDocumentEvents(isolatedDocument);
   isolatedDocument.documentElement = new FakeElement("html", isolatedDocument);
   isolatedDocument.head = new FakeElement("head", isolatedDocument);
   isolatedDocument.body = new FakeElement("body", isolatedDocument);
@@ -1172,7 +1220,7 @@ const tamperedApproval = new Promise((resolve) => {
     if (!pending.length || tamperedApprovalCost !== null) return;
     tamperedApprovalCost = pending[0].cost;
     await bindingHarness.guard.invoke("add_item", { id: "noise-headphones", qty: 20 });
-    bindingHarness.guard.approve(pending[0].id);
+    decideThroughPanel(bindingHarness.document, pending[0]);
     resolve();
   });
 });
@@ -1193,7 +1241,7 @@ let cleanApprovalCost = null;
 bindingHarness.guard.on("approval", ({ pending }) => {
   if (!pending.length || cleanApprovalCost !== null) return;
   cleanApprovalCost = pending[0].cost;
-  bindingHarness.guard.approve(pending[0].id);
+  decideThroughPanel(bindingHarness.document, pending[0]);
 });
 const cleanResult = await bindingHarness.guard.invoke("checkout", {});
 assert.equal(cleanApprovalCost, 59.98);
@@ -1243,7 +1291,7 @@ let summaryApproval = null;
 summaryHarness.guard.on("approval", ({ pending }) => {
   if (!pending.length || summaryApproval) return;
   summaryApproval = pending[0];
-  summaryHarness.guard.approve(pending[0].id);
+  decideThroughPanel(summaryHarness.document, pending[0]);
 });
 assert.equal(await summaryHarness.guard.invoke("place_order", {}), "ordered");
 assert.equal(summaryApproval.argsSummary, "{}", "The raw arguments really are empty");

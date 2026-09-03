@@ -51,10 +51,8 @@ const toolExample = `await PageControl.registerTool({
 });`;
 
 const approvalExample = `const stop = PageControl.on("approval", ({ pending }) => {
-  renderApprovals(pending, {
-    allow: (id) => PageControl.approve(id),
-    block: (id) => PageControl.deny(id),
-  });
+  // Handles are display-only. They cannot settle an approval.
+  renderPendingApprovals(pending);
 });
 
 // Unsubscribe when your UI unmounts.
@@ -90,10 +88,10 @@ const apiRows = [
   ["registerTool(tool, options?)", "Register a WebMCP tool through the guarded execution pipeline."],
   ["seal()", "Lock the reviewed tool surface and flag later replacements or additions."],
   ["on(event, callback)", "Subscribe to entries, tools, budget, approvals, alerts, state, or environment."],
-  ["approve(id) / deny(id)", "Resolve a pending human approval before its 60-second timeout."],
+  ["approve(id) / deny(id)", "Setup-only helpers. Both refuse after the reviewed surface is sealed."],
   ["pause() / resume()", "Stop every agent call immediately, then restore guarded execution."],
   ["setUserPolicy(name, rule, options?)", "Change a user rule without going below the merchant policy."],
-  ["setBudget(limit, options?)", "Set the session budget. Raising it requires humanConfirmed from a direct human action."],
+  ["setBudget(limit, options?)", "Setup-only helper. The trusted panel owns budget changes after seal."],
   ["getPolicies()", "Read merchant, user, and effective policy maps."],
   ["getJourney() / exportJourney()", "Read or download the redacted, hash-chained flight record."],
   ["getEnvironment()", "Return native WebMCP or shim mode and the active API surface."],
@@ -299,7 +297,7 @@ export default function DocsPage() {
                 every pending request.
               </p>
               <p className="sdk-docs-note">
-                The dialog needs no merchant UI code. Subscribe to the same approval state only when the host application also needs to mirror it elsewhere.
+                The dialog needs no merchant UI code. Public events contain an opaque display handle, never the internal approval id. After <code>seal()</code>, only a browser-trusted click in PageControl&apos;s controls can resolve the request.
               </p>
               <CodeBlock title="JavaScript">{approvalExample}</CodeBlock>
             </section>

@@ -23,6 +23,7 @@ export function AuthorityRow({
   flashing = false,
   meter,
   onSubmit,
+  trustedBudgetControl = false,
   children,
 }: {
   label: string;
@@ -37,6 +38,8 @@ export function AuthorityRow({
   meter?: ReactNode;
   /** When given, the editor is a form and this handles its submit. */
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
+  /** Lets the sealed SDK accept only a browser-trusted budget form submission. */
+  trustedBudgetControl?: boolean;
   children: ReactNode;
 }) {
   const valueClass = [
@@ -76,7 +79,14 @@ export function AuthorityRow({
       </div>
       {meter}
       {onSubmit ? (
-        <form id={editorId} className="budget-policy authority-editor" hidden={!open} onSubmit={onSubmit} noValidate>
+        <form
+          id={editorId}
+          className="budget-policy authority-editor"
+          hidden={!open}
+          onSubmit={onSubmit}
+          data-pagecontrol-budget-form={trustedBudgetControl ? "" : undefined}
+          noValidate
+        >
           {children}
         </form>
       ) : (

@@ -92,10 +92,15 @@ function SpendRow({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const result = window.PageControl?.setBudget(Number(limit), { humanConfirmed: true }) ?? {
-      ok: false,
-      message: "PageControl is not available.",
+    const form = event.currentTarget;
+    const result = {
+      ok: form.getAttribute("data-pagecontrol-result-ok") === "true",
+      message:
+        form.getAttribute("data-pagecontrol-result-message") ||
+        "Use the Set button directly to confirm this budget.",
     };
+    form.removeAttribute("data-pagecontrol-result-ok");
+    form.removeAttribute("data-pagecontrol-result-message");
     setOk(result.ok);
     setMessage(result.message);
     if (result.ok) onToggle();
@@ -111,6 +116,7 @@ function SpendRow({
       open={open}
       onToggle={onToggle}
       onSubmit={submit}
+      trustedBudgetControl
       meter={
         <div
           className="meter-track"
@@ -133,6 +139,7 @@ function SpendRow({
       <div className="budget-policy-controls">
         <input
           id="budget-limit"
+          name="limit"
           type="text"
           inputMode="decimal"
           autoComplete="off"

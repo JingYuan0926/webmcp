@@ -53,6 +53,8 @@ PageControl patches `document.modelContext.registerTool` before application code
 
 The SDK also audits the browser's native tool list through `document.modelContext.getTools()` and the `toolchange` event. The panel compares that list with PageControl's own registry and warns when a tool exists that PageControl did not wrap, including a tool registered before the SDK loaded.
 
+After `seal()`, the public `approve`, `deny`, and `setBudget` methods refuse—even if a script cached them earlier. Approval events expose only opaque display handles. The built-in dialog and panel settle requests through browser-trusted user actions, so a page script cannot approve its own call with a synthetic click.
+
 When the browser does not provide WebMCP, the SDK installs a compatible in-page shim. The demo therefore runs in a normal browser while using the same guarded path as a native client.
 
 ## Native WebMCP

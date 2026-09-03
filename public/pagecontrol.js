@@ -48,6 +48,7 @@
   var reportedUnguarded = new Set();
   var journey = [];
   var pendingApprovals = new Map();
+  var approvalHandles = new Map();
   var rateWindows = new Map();
   var initialized = false;
   var sealed = false;
@@ -525,11 +526,21 @@
   }
 
   function setBudget(limit, options) {
+    if (sealed) {
+      return { ok: false, message: "The public budget control is locked after PageControl seals." };
+    }
     if (typeof limit !== "number" || !Number.isFinite(limit) || limit < 0) {
       return { ok: false, message: "Budget must be a finite, non-negative number." };
     }
     if (limit > budget.limit && (!options || options.humanConfirmed !== true)) {
       return { ok: false, message: "Raising the budget requires human approval." };
+    }
+    return setBudgetInternal(limit);
+  }
+
+  function setBudgetFromTrustedUi(limit) {
+    if (typeof limit !== "number" || !Number.isFinite(limit) || limit < 0) {
+      return { ok: false, message: "Budget must be a finite, non-negative number." };
     }
     return setBudgetInternal(limit);
   }
@@ -674,10 +685,10 @@
       removeApprovalModal();
       return;
     }
-    if (displayedApprovalId === first.public.id) return;
+    if (displayedApprovalId === first.id) return;
     removeApprovalModal();
     ensureApprovalStyles();
-    displayedApprovalId = first.public.id;
+    displayedApprovalId = first.id;
     previousFocus = document.activeElement;
 
     var overlay = document.createElement("div");
@@ -720,15 +731,17 @@
     denyButton.type = "button";
     denyButton.className = "pagecontrol-button";
     denyButton.textContent = "Block";
-    denyButton.addEventListener("click", function () {
-      deny(first.public.id);
+    denyButton.addEventListener("click", function (event) {
+      if ("isTrusted" in event && !event.isTrusted) return;
+      settleApproval(first.id, false, "denied");
     });
     var allowButton = document.createElement("button");
     allowButton.type = "button";
     allowButton.className = "pagecontrol-button pagecontrol-button--allow";
     allowButton.textContent = "Run once";
-    allowButton.addEventListener("click", function () {
-      approve(first.public.id);
+    allowButton.addEventListener("click", function (event) {
+      if ("isTrusted" in event && !event.isTrusted) return;
+      settleApproval(first.id, true, "approved");
     });
     actions.appendChild(denyButton);
     actions.appendChild(allowButton);
@@ -743,8 +756,9 @@
     updateCountdown();
     approvalTick = window.setInterval(updateCountdown, 1000);
     approvalKeyHandler = function (event) {
+      if ("isTrusted" in event && !event.isTrusted) return;
       if (event.key === "Escape") {
-        deny(first.public.id);
+        settleApproval(first.id, false, "denied");
       } else if (event.key === "Tab") {
         if (!event.shiftKey && document.activeElement === allowButton) {
           event.preventDefault();
@@ -768,6 +782,7 @@
       item.abortSignal.removeEventListener("abort", item.abortHandler);
     }
     pendingApprovals.delete(id);
+    approvalHandles.delete(item.public.handle);
     item.resolve({ allowed: allowed, reason: reason });
     emitApprovals();
     renderApprovalModal();
@@ -775,18 +790,21 @@
   }
 
   function approve(id) {
+    if (sealed) return false;
     return settleApproval(id, true, "approved");
   }
 
   function deny(id) {
+    if (sealed) return false;
     return settleApproval(id, false, "denied");
   }
 
   function requestApproval(tool, args, cost, signal, intentSummary) {
     return new Promise(function (resolve) {
       var id = makeId();
+      var handle = makeId();
       var publicItem = {
-        id: id,
+        handle: handle,
         tool: tool,
         argsSummary: summarizeArgs(args),
         expiresAt: now() + APPROVAL_TTL_MS,
@@ -794,6 +812,7 @@
       if (typeof cost === "number") publicItem.cost = cost;
       if (typeof intentSummary === "string" && intentSummary) publicItem.summary = intentSummary;
       var item = {
+        id: id,
         public: publicItem,
         resolve: resolve,
         settled: false,
@@ -801,6 +820,7 @@
         abortSignal: signal || null,
         abortHandler: null,
       };
+      approvalHandles.set(handle, id);
       item.timer = window.setTimeout(function () {
         settleApproval(id, false, "timeout");
       }, APPROVAL_TTL_MS);
@@ -817,6 +837,55 @@
         renderApprovalModal();
       }
     });
+  }
+
+  function closestControl(start, attribute) {
+    var current = start;
+    while (current && current !== document) {
+      if (typeof current.getAttribute === "function" && current.getAttribute(attribute) !== null) {
+        return current;
+      }
+      current = current.parentNode;
+    }
+    return null;
+  }
+
+  function installHumanControlBridge() {
+    if (!document || typeof document.addEventListener !== "function") return;
+    document.addEventListener(
+      "click",
+      function (event) {
+        var control = closestControl(event.target, "data-pagecontrol-approval-handle");
+        if (!control) return;
+        if (typeof event.preventDefault === "function") event.preventDefault();
+        if (event.isTrusted !== true) return;
+        var handle = control.getAttribute("data-pagecontrol-approval-handle");
+        var decision = control.getAttribute("data-pagecontrol-decision");
+        var id = approvalHandles.get(handle);
+        if (!id || (decision !== "approve" && decision !== "deny")) return;
+        settleApproval(id, decision === "approve", decision === "approve" ? "approved" : "denied");
+      },
+      true,
+    );
+    document.addEventListener(
+      "submit",
+      function (event) {
+        var form = closestControl(event.target, "data-pagecontrol-budget-form");
+        if (!form) return;
+        if (typeof event.preventDefault === "function") event.preventDefault();
+        if (event.isTrusted !== true) return;
+        var input =
+          form.elements && typeof form.elements.namedItem === "function"
+            ? form.elements.namedItem("limit")
+            : typeof form.querySelector === "function"
+              ? form.querySelector('[name="limit"]')
+              : null;
+        var result = setBudgetFromTrustedUi(Number(input && input.value));
+        form.setAttribute("data-pagecontrol-result-ok", result.ok ? "true" : "false");
+        form.setAttribute("data-pagecontrol-result-message", result.message);
+      },
+      true,
+    );
   }
 
   async function executeWithTimeout(record, inputs, executionContext) {
@@ -1743,8 +1812,14 @@
   }
 
   function seal() {
+    if (sealed) return { ok: true, message: "PageControl is already sealed." };
     sealed = true;
     scheduleSurfaceAudit();
+    api.approve = function () { return false; };
+    api.deny = function () { return false; };
+    api.setBudget = function () {
+      return { ok: false, message: "The public budget control is locked after PageControl seals." };
+    };
     if (!Object.isFrozen(api)) Object.freeze(api);
     return { ok: true, message: "PageControl is sealed." };
   }
@@ -1775,5 +1850,6 @@
   };
 
   window.PageControl = api;
+  installHumanControlBridge();
   startLateNativePoll();
 })();
