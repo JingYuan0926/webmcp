@@ -137,24 +137,33 @@ export async function verifyAndConsumeCheckoutGrant(
     if (!signatureValid) return { ok: false, code: "grant_invalid" };
 
     const nowSeconds = Math.floor(Date.now() / 1000);
-    if (
-      claims.iss !== apiUrl() ||
-      claims.aud !== expected.origin ||
-      claims.origin !== expected.origin ||
-      claims.tool !== "checkout" ||
-      claims.quoteId !== quoteRef(expected.quote.id) ||
-      claims.amountMinor !== expected.quote.amountMinor ||
-      claims.sessionId !== expected.quote.sessionId ||
-      !Number.isInteger(claims.iat) ||
-      claims.iat > nowSeconds + 5 ||
-      !Number.isInteger(claims.exp) ||
-      claims.exp <= nowSeconds ||
-      claims.exp - claims.iat > 60 ||
-      typeof claims.nonce !== "string" ||
-      claims.nonce.length < 16 ||
-      typeof claims.jti !== "string" ||
-      claims.jti.length < 16
-    ) {
+    // The signing service and this app are separate deployments with separate
+    // clocks. Five seconds of allowance was tight enough that ordinary drift
+    // rejected valid grants; the 60-second expiry still bounds the window.
+    const CLOCK_SKEW_SECONDS = 60;
+    const failures: string[] = [];
+    if (claims.iss !== apiUrl()) failures.push("iss");
+    if (claims.aud !== expected.origin) failures.push("aud");
+    if (claims.origin !== expected.origin) failures.push("origin");
+    if (claims.tool !== "checkout") failures.push("tool");
+    if (claims.quoteId !== quoteRef(expected.quote.id)) failures.push("quoteId");
+    if (claims.amountMinor !== expected.quote.amountMinor) failures.push("amountMinor");
+    if (claims.sessionId !== expected.quote.sessionId) failures.push("sessionId");
+    if (!Number.isInteger(claims.iat) || claims.iat > nowSeconds + CLOCK_SKEW_SECONDS) {
+      failures.push("iat");
+    }
+    if (!Number.isInteger(claims.exp) || claims.exp <= nowSeconds - CLOCK_SKEW_SECONDS) {
+      failures.push("exp");
+    }
+    if (claims.exp - claims.iat > 60) failures.push("lifetime");
+    if (typeof claims.nonce !== "string" || claims.nonce.length < 16) failures.push("nonce");
+    if (typeof claims.jti !== "string" || claims.jti.length < 16) failures.push("jti");
+
+    if (failures.length) {
+      // Named in the server log only; the agent gets the opaque code.
+      console.error("[grant] mismatched claims:", failures.join(","), {
+        skewSeconds: claims.iat - nowSeconds,
+      });
       return { ok: false, code: "grant_mismatch" };
     }
 

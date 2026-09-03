@@ -7,7 +7,7 @@ import { rememberCard, savedCard, subscribe, type SavedCard } from "@/lib/paymen
 import { AuthorityRow } from "@/components/guard/AuthorityRow";
 import { CardBrandIcon, CardIcon } from "@/components/guard/AuthorityIcons";
 
-type Status = "loading" | "idle" | "redirecting" | "returning";
+type Status = "loading" | "idle" | "redirecting" | "returning" | "awaiting";
 
 /**
  * The saved payment card, as one row of the agent authority group.
@@ -102,12 +102,49 @@ export function CardRow({ open, onToggle }: { open: boolean; onToggle: () => voi
         setStatus("idle");
         return;
       }
-      window.location.href = payload.url;
+      // Opened in a new tab rather than navigating this one. A full-page
+      // redirect to Stripe tears down the page mid-session, and the agent's
+      // cart and journey are the things a demo is actually showing.
+      const opened = window.open(payload.url, "_blank", "noopener,noreferrer");
+      if (!opened) {
+        // Popup blocked. Falling back to a redirect is better than a dead button.
+        window.location.href = payload.url;
+        return;
+      }
+      setStatus("awaiting");
+      setNotice("Finish in the Stripe tab, then come back here.");
     } catch {
       setError("Could not reach the payment service.");
       setStatus("idle");
     }
   }
+
+  /** Picks up a card saved in the other tab when this one is looked at again. */
+  const refreshCard = useCallback(async () => {
+    try {
+      const response = await fetch("/api/payments/method", { credentials: "same-origin" });
+      const payload = await response.json();
+      rememberCard(payload?.card ?? null);
+      if (payload?.card) {
+        setStatus("idle");
+        setNotice("Card saved. The agent can check out without ever seeing it.");
+      }
+    } catch {
+      // Leave the current state alone; the next focus will try again.
+    }
+  }, []);
+
+  useEffect(() => {
+    function onFocus() {
+      if (document.visibilityState === "visible") void refreshCard();
+    }
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [refreshCard]);
 
   async function removeCard() {
     setError("");
@@ -179,9 +216,13 @@ export function CardRow({ open, onToggle }: { open: boolean; onToggle: () => voi
             type="button"
             className="panel-button panel-button--allow panel-button--wide"
             onClick={startSetup}
-            disabled={status === "redirecting" || status === "loading"}
+            disabled={status === "redirecting" || status === "loading" || status === "awaiting"}
           >
-            {status === "redirecting" ? "Opening Stripe…" : "Add a card with Stripe ↗"}
+            {status === "redirecting"
+              ? "Opening Stripe…"
+              : status === "awaiting"
+                ? "Waiting for the Stripe tab…"
+                : "Add a card with Stripe ↗"}
           </button>
         </>
       )}
