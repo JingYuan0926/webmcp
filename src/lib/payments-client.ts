@@ -185,27 +185,52 @@ export type ChargeResult =
     }
   | { ok: false; code: string; message: string };
 
-async function approvalGrant(quoteId: string): Promise<string | null> {
-  const response = await fetch("/api/checkout/grant", {
-    method: "POST",
-    credentials: "same-origin",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ quoteId }),
-  });
-  const payload = await response.json();
-  return response.ok && typeof payload?.grant === "string" ? payload.grant : null;
+/**
+ * Every reason a grant can fail, phrased for the shopper and the agent. The
+ * route distinguishes them; collapsing them into one sentence made a lost
+ * session read as a service outage.
+ */
+const GRANT_ERRORS: Record<string, string> = {
+  no_session: "This browser has no shopping session on the server. Reload the page and save your card again.",
+  wrong_origin: "The approval request came from another site. Nothing was charged.",
+  quote_missing: "No approved price was found for this cart. Start checkout again.",
+  quote_expired: "The approved price expired. Start checkout again.",
+  quote_used: "That approved price was already charged.",
+  grant_unavailable: "The approval proof service is unavailable. Nothing was charged.",
+  bad_request: "The approval request was malformed. Nothing was charged.",
+};
+
+async function approvalGrant(
+  quoteId: string,
+): Promise<{ ok: true; grant: string } | { ok: false; code: string; message: string }> {
+  let payload: { ok?: boolean; grant?: unknown; code?: unknown } | null = null;
+  try {
+    const response = await fetch("/api/checkout/grant", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ quoteId }),
+    });
+    payload = await response.json();
+    if (response.ok && typeof payload?.grant === "string") {
+      return { ok: true, grant: payload.grant };
+    }
+  } catch {
+    return {
+      ok: false,
+      code: "grant_unreachable",
+      message: "Could not reach the approval service. Nothing was charged.",
+    };
+  }
+  const code = typeof payload?.code === "string" ? payload.code : "grant_unavailable";
+  return { ok: false, code, message: GRANT_ERRORS[code] ?? GRANT_ERRORS.grant_unavailable };
 }
 
 /** Charges a pinned quote only after the shop server obtains a signed grant. */
 export async function chargeQuote(quoteId: string): Promise<ChargeResult> {
-  const grant = await approvalGrant(quoteId);
-  if (!grant) {
-    return {
-      ok: false,
-      code: "grant_unavailable",
-      message: "The approval proof service is unavailable. Nothing was charged.",
-    };
-  }
+  const approval = await approvalGrant(quoteId);
+  if (!approval.ok) return approval;
+  const grant = approval.grant;
   const response = await fetch("/api/checkout/confirm", {
     method: "POST",
     credentials: "same-origin",
