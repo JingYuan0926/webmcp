@@ -174,6 +174,8 @@ export type ChargeResult =
       total: number;
       currency: string;
       card: SavedCard | null;
+      /** Stripe PaymentIntent id, for looking the charge up in the dashboard. */
+      paymentIntentId: string;
     }
   | { ok: false; code: string; message: string };
 

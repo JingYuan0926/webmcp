@@ -265,6 +265,9 @@ export function registerStoreTools(): Promise<boolean> {
               total: charge.total,
               currency: charge.currency,
               card: charge.card,
+              // Kept for the on-page receipt. storeApi.checkout does not return
+              // it, so it never reaches the agent.
+              paymentIntentId: charge.paymentIntentId,
             }),
           );
         },

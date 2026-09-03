@@ -827,6 +827,50 @@ summary:focus-visible {
   white-space: pre-line;
 }
 
+.order-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.order-row {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+
+.order-topline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.order-topline strong {
+  font-family: var(--font-data);
+  font-size: 0.75rem;
+}
+
+.order-meta,
+.order-lines {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.order-link {
+  margin-top: var(--space-1);
+  color: var(--brand-ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
 .checkout-hint {
   margin: var(--space-2) 0 0;
   color: var(--muted);

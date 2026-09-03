@@ -61,8 +61,15 @@ export function CartCard() {
       } catch {
         parsed = null;
       }
-      if (parsed?.ok) setMessage(parsed.message ?? "Order confirmed.");
-      else setError(parsed?.message ?? raw);
+      if (parsed?.ok) {
+        setMessage(parsed.message ?? "Order confirmed.");
+      } else if (raw.startsWith("BLOCKED")) {
+        // The generic block line names the rule but not the numbers. The guard
+        // already recorded the detail, so show that instead.
+        setError(guard.explainLast() || raw);
+      } else {
+        setError(parsed?.message ?? raw);
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Checkout failed.");
     } finally {

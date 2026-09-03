@@ -31,6 +31,8 @@ export type Order = {
   createdAt: string;
   /** Human-readable card summary, e.g. "visa ····4242". Never a payment handle. */
   paidWith?: string;
+  /** Stripe PaymentIntent id, so a receipt can link to the real charge. */
+  paymentIntentId?: string;
 };
 
 /**
@@ -43,6 +45,7 @@ export type PaymentReceipt = {
   total: number;
   currency: string;
   card: { brand: string; last4: string } | null;
+  paymentIntentId?: string;
 };
 
 export type StoreState = {
@@ -53,7 +56,7 @@ export type StoreState = {
 };
 
 type StoreAction =
-  | { type: "hydrate"; state: Pick<StoreState, "items" | "address"> }
+  | { type: "hydrate"; state: Pick<StoreState, "items" | "address" | "orders"> }
   | { type: "add"; product: Product; qty: number; flash: string }
   | { type: "remove"; id: string; flash: string }
   | { type: "address"; address: Address; flash: string }
@@ -69,7 +72,12 @@ const initialState: StoreState = {
 function reducer(state: StoreState, action: StoreAction): StoreState {
   switch (action.type) {
     case "hydrate":
-      return { ...state, items: action.state.items, address: action.state.address };
+      return {
+        ...state,
+        items: action.state.items,
+        address: action.state.address,
+        orders: action.state.orders,
+      };
     case "add": {
       const existing = state.items.find((item) => item.product.id === action.product.id);
       const items = existing
@@ -215,6 +223,7 @@ export const storeApi = {
       total: receipt.total,
       createdAt: new Date().toISOString(),
       paidWith,
+      paymentIntentId: receipt.paymentIntentId,
     };
     commit({ type: "checkout", order, flash: flashKey("checkout") });
     return {
@@ -247,13 +256,55 @@ type StoreContextValue = {
 
 const StoreContext = createContext<StoreContextValue | null>(null);
 
-function readPersistedState(): Pick<StoreState, "items" | "address"> {
+/** Rebuilds orders from storage, re-resolving products against the catalog. */
+function readPersistedOrders(value: unknown): Order[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    const order = entry as {
+      id?: unknown;
+      total?: unknown;
+      createdAt?: unknown;
+      paidWith?: unknown;
+      paymentIntentId?: unknown;
+      items?: Array<{ id?: unknown; qty?: unknown }>;
+    };
+    if (
+      typeof order?.id !== "string" ||
+      typeof order.total !== "number" ||
+      typeof order.createdAt !== "string"
+    ) {
+      return [];
+    }
+    const items = Array.isArray(order.items)
+      ? order.items.flatMap((item) => {
+          const product = typeof item?.id === "string" ? storeApi.get(item.id) : null;
+          return product && typeof item.qty === "number" && Number.isInteger(item.qty) && item.qty > 0
+            ? [{ product, qty: item.qty }]
+            : [];
+        })
+      : [];
+    return [
+      {
+        id: order.id,
+        total: order.total,
+        createdAt: order.createdAt,
+        items,
+        paidWith: typeof order.paidWith === "string" ? order.paidWith : undefined,
+        paymentIntentId:
+          typeof order.paymentIntentId === "string" ? order.paymentIntentId : undefined,
+      },
+    ];
+  });
+}
+
+function readPersistedState(): Pick<StoreState, "items" | "address" | "orders"> {
   try {
     const raw = window.localStorage.getItem("kedai-tech-store");
-    if (!raw) return { items: [], address: null };
+    if (!raw) return { items: [], address: null, orders: [] };
     const parsed = JSON.parse(raw) as {
       items?: Array<{ id?: unknown; qty?: unknown }>;
       address?: Partial<Address> | null;
+      orders?: unknown;
     };
     const items = Array.isArray(parsed.items)
       ? parsed.items.flatMap((item) => {
@@ -271,9 +322,9 @@ function readPersistedState(): Pick<StoreState, "items" | "address"> {
       )
         ? (candidate as Address)
         : null;
-    return { items, address };
+    return { items, address, orders: readPersistedOrders(parsed.orders) };
   } catch {
-    return { items: [], address: null };
+    return { items: [], address: null, orders: [] };
   }
 }
 
@@ -306,6 +357,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         JSON.stringify({
           items: state.items.map((item) => ({ id: item.product.id, qty: item.qty })),
           address: state.address,
+          // Receipts survive a reload; the products are re-resolved on read.
+          orders: state.orders.slice(0, 20).map((order) => ({
+            id: order.id,
+            total: order.total,
+            createdAt: order.createdAt,
+            paidWith: order.paidWith,
+            paymentIntentId: order.paymentIntentId,
+            items: order.items.map((item) => ({ id: item.product.id, qty: item.qty })),
+          })),
         }),
       );
     } catch {
