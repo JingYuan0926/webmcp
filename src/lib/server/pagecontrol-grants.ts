@@ -25,7 +25,10 @@ const usedNonces = new Map<string, number>();
 let publicKeyPromise: Promise<{ key: ReturnType<typeof createPublicKey>; kid: string }> | null = null;
 
 function apiUrl(): string {
-  return (process.env.PAGECONTROL_API_URL || "https://api.pagecontrol.app").replace(/\/$/, "");
+  // Trimmed: a stray space from pasting the value into a dashboard makes every
+  // issuer comparison fail, and the resulting grant_mismatch says nothing about
+  // whitespace. Trailing slashes are normalised for the same reason.
+  return (process.env.PAGECONTROL_API_URL || "https://api.pagecontrol.app").trim().replace(/\/+$/, "");
 }
 
 function decodePart(value: string): unknown {
@@ -81,7 +84,7 @@ export async function issueCheckoutGrant(
   origin: string,
   quote: Quote,
 ): Promise<{ ok: true; token: string } | { ok: false; code: string }> {
-  const serviceToken = process.env.PAGECONTROL_SERVICE_TOKEN;
+  const serviceToken = process.env.PAGECONTROL_SERVICE_TOKEN?.trim();
   if (!serviceToken) return { ok: false, code: "grant_not_configured" };
 
   try {

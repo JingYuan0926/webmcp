@@ -48,10 +48,13 @@ const CURRENCY = "usd";
 const claimed = new Set<string>();
 
 function signingSecret(): string {
-  const secret =
+  // Trimmed, and trimmed identically in both signers: a pasted value carrying a
+  // stray space would otherwise sign here and fail to verify there.
+  const secret = (
     process.env.PAGECONTROL_SESSION_SECRET ||
     process.env.PAGECONTROL_SERVICE_TOKEN ||
-    process.env.STRIPE_SECRET_KEY;
+    process.env.STRIPE_SECRET_KEY
+  )?.trim();
   if (!secret) throw new Error("No secret available to sign quotes.");
   return secret;
 }
