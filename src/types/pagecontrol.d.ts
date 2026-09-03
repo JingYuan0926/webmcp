@@ -56,6 +56,8 @@ declare global {
     argsSummary: string;
     expiresAt: number;
     cost?: number;
+    /** Plain-language description of the pending action, from `guard.getSummary`. */
+    summary?: string;
   };
 
   type PageControlAlert = {
@@ -89,6 +91,13 @@ declare global {
     guard?: {
       getCost?: (inputs: Record<string, unknown>) => number;
       getQty?: (inputs: Record<string, unknown>) => number;
+      /**
+       * Describes what the call will actually do, for the human approval card.
+       * Use it when a tool's arguments do not carry the meaning — a
+       * zero-argument checkout, for instance. Throwing here blocks the call
+       * before it reaches a human.
+       */
+      getSummary?: (inputs: Record<string, unknown>) => string;
     };
   };
 

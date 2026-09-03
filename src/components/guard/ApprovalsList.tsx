@@ -35,7 +35,9 @@ export function ApprovalsList({ approvals }: { approvals: PageControlApproval[] 
               <strong>{approval.tool}</strong>
               <Countdown expiresAt={approval.expiresAt} />
             </div>
-            <p>{approval.argsSummary}</p>
+            <p className={approval.summary ? "approval-intent" : undefined}>
+              {approval.summary ?? approval.argsSummary}
+            </p>
             {typeof approval.cost === "number" ? (
               <span className="approval-cost">Cost {formatUSD(approval.cost)}</span>
             ) : null}

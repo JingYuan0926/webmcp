@@ -186,7 +186,10 @@ export const storeApi = {
   canCheckout(): { ok: boolean; message: string } {
     if (!currentState.items.length) return { ok: false, message: "The cart is empty." };
     if (!currentState.address) {
-      return { ok: false, message: "Add a shipping address before checkout." };
+      return {
+        ok: false,
+        message: "Add a shipping address before checkout. Use set_shipping_address.",
+      };
     }
     return { ok: true, message: "" };
   },

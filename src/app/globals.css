@@ -823,6 +823,25 @@ summary:focus-visible {
   width: 100%;
 }
 
+.approval-intent {
+  white-space: pre-line;
+}
+
+.checkout-hint {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.checkout-hint code {
+  padding: 0 0.2em;
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--brand) 10%, var(--bg));
+  font-family: var(--font-data);
+  font-size: 0.95em;
+}
+
 .wallet-summary {
   display: flex;
   align-items: baseline;

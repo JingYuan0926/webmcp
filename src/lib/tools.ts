@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  cardIsLoaded,
   chargeQuote,
   hasCard,
   pinQuote,
+  savedCard,
   takePinnedQuote,
   type CartLine,
 } from "@/lib/payments-client";
@@ -208,7 +210,36 @@ export function registerStoreTools(): Promise<boolean> {
           // sees on the approval card and pins the exact server quote behind
           // it, so the charge cannot be for a different cart than the one
           // approved.
-          getCost: () => pinQuote(cartLines()),
+          getCost: () => {
+            const ready = storeApi.canCheckout();
+            // Throwing here blocks the call before it reaches a human, so an
+            // agent that forgot a prerequisite is told immediately rather than
+            // after someone approves a doomed checkout.
+            if (!ready.ok) throw new Error(ready.message);
+            // Only assert this once the card state is known — an unresolved
+            // lookup must not read as "no card".
+            if (cardIsLoaded() && !hasCard()) {
+              throw new Error(
+                "No card is saved. The account holder must add one in the Payment card panel.",
+              );
+            }
+            return pinQuote(cartLines());
+          },
+          // checkout takes no arguments by design, so "{}" is all a human
+          // would otherwise see. Describe the actual order instead.
+          getSummary: () => {
+            const { items } = storeApi.cart();
+            const address = storeApi.getAddress();
+            const card = savedCard();
+            const lines = items.map((item) => `${item.qty} × ${item.product.name}`);
+            const shipTo = address
+              ? `Ship to ${address.name}, ${address.line1}, ${address.city} ${address.postcode}`
+              : "No shipping address";
+            const payWith = card
+              ? `Pay with ${card.brand} ····${card.last4}`
+              : "No card saved";
+            return [lines.join("\n"), shipTo, payWith].filter(Boolean).join("\n");
+          },
         },
         execute: async () => {
           const ready = storeApi.canCheckout();

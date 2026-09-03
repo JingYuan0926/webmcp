@@ -1181,6 +1181,80 @@ assert.deepEqual(JSON.parse(cleanResult), { ok: true, total: 59.98 });
 assert.deepEqual(charges, [59.98], "The charged amount must equal the approved amount");
 assert.equal(bindingBudget.spent, 59.98);
 
+// A zero-argument tool gives a human nothing to judge, so guard.getSummary
+// describes the action instead. Throwing from it blocks the call before it
+// reaches a human at all.
+const summaryHarness = createIsolatedBrowser();
+await summaryHarness.guard.init({
+  appName: "Approval summary test",
+  budget: { limit: 300, currency: "USD" },
+  defaultMode: "allow",
+  defaultMaxPerMinute: 60,
+  tools: { place_order: { mode: "approve", chargesBudget: true } },
+});
+let summaryAddress = null;
+await summaryHarness.document.modelContext.registerTool({
+  name: "place_order",
+  description: "Order the basket.",
+  inputSchema: objectSchema(),
+  guard: {
+    getCost: () => {
+      if (!summaryAddress) throw new Error("Add a shipping address before checkout.");
+      return 42.5;
+    },
+    getSummary: () => `1 × Wireless Mouse\nShip to ${summaryAddress}`,
+  },
+  execute: async () => "ordered",
+});
+
+// No address: blocked before any approval is raised.
+let summaryApprovalsRaised = 0;
+summaryHarness.guard.on("approval", ({ pending }) => {
+  if (pending.length) summaryApprovalsRaised += 1;
+});
+const missingAddress = await summaryHarness.guard.invoke("place_order", {});
+assert.match(missingAddress, /Add a shipping address before checkout/);
+assert.equal(summaryApprovalsRaised, 0, "A failed precondition must not reach a human");
+assert.equal(summaryHarness.guard.getJourney().at(-1).verdict, "invalid_args");
+
+// With an address, the approval carries the summary rather than "{}".
+summaryAddress = "Derek, 1 Main St, Springfield 12345";
+let summaryApproval = null;
+summaryHarness.guard.on("approval", ({ pending }) => {
+  if (!pending.length || summaryApproval) return;
+  summaryApproval = pending[0];
+  summaryHarness.guard.approve(pending[0].id);
+});
+assert.equal(await summaryHarness.guard.invoke("place_order", {}), "ordered");
+assert.equal(summaryApproval.argsSummary, "{}", "The raw arguments really are empty");
+assert.equal(
+  summaryApproval.summary,
+  "1 × Wireless Mouse\nShip to Derek, 1 Main St, Springfield 12345",
+  "The approval must describe the action, not the arguments",
+);
+assert.equal(summaryApproval.cost, 42.5);
+
+// A summary that is not a usable string blocks rather than showing junk.
+const badSummaryHarness = createIsolatedBrowser();
+await badSummaryHarness.guard.init({
+  appName: "Bad summary test",
+  budget: { limit: 100, currency: "USD" },
+  defaultMode: "allow",
+  defaultMaxPerMinute: 30,
+  tools: { bad_summary: { mode: "approve" } },
+});
+await badSummaryHarness.document.modelContext.registerTool({
+  name: "bad_summary",
+  description: "Return a non-string summary.",
+  inputSchema: objectSchema(),
+  guard: { getSummary: () => ({ not: "a string" }) },
+  execute: async () => "should not run",
+});
+assert.match(
+  await badSummaryHarness.guard.invoke("bad_summary", {}),
+  /Derived summary must be a non-empty string/,
+);
+
 console.log(
-  `PageControl SDK smoke test passed (${entries.length} core entries + native, abort, migration, and approval-binding cases).`,
+  `PageControl SDK smoke test passed (${entries.length} core entries + native, abort, migration, approval-binding, and intent-summary cases).`,
 );

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { formatUSD } from "@/lib/catalog";
-import { refreshQuote } from "@/lib/payments-client";
+import { hasCard, refreshQuote, subscribe } from "@/lib/payments-client";
 import { flashed, useStore } from "@/lib/store";
 
 export function CartCard() {
@@ -11,6 +11,9 @@ export function CartCard() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [cardReady, setCardReady] = useState(false);
+
+  useEffect(() => subscribe(() => setCardReady(hasCard())), []);
 
   const total = state.items.reduce(
     (sum, item) => sum + item.product.price * item.qty,
@@ -115,10 +118,19 @@ export function CartCard() {
         type="button"
         className="button button-primary full-width"
         onClick={checkout}
-        disabled={!state.items.length || busy}
+        disabled={!state.items.length || !state.address || !cardReady || busy}
       >
         {busy ? "Waiting for approval…" : "Checkout"}
       </button>
+      {state.items.length > 0 && !state.address ? (
+        <p className="checkout-hint">
+          Save a shipping address to check out. An agent can do it with{" "}
+          <code>set_shipping_address</code>.
+        </p>
+      ) : null}
+      {state.items.length > 0 && state.address && !cardReady ? (
+        <p className="checkout-hint">Save a payment card to check out.</p>
+      ) : null}
       {error ? (
         <p className="inline-message is-error" role="alert">
           {error}

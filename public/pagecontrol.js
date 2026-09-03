@@ -552,6 +552,7 @@
       ".pagecontrol-kicker{margin:0 0 8px;color:#2fbf94;font:700 12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase}" +
       ".pagecontrol-title{margin:0;font-size:22px;line-height:1.25}" +
       ".pagecontrol-copy{margin:10px 0 0;color:#8fa39c;font-size:14px;line-height:1.55;overflow-wrap:anywhere}" +
+      ".pagecontrol-copy--intent{white-space:pre-line;color:#e2ece8}" +
       ".pagecontrol-cost{margin:16px 0 0;padding:12px;border-radius:10px;background:#101613;color:#e2ece8;font:600 14px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}" +
       ".pagecontrol-countdown{margin:14px 0 0;color:#e0a03c;font:600 13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}" +
       ".pagecontrol-actions{display:flex;gap:12px;margin-top:20px}" +
@@ -608,8 +609,10 @@
     title.className = "pagecontrol-title";
     title.textContent = "Run " + first.public.tool + "?";
     var copy = document.createElement("p");
-    copy.className = "pagecontrol-copy";
-    copy.textContent = first.public.argsSummary;
+    // Prefer the tool's own description of what it will do. Falling back to the
+    // raw arguments is only useful when they carry the meaning.
+    copy.className = first.public.summary ? "pagecontrol-copy pagecontrol-copy--intent" : "pagecontrol-copy";
+    copy.textContent = first.public.summary || first.public.argsSummary;
     card.appendChild(kicker);
     card.appendChild(title);
     card.appendChild(copy);
@@ -691,7 +694,7 @@
     return settleApproval(id, false, "denied");
   }
 
-  function requestApproval(tool, args, cost, signal) {
+  function requestApproval(tool, args, cost, signal, intentSummary) {
     return new Promise(function (resolve) {
       var id = makeId();
       var publicItem = {
@@ -701,6 +704,7 @@
         expiresAt: now() + APPROVAL_TTL_MS,
       };
       if (typeof cost === "number") publicItem.cost = cost;
+      if (typeof intentSummary === "string" && intentSummary) publicItem.summary = intentSummary;
       var item = {
         public: publicItem,
         resolve: resolve,
@@ -861,6 +865,7 @@
 
     var qty;
     var cost;
+    var intentSummary;
     try {
       if (record.guardMeta && typeof record.guardMeta.getQty === "function") {
         qty = record.guardMeta.getQty(safeInputs);
@@ -873,6 +878,16 @@
         if (typeof cost !== "number" || !Number.isFinite(cost) || cost < 0) {
           throw new TypeError("Derived cost must be a finite, non-negative number.");
         }
+      }
+      // A human approving a call needs to see what it will do, not the
+      // agent's arguments. Tools whose arguments are empty by design derive a
+      // plain-language summary from page state instead.
+      if (record.guardMeta && typeof record.guardMeta.getSummary === "function") {
+        intentSummary = record.guardMeta.getSummary(safeInputs);
+        if (typeof intentSummary !== "string" || !intentSummary.trim()) {
+          throw new TypeError("Derived summary must be a non-empty string.");
+        }
+        if (intentSummary.length > 600) intentSummary = intentSummary.slice(0, 597) + "…";
       }
     } catch (error) {
       var guardError = error instanceof Error ? error.message : String(error);
@@ -945,7 +960,7 @@
 
     var approvedByHuman = false;
     if (policy.mode === "approve") {
-      var approvalPromise = requestApproval(name, safeInputs, cost, sourceSignal);
+      var approvalPromise = requestApproval(name, safeInputs, cost, sourceSignal, intentSummary);
       await appendEntry({
         tool: name,
         verdict: "approval_pending",
