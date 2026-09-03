@@ -95,6 +95,7 @@ const apiRows = [
   ["getPolicies()", "Read merchant, user, and effective policy maps."],
   ["getJourney() / exportJourney()", "Read or download the redacted, hash-chained flight record."],
   ["getEnvironment()", "Return native WebMCP or shim mode and the active API surface."],
+  ["canInterceptNativeRegistration()", "Check whether direct modelContext.registerTool calls enter PageControl on this host."],
   ["getSurface()", "Compare browser-reported WebMCP tools with the tools PageControl wrapped."],
   ["explainLast()", "Return the plain-language reason for the most recent blocked call."],
 ] as const;

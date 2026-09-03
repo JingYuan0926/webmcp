@@ -792,6 +792,7 @@ assert.deepEqual(nativeHarness.guard.getSurface().unguarded, [
 ]);
 assert.deepEqual(nativeHarness.guard.getEnvironment(), { native: true, api: "document" });
 assert.equal(nativeHarness.document.modelContext, nativeHarness.navigator.modelContext);
+assert.equal(nativeHarness.guard.canInterceptNativeRegistration(), true);
 await nativeHarness.guard.init({
   appName: "Native context test",
   budget: { limit: 100, currency: "USD" },
@@ -818,6 +819,16 @@ await nativeHarness.document.modelContext.registerTool(
   },
   nativeRegistrationOptions,
 );
+await new Promise((resolve) => setTimeout(resolve, 0));
+assert.ok(
+  nativeHarness.guard.getSurface().guarded.includes("native_cap"),
+  "A tool registered through patched modelContext.registerTool must be guarded",
+);
+assert.equal(
+  nativeHarness.guard.getSurface().unguarded.includes("native_cap"),
+  false,
+  "A patched native registration must not be reported as unguarded",
+);
 const nativeRegistration = preexistingNative.registrations.find(
   ({ definition }) => definition.name === "native_cap",
 );
@@ -843,6 +854,7 @@ const readOnlyHarness = createIsolatedBrowser({
 assert.ok(readOnlyHarness.guard, "PageControl must load with a read-only native context");
 assert.deepEqual(readOnlyHarness.guard.getEnvironment(), { native: true, api: "document" });
 assert.equal(readOnlyNative.registerTool, originalReadOnlyRegister);
+assert.equal(readOnlyHarness.guard.canInterceptNativeRegistration(), false);
 await readOnlyHarness.guard.init({
   appName: "Read-only native context test",
   budget: { limit: 100, currency: "USD" },

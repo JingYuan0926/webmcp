@@ -193,6 +193,8 @@ declare global {
     exportJourney: () => string;
     explainLast: () => string;
     getEnvironment: () => PageControlEnvironment;
+    /** True only when direct calls to modelContext.registerTool enter PageControl. */
+    canInterceptNativeRegistration: () => boolean;
     getSurface: () => PageControlSurface;
     resetTamperStatus: () => { ok: boolean; message: string };
     seal: () => { ok: boolean; message: string };

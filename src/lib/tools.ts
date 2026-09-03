@@ -88,22 +88,39 @@ export function registerStoreTools(): Promise<boolean> {
       throw new Error("PageControl could not initialize the WebMCP tool registry.");
     }
 
-    // PageControl wraps the native API, so this literal registration still
-    // enters the same guarded execution pipeline as PageControl.registerTool.
-    await document.modelContext.registerTool({
-      name: "search_products",
-      label: "Search products",
-      description: "Search the product catalog",
-      inputSchema: {
-        type: "object",
-        properties: {
-          query: { type: "string", minLength: 1 },
-        },
-        required: ["query"],
+    const searchProductsSchema = {
+      type: "object",
+      properties: {
+        query: { type: "string", minLength: 1 },
       },
-      annotations: { readOnlyHint: true, untrustedContentHint: false },
-      execute: async (input) => JSON.stringify(storeApi.search(asString(input.query))),
-    });
+      required: ["query"],
+    };
+    const executeSearchProducts = async (input: Record<string, unknown>) =>
+      JSON.stringify(storeApi.search(asString(input.query)));
+
+    if (guard.canInterceptNativeRegistration()) {
+      // This direct literal call proves PageControl wraps the native WebMCP
+      // API when the browser allows the method to be patched.
+      await document.modelContext.registerTool({
+        name: "search_products",
+        label: "Search products",
+        description: "Search the product catalog",
+        inputSchema: searchProductsSchema,
+        annotations: { readOnlyHint: true, untrustedContentHint: false },
+        execute: executeSearchProducts,
+      });
+    } else {
+      // Some hosts expose a read-only native method. Use the explicit bridge
+      // there so the tool cannot silently bypass PageControl.
+      await guard.registerTool({
+        name: "search_products",
+        label: "Search products",
+        description: "Search the product catalog",
+        inputSchema: searchProductsSchema,
+        annotations: { readOnlyHint: true, untrustedContentHint: false },
+        execute: executeSearchProducts,
+      });
+    }
 
     const tools: WebMCPToolDefinition[] = [
       {

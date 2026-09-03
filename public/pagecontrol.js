@@ -358,6 +358,15 @@
     return clone(environment);
   }
 
+  function canInterceptNativeRegistration() {
+    return Boolean(
+      activeBinding &&
+      activeBinding.patchedRegister &&
+      modelContext &&
+      modelContext.registerTool === activeBinding.guardedRegister
+    );
+  }
+
   function emitApprovals() {
     emit("approval", {
       pending: Array.from(pendingApprovals.values()).map(function (item) {
@@ -1853,6 +1862,7 @@
     exportJourney: exportJourney,
     explainLast: explainLast,
     getEnvironment: getEnvironment,
+    canInterceptNativeRegistration: canInterceptNativeRegistration,
     getSurface: getSurface,
     resetTamperStatus: resetTamperStatus,
     seal: seal,
