@@ -23,9 +23,12 @@ function PageControlDemo() {
         <TopBar />
         <StorePane />
       </section>
-      {panelOpen ? (
-        <GuardPanel onHide={() => setPanelOpen(false)} />
-      ) : (
+      {/* Always mounted, only hidden. The panel now owns the shipping inputs
+          that a third-party widget scrapes, the return leg from Stripe's hosted
+          card setup, and the card state the checkout guard reads — unmounting
+          it would silently disable all three. */}
+      <GuardPanel onHide={() => setPanelOpen(false)} hidden={!panelOpen} />
+      {panelOpen ? null : (
         <button
           type="button"
           className="show-guard-button"

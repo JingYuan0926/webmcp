@@ -871,6 +871,34 @@ summary:focus-visible {
   font-weight: 700;
 }
 
+.order-terms {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.order-terms p {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: 0.75rem;
+}
+
+.order-terms span {
+  color: var(--muted);
+}
+
+.order-terms strong {
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .checkout-hint {
   margin: var(--space-2) 0 0;
   color: var(--muted);
@@ -1350,6 +1378,7 @@ summary:focus-visible {
 .budget-edit-button:focus-visible,
 .guard-panel input:focus-visible,
 .guard-panel select:focus-visible,
+.guard-panel button:focus-visible,
 .guard-panel summary:focus-visible {
   outline-color: var(--panel-ink);
 }
@@ -1379,6 +1408,9 @@ summary:focus-visible {
 }
 
 .timeline-list {
+  max-height: 22rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   margin-top: var(--space-3);
   border-top: 1px solid var(--panel-line);
 }
@@ -1890,6 +1922,113 @@ summary:focus-visible {
   padding: 0;
 }
 
+.authority-rows {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.authority-row {
+  display: grid;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--panel-line);
+}
+
+.authority-row:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.authority-row-head {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) 2rem;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.authority-label {
+  color: var(--panel-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.authority-value {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--panel-ink);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authority-value--ok {
+  color: var(--panel-ink);
+}
+
+.authority-value--warn {
+  color: var(--warn);
+}
+
+.authority-value--danger {
+  color: var(--danger);
+}
+
+.authority-value--empty {
+  color: var(--warn);
+}
+
+.authority-row .meter-track {
+  margin-top: 0;
+}
+
+/* Cancels .budget-policy's own top margin, which would double the row gap. */
+.authority-editor {
+  margin-top: 0;
+}
+
+/* Load-bearing: .budget-policy sets display:grid, which outranks the user
+   agent's [hidden] rule, so without this every editor renders permanently
+   open. The editors are hidden rather than unmounted because a third-party
+   widget in this demo scrapes the shipping inputs from the document. */
+.authority-editor[hidden] {
+  display: none;
+}
+
+.authority-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.authority-note {
+  margin: 0;
+  color: var(--panel-muted);
+  font-size: 0.6875rem;
+  line-height: 1.45;
+}
+
+.authority-note code {
+  font-family: var(--font-data);
+  font-size: 0.95em;
+}
+
+.panel-caption--warn {
+  color: var(--warn);
+}
+
+.panel-button--wide {
+  width: 100%;
+}
+
+.guard-panel[hidden] {
+  display: none;
+}
+
 .export-row {
   display: grid;
   justify-items: center;
@@ -1983,6 +2122,17 @@ summary:focus-visible {
     0%, 100% { box-shadow: var(--shadow-card); }
     45% { box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--ok) 28%, transparent); }
   }
+
+  /* store-flash rests on a light-ink shadow, which paints wrong on the panel. */
+  .authority-row.is-flashing {
+    border-radius: var(--radius-sm);
+    animation: panel-flash 400ms cubic-bezier(0, 0, 0.2, 1);
+  }
+
+  @keyframes panel-flash {
+    0%, 100% { box-shadow: none; }
+    45% { box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--ok) 28%, transparent); }
+  }
 }
 
 @media (max-width: 72rem) and (min-width: 56.25rem) {
@@ -1994,7 +2144,10 @@ summary:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .store-sidebar .store-card:last-child {
+  /* Targets the cart explicitly. As :last-child this silently retargeted
+     whichever card happened to be last, and OrdersCard renders nothing until
+     an order exists. */
+  .store-sidebar .cart-card {
     grid-column: 1 / -1;
   }
 

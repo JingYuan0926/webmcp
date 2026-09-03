@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { formatUSD } from "@/lib/catalog";
-import { hasCard, refreshQuote, subscribe } from "@/lib/payments-client";
+import { hasCard, refreshQuote, savedCard, subscribe, type SavedCard } from "@/lib/payments-client";
 import { flashed, useStore } from "@/lib/store";
 
 export function CartCard() {
@@ -12,8 +12,16 @@ export function CartCard() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [cardReady, setCardReady] = useState(false);
+  const [card, setCard] = useState<SavedCard | null>(null);
 
-  useEffect(() => subscribe(() => setCardReady(hasCard())), []);
+  useEffect(
+    () =>
+      subscribe(() => {
+        setCardReady(hasCard());
+        setCard(savedCard());
+      }),
+    [],
+  );
 
   const total = state.items.reduce(
     (sum, item) => sum + item.product.price * item.qty,
@@ -22,6 +30,9 @@ export function CartCard() {
   const isFlashed =
     flashed(state.lastFlash, "cart") ||
     flashed(state.lastFlash, "checkout") ||
+    // The address form lives in the PageControl panel now, so an agent-driven
+    // change must still repaint something on the storefront side.
+    flashed(state.lastFlash, "address") ||
     Boolean(state.lastFlash?.startsWith("product:"));
 
   // Keep a server-priced quote standing by. The guard reads it synchronously
@@ -121,6 +132,23 @@ export function CartCard() {
         <span>Total</span>
         <strong className="price">{formatUSD(total)}</strong>
       </div>
+      {/* Read-only. The editable versions live in the PageControl panel; two
+          sets of shipping-* ids would be invalid HTML and would break the
+          third-party widget that scrapes them. */}
+      <div id="delivery" className="order-terms">
+        <p>
+          <span>Ships to</span>
+          <strong>
+            {state.address
+              ? `${state.address.name} · ${state.address.city} ${state.address.postcode}`
+              : "Not set"}
+          </strong>
+        </p>
+        <p>
+          <span>Pays with</span>
+          <strong>{card ? `${card.brand} ····${card.last4}` : "Not set"}</strong>
+        </p>
+      </div>
       <button
         type="button"
         className="button button-primary full-width"
@@ -129,14 +157,11 @@ export function CartCard() {
       >
         {busy ? "Waiting for approval…" : "Checkout"}
       </button>
-      {state.items.length > 0 && !state.address ? (
+      {state.items.length > 0 && (!state.address || !cardReady) ? (
         <p className="checkout-hint">
-          Save a shipping address to check out. An agent can do it with{" "}
-          <code>set_shipping_address</code>.
+          Set the {!state.address && !cardReady ? "address and card" : !state.address ? "address" : "card"} under{" "}
+          <strong>Agent authority</strong> in the PageControl panel.
         </p>
-      ) : null}
-      {state.items.length > 0 && state.address && !cardReady ? (
-        <p className="checkout-hint">Save a payment card to check out.</p>
       ) : null}
       {error ? (
         <p className="inline-message is-error" role="alert">

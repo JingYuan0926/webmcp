@@ -1,13 +1,13 @@
 "use client";
 
+import { AgentAuthority } from "@/components/guard/AgentAuthority";
 import { AlertsStrip } from "@/components/guard/AlertsStrip";
 import { ApprovalsList } from "@/components/guard/ApprovalsList";
 import { PolicyList } from "@/components/guard/PolicyList";
-import { SpendMeter } from "@/components/guard/SpendMeter";
 import { Timeline } from "@/components/guard/Timeline";
 import { usePageControl } from "@/lib/use-pagecontrol";
 
-export function GuardPanel({ onHide }: { onHide: () => void }) {
+export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: boolean }) {
   const snapshot = usePageControl();
   const tampered = snapshot.tools.some((tool) => tool.tampered);
   const status = tampered ? "Tamper detected" : snapshot.guardState.paused ? "Paused" : "Live";
@@ -19,7 +19,7 @@ export function GuardPanel({ onHide }: { onHide: () => void }) {
   }
 
   return (
-    <aside className="guard-panel" aria-label="PageControl panel">
+    <aside className="guard-panel" aria-label="PageControl panel" hidden={hidden}>
       <header className="guard-header">
         <button
           type="button"
@@ -67,10 +67,11 @@ export function GuardPanel({ onHide }: { onHide: () => void }) {
           <span>The store still works. Reload to reconnect PageControl.</span>
         </div>
       ) : null}
-      <SpendMeter budget={snapshot.budget} />
+      <AgentAuthority budget={snapshot.budget} />
       <ApprovalsList approvals={snapshot.approvals} />
-      <Timeline entries={snapshot.entries} />
+      {/* Alerts are current state; the timeline is history. */}
       <AlertsStrip alerts={snapshot.alerts} />
+      <Timeline entries={snapshot.entries} />
       <PolicyList
         tools={snapshot.tools}
         policies={snapshot.policies}

@@ -98,7 +98,9 @@ Failure behavior is a security decision. A guard that fails quietly is worse tha
 
 Checkout charges a real Stripe card in test mode. The agent triggers the charge and never sees the card.
 
-The shopper saves a card once, into a Stripe Elements iframe served from `js.stripe.com`. Because that iframe is a different origin, the page's own JavaScript cannot read the number — and a WebMCP tool is page JavaScript, so no tool can read it either. Stripe returns a `pm_...` handle that stays on the server behind an httpOnly cookie. There is deliberately no tool for adding, reading, or changing a card.
+The three things a shopper delegates — how much the agent may spend, which card it charges, and where the order ships — sit together under **Agent authority** in the PageControl panel. Budget is authority, and so are the other two.
+
+The shopper saves a card on Stripe's own hosted setup page. Card details never reach this origin at all, so the browser never loads Stripe.js and no publishable key is needed. Stripe returns a `pm_...` handle that stays on the server behind an httpOnly cookie. There is deliberately no tool for adding, reading, or changing a card.
 
 The `checkout` tool still takes zero arguments. What it does now:
 
@@ -167,8 +169,8 @@ Open `http://localhost:3000`. Test native WebMCP in ChatGPT's in-app browser or 
 - `src/app/api/` — setup intent, saved payment method, cart quote, and charge confirmation routes.
 - `src/lib/use-pagecontrol.ts` — React bridge for SDK events.
 - `src/lib/demo-agent.ts` — deterministic ten-step security demo.
-- `src/components/store/` — storefront, cart, payment card, address, and orders interface.
-- `src/components/guard/` — spend, approvals, timeline, alerts, policies, and export interface.
+- `src/components/store/` — storefront, cart, and orders interface.
+- `src/components/guard/` — agent authority (budget, card, address), approvals, alerts, timeline, policies, and export interface.
 
 ## Built with
 

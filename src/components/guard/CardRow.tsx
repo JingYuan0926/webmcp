@@ -4,22 +4,25 @@ import { useCallback, useEffect, useState } from "react";
 
 import { rememberCard, savedCard, subscribe, type SavedCard } from "@/lib/payments-client";
 
+import { AuthorityRow } from "@/components/guard/AuthorityRow";
+
 type Status = "loading" | "idle" | "redirecting" | "returning";
 
 /**
- * The payment panel. Adding a card hands the shopper to Stripe's own hosted
- * setup page, so card details never reach this origin at all — not the DOM,
- * not this bundle, and therefore not any WebMCP tool.
+ * The saved payment card, as one row of the agent authority group.
+ *
+ * The mount effect is deliberately not gated on `open` or on panel visibility:
+ * it is the only thing that resolves the card state (which the checkout tool's
+ * pre-approval guard reads) and the only handler for the return trip from
+ * Stripe's hosted setup page.
  */
-export function WalletCard() {
+export function CardRow({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const [card, setCard] = useState<SavedCard | null>(() => savedCard());
   const [configured, setConfigured] = useState<boolean | null>(null);
   const [status, setStatus] = useState<Status>("loading");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  // Finish a setup the shopper started on Stripe, then tidy the URL so a
-  // reload does not replay it.
   const completeReturn = useCallback(async (checkoutSessionId: string) => {
     setStatus("returning");
     try {
@@ -32,7 +35,7 @@ export function WalletCard() {
       const payload = await response.json();
       if (payload?.ok && payload.card) {
         rememberCard(payload.card as SavedCard);
-        setNotice("Card saved. The agent can now check out without ever seeing it.");
+        setNotice("Card saved. The agent can check out without ever seeing it.");
       } else {
         setError(payload?.message ?? "The card could not be saved.");
       }
@@ -117,74 +120,78 @@ export function WalletCard() {
     }
   }
 
+  const value =
+    status === "loading"
+      ? "Checking…"
+      : status === "returning"
+        ? "Saving your card…"
+        : card
+          ? `${card.brand} ····${card.last4}`
+          : "Not set";
+
   return (
-    <section id="wallet" className="store-card wallet-card" aria-labelledby="wallet-title">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">Payment</p>
-          <h2 id="wallet-title">Payment card</h2>
-        </div>
-        {card ? <span className="saved-badge">Saved</span> : null}
+    <AuthorityRow
+      label="Charges to"
+      value={value}
+      empty={!card && status !== "loading" && status !== "returning"}
+      editorId="card-editor"
+      editLabel="Edit payment card"
+      open={open}
+      onToggle={onToggle}
+    >
+      <div>
+        <strong className="authority-label">Payment card</strong>
+        <span>
+          {card
+            ? `${card.brand} ····${card.last4} · exp ${String(card.expMonth).padStart(2, "0")}/${String(card.expYear).slice(-2)}`
+            : "None saved"}
+        </span>
       </div>
 
-      {status === "loading" || status === "returning" ? (
-        <div className="compact-empty">
-          <strong>{status === "returning" ? "Saving your card…" : "Checking…"}</strong>
-          <span>One moment.</span>
-        </div>
-      ) : configured === false ? (
-        <div className="compact-empty">
-          <strong>Stripe is not configured</strong>
-          <span>
-            Copy <code>.env.example</code> to <code>.env.local</code> and add your Stripe test keys,
-            then restart the dev server.
-          </span>
-        </div>
+      {configured === false ? (
+        <p className="authority-note">
+          Stripe is not configured. Copy <code>.env.example</code> to <code>.env.local</code>, add
+          your Stripe test key, and restart the dev server.
+        </p>
       ) : card ? (
         <>
-          <div className="wallet-summary">
-            <span className="wallet-brand">{card.brand}</span>
-            <strong className="wallet-digits">···· ···· ···· {card.last4}</strong>
-            <span className="wallet-expiry">
-              {String(card.expMonth).padStart(2, "0")}/{String(card.expYear).slice(-2)}
-            </span>
-          </div>
-          <p className="wallet-note">
+          <p className="authority-note">
             Held by Stripe. This page never sees the number, so no agent tool can read it.
           </p>
-          <button type="button" className="button button-secondary full-width" onClick={removeCard}>
+          <button
+            type="button"
+            className="panel-button panel-button--ghost panel-button--wide"
+            onClick={removeCard}
+          >
             Remove card
           </button>
         </>
       ) : (
         <>
-          <div className="compact-empty">
-            <strong>No card saved</strong>
-            <span>Add one so an agent can check out for you. Test card: 4242 4242 4242 4242.</span>
-          </div>
+          <p className="authority-note">
+            Opens Stripe&rsquo;s hosted page. Your card details never reach this site. Test card
+            4242 4242 4242 4242.
+          </p>
           <button
             type="button"
-            className="button button-primary full-width"
+            className="panel-button panel-button--allow panel-button--wide"
             onClick={startSetup}
-            disabled={status === "redirecting"}
+            disabled={status === "redirecting" || status === "loading"}
           >
             {status === "redirecting" ? "Opening Stripe…" : "Add a card with Stripe ↗"}
           </button>
-          <p className="wallet-note wallet-note--after">
-            Opens Stripe&rsquo;s hosted page. Your card details never reach this site.
-          </p>
         </>
       )}
 
       {error ? (
-        <p className="inline-message is-error" role="alert">
+        <p className="policy-message is-error" role="alert">
           {error}
         </p>
-      ) : (
-        <p className="inline-message" aria-live="polite">
+      ) : notice ? (
+        <p className="policy-message" aria-live="polite">
           {notice}
         </p>
-      )}
-    </section>
+      ) : null}
+    </AuthorityRow>
   );
 }
