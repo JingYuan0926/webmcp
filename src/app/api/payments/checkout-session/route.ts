@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { requireSession, setCustomer } from "@/lib/server/session";
+import { persistSession, requireSession, setCustomer } from "@/lib/server/session";
 import {
   LIVE_KEY_MESSAGE,
   liveKeyBlocked,
@@ -39,7 +39,10 @@ export async function POST(request: Request) {
           metadata: { app: "northline-tech", session: session.id },
         })
       ).id;
-    if (!session.stripeCustomerId) setCustomer(session, customerId);
+    if (!session.stripeCustomerId) {
+      setCustomer(session, customerId);
+      await persistSession(session);
+    }
 
     const origin = new URL(request.url).origin;
     const checkout = await stripe().checkout.sessions.create({
