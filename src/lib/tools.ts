@@ -24,6 +24,8 @@ const CHECKOUT_ERRORS: Record<string, string> = {
   expired: "The approved price expired before the charge ran. Start checkout again.",
   cart_changed:
     "The cart changed after the price was approved. Nothing was charged. Start checkout again.",
+  amount_changed:
+    "The approved amount no longer matches this checkout. Nothing was charged. Start checkout again.",
 };
 
 function cartLines(): CartLine[] {
@@ -210,7 +212,7 @@ export function registerStoreTools(): Promise<boolean> {
           // sees on the approval card and pins the exact server quote behind
           // it, so the charge cannot be for a different cart than the one
           // approved.
-          getCost: () => {
+          getCost: (_inputs, context) => {
             const ready = storeApi.canCheckout();
             // Throwing here blocks the call before it reaches a human, so an
             // agent that forgot a prerequisite is told immediately rather than
@@ -223,7 +225,7 @@ export function registerStoreTools(): Promise<boolean> {
                 "No card is saved. The account holder must add one in the Payment card panel.",
               );
             }
-            return pinQuote(cartLines());
+            return pinQuote(cartLines(), context.callId);
           },
           // checkout takes no arguments by design, so "{}" is all a human
           // would otherwise see. Describe the actual order instead.
@@ -241,14 +243,17 @@ export function registerStoreTools(): Promise<boolean> {
             return [lines.join("\n"), shipTo, payWith].filter(Boolean).join("\n");
           },
         },
-        execute: async () => {
+        execute: async (_inputs, context) => {
           const ready = storeApi.canCheckout();
           // Throwing rather than returning: the guard refunds the budget
           // reservation on the error path, so a failed order never consumes
           // the session budget.
           if (!ready.ok) throw new Error(ready.message);
 
-          const pin = takePinnedQuote(cartLines());
+          const callId = context.pageControl?.callId;
+          const approvedCost = context.pageControl?.approvedCost ?? null;
+          if (!callId) throw new Error(CHECKOUT_ERRORS.no_quote);
+          const pin = takePinnedQuote(cartLines(), callId, approvedCost);
           if (!pin.ok) throw new Error(CHECKOUT_ERRORS[pin.code]);
 
           let charge;

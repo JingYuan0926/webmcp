@@ -21,11 +21,11 @@ export type QuoteSnapshot = {
 };
 
 export type PinnedQuote =
-  | { ok: true; quoteId: string; total: number }
-  | { ok: false; code: "no_quote" | "expired" | "cart_changed" };
+  | { ok: true; quoteId: string; amountMinor: number; total: number }
+  | { ok: false; code: "no_quote" | "expired" | "cart_changed" | "amount_changed" };
 
 let currentQuote: QuoteSnapshot | null = null;
-let pinned: QuoteSnapshot | null = null;
+const pinnedByCall = new Map<string, QuoteSnapshot>();
 let card: SavedCard | null = null;
 let cardLoaded = false;
 const listeners = new Set<() => void>();
@@ -129,17 +129,21 @@ export async function refreshQuote(lines: CartLine[]): Promise<QuoteSnapshot | n
  * Falls back to a locally computed total when no quote is ready — the caps and
  * budget still apply, and `takePinnedQuote` refuses the charge.
  */
-export function pinQuote(lines: CartLine[]): number {
+export function pinQuote(lines: CartLine[], callId: string): number {
+  const now = Date.now();
+  for (const [id, quote] of pinnedByCall) {
+    if (quote.expiresAt <= now) pinnedByCall.delete(id);
+  }
   const fingerprint = fingerprintFor(lines);
   if (
     currentQuote &&
     currentQuote.fingerprint === fingerprint &&
     currentQuote.expiresAt > Date.now()
   ) {
-    pinned = currentQuote;
+    pinnedByCall.set(callId, currentQuote);
     return currentQuote.total;
   }
-  pinned = null;
+  pinnedByCall.delete(callId);
   return localTotal(lines);
 }
 
@@ -148,13 +152,25 @@ export function pinQuote(lines: CartLine[]): number {
  * live cart. If anything moved between the human's approval and this moment,
  * the charge is refused rather than silently repriced.
  */
-export function takePinnedQuote(lines: CartLine[]): PinnedQuote {
-  const pin = pinned;
-  pinned = null;
+export function takePinnedQuote(
+  lines: CartLine[],
+  callId: string,
+  approvedCost: number | null,
+): PinnedQuote {
+  const pin = pinnedByCall.get(callId) ?? null;
+  pinnedByCall.delete(callId);
   if (!pin) return { ok: false, code: "no_quote" };
   if (pin.expiresAt <= Date.now()) return { ok: false, code: "expired" };
   if (pin.fingerprint !== fingerprintFor(lines)) return { ok: false, code: "cart_changed" };
-  return { ok: true, quoteId: pin.quoteId, total: pin.total };
+  if (approvedCost === null || Math.round(approvedCost * 100) !== pin.amountMinor) {
+    return { ok: false, code: "amount_changed" };
+  }
+  return {
+    ok: true,
+    quoteId: pin.quoteId,
+    amountMinor: pin.amountMinor,
+    total: pin.total,
+  };
 }
 
 export type ChargeResult =

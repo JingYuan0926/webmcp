@@ -1165,9 +1165,9 @@ const totalOf = (lines) =>
   lines.reduce((sum, line) => sum + Math.round(line.price * 100) * line.qty, 0) / 100;
 
 // Mirrors src/lib/payments-client.ts: a quote refreshed on every cart change,
-// pinned synchronously by getCost, and consumed by execute.
+// pinned by PageControl call id inside getCost, and consumed only by that call.
 let liveQuote = null;
-let pinnedQuote = null;
+const pinnedQuotes = new Map();
 const refreshQuote = () => {
   liveQuote = bindingCart.length
     ? { id: `q_${fingerprintOf(bindingCart)}`, fingerprint: fingerprintOf(bindingCart), total: totalOf(bindingCart) }
@@ -1191,15 +1191,21 @@ await bindingHarness.document.modelContext.registerTool({
   description: "Charge the pinned quote.",
   inputSchema: objectSchema(),
   guard: {
-    getCost: () => {
-      pinnedQuote = liveQuote && liveQuote.fingerprint === fingerprintOf(bindingCart) ? liveQuote : null;
-      return pinnedQuote ? pinnedQuote.total : totalOf(bindingCart);
+    getCost: (_inputs, guardContext) => {
+      const quote = liveQuote && liveQuote.fingerprint === fingerprintOf(bindingCart) ? liveQuote : null;
+      if (quote) pinnedQuotes.set(guardContext.callId, quote);
+      else pinnedQuotes.delete(guardContext.callId);
+      return quote ? quote.total : totalOf(bindingCart);
     },
   },
-  execute: async () => {
-    const pin = pinnedQuote;
-    pinnedQuote = null;
+  execute: async (_inputs, executionContext) => {
+    const callId = executionContext.pageControl?.callId;
+    const pin = pinnedQuotes.get(callId);
+    pinnedQuotes.delete(callId);
     if (!pin) throw new Error("No priced quote was pinned for this cart.");
+    if (Math.round(executionContext.pageControl.approvedCost * 100) !== Math.round(pin.total * 100)) {
+      throw new Error("The approved amount no longer matches this checkout. Nothing was charged.");
+    }
     if (pin.fingerprint !== fingerprintOf(bindingCart)) {
       throw new Error("The cart changed after the price was approved. Nothing was charged.");
     }
@@ -1248,6 +1254,61 @@ assert.equal(cleanApprovalCost, 59.98);
 assert.deepEqual(JSON.parse(cleanResult), { ok: true, total: 59.98 });
 assert.deepEqual(charges, [59.98], "The charged amount must equal the approved amount");
 assert.equal(bindingBudget.spent, 59.98);
+
+// Two approvals may overlap. Each execute must consume the quote captured by
+// its own getCost call, never the most recently pinned quote for the page.
+const overlapHarness = createIsolatedBrowser();
+await overlapHarness.guard.init({
+  appName: "Concurrent approval binding test",
+  budget: { limit: 300, currency: "USD" },
+  defaultMode: "allow",
+  defaultMaxPerMinute: 60,
+  tools: { checkout: { mode: "approve", chargesBudget: true } },
+});
+const queuedQuotes = [
+  { quoteId: "q_small", total: 20 },
+  { quoteId: "q_large", total: 200 },
+];
+const overlapPins = new Map();
+const overlapCharges = [];
+await overlapHarness.document.modelContext.registerTool({
+  name: "checkout",
+  description: "Charge one call-bound quote.",
+  inputSchema: objectSchema(),
+  guard: {
+    getCost: (_inputs, guardContext) => {
+      const quote = queuedQuotes.shift();
+      overlapPins.set(guardContext.callId, quote);
+      return quote.total;
+    },
+  },
+  execute: async (_inputs, executionContext) => {
+    const callId = executionContext.pageControl.callId;
+    const quote = overlapPins.get(callId);
+    overlapPins.delete(callId);
+    assert.equal(executionContext.pageControl.approvedCost, quote.total);
+    overlapCharges.push(quote);
+    return JSON.stringify(quote);
+  },
+});
+overlapHarness.guard.seal();
+overlapHarness.guard.on("approval", ({ pending }) => {
+  if (pending.length !== 2) return;
+  for (const approval of pending) decideThroughPanel(overlapHarness.document, approval);
+});
+const overlapResults = await Promise.all([
+  overlapHarness.guard.invoke("checkout", {}),
+  overlapHarness.guard.invoke("checkout", {}),
+]);
+assert.deepEqual(
+  overlapResults.map((result) => JSON.parse(result).quoteId).sort(),
+  ["q_large", "q_small"],
+);
+assert.deepEqual(
+  overlapCharges.map((quote) => quote.total).sort((left, right) => left - right),
+  [20, 200],
+  "Concurrent approvals must consume their own call-bound amounts",
+);
 
 // A zero-argument tool gives a human nothing to judge, so guard.getSummary
 // describes the action instead. Throwing from it blocks the call before it

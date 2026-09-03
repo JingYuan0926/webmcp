@@ -12,6 +12,19 @@ declare global {
     denyMessage?: string;
   };
 
+  type PageControlGuardContext = {
+    callId: string;
+  };
+
+  type PageControlExecutionContext = {
+    signal?: AbortSignal;
+    pageControl?: {
+      callId: string;
+      approvedByHuman: boolean;
+      approvedCost: number | null;
+    };
+  };
+
   type PageControlEntry = {
     id: string;
     seq: number;
@@ -91,19 +104,19 @@ declare global {
     inputSchema: Record<string, unknown>;
     execute: (
       inputs: Record<string, unknown>,
-      context: { signal?: AbortSignal },
+      context: PageControlExecutionContext,
     ) => Promise<string> | string;
     annotations?: { readOnlyHint?: boolean; untrustedContentHint?: boolean };
     guard?: {
-      getCost?: (inputs: Record<string, unknown>) => number;
-      getQty?: (inputs: Record<string, unknown>) => number;
+      getCost?: (inputs: Record<string, unknown>, context: PageControlGuardContext) => number;
+      getQty?: (inputs: Record<string, unknown>, context: PageControlGuardContext) => number;
       /**
        * Describes what the call will actually do, for the human approval card.
        * Use it when a tool's arguments do not carry the meaning — a
        * zero-argument checkout, for instance. Throwing here blocks the call
        * before it reaches a human.
        */
-      getSummary?: (inputs: Record<string, unknown>) => string;
+      getSummary?: (inputs: Record<string, unknown>, context: PageControlGuardContext) => string;
     };
   };
 

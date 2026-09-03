@@ -888,7 +888,7 @@
     );
   }
 
-  async function executeWithTimeout(record, inputs, executionContext) {
+  async function executeWithTimeout(record, inputs, executionContext, pageControlContext) {
     var controller = new AbortController();
     var sourceSignal = executionContext && executionContext.signal;
     var rejectAbort;
@@ -912,7 +912,10 @@
         reject(new Error("Tool execution timed out after 20 seconds."));
       }, EXECUTION_TTL_MS);
     });
-    var callContext = Object.assign({}, executionContext || {}, { signal: controller.signal });
+    var callContext = Object.assign({}, executionContext || {}, {
+      signal: controller.signal,
+      pageControl: pageControlContext,
+    });
     try {
       return await Promise.race([
         Promise.resolve().then(function () {
@@ -929,6 +932,8 @@
 
   async function runPipelineInternal(name, inputs, executionContext, invokeOptions) {
     var startedAt = performance.now();
+    var callId = makeId();
+    var guardContext = { callId: callId };
     var simulated = Boolean(invokeOptions && invokeOptions.simulated);
     var safeInputs = inputs === undefined ? {} : inputs;
     var sourceSignal = executionContext && executionContext.signal;
@@ -1025,13 +1030,13 @@
     var intentSummary;
     try {
       if (record.guardMeta && typeof record.guardMeta.getQty === "function") {
-        qty = record.guardMeta.getQty(safeInputs);
+        qty = record.guardMeta.getQty(safeInputs, guardContext);
         if (typeof qty !== "number" || !Number.isFinite(qty) || !Number.isInteger(qty) || qty < 0) {
           throw new TypeError("Derived quantity must be a finite, non-negative integer.");
         }
       }
       if (record.guardMeta && typeof record.guardMeta.getCost === "function") {
-        cost = record.guardMeta.getCost(safeInputs);
+        cost = record.guardMeta.getCost(safeInputs, guardContext);
         if (typeof cost !== "number" || !Number.isFinite(cost) || cost < 0) {
           throw new TypeError("Derived cost must be a finite, non-negative number.");
         }
@@ -1040,7 +1045,7 @@
       // agent's arguments. Tools whose arguments are empty by design derive a
       // plain-language summary from page state instead.
       if (record.guardMeta && typeof record.guardMeta.getSummary === "function") {
-        intentSummary = record.guardMeta.getSummary(safeInputs);
+        intentSummary = record.guardMeta.getSummary(safeInputs, guardContext);
         if (typeof intentSummary !== "string" || !intentSummary.trim()) {
           throw new TypeError("Derived summary must be a non-empty string.");
         }
@@ -1169,7 +1174,11 @@
         refundBudgetReservation();
         return recordAbort(name, safeInputs, startedAt, resolved.source, simulated);
       }
-      var rawResult = await executeWithTimeout(record, safeInputs, executionContext || {});
+      var rawResult = await executeWithTimeout(record, safeInputs, executionContext || {}, {
+        callId: callId,
+        approvedByHuman: approvedByHuman,
+        approvedCost: typeof cost === "number" ? cost : null,
+      });
       var result;
       if (typeof rawResult === "string") {
         result = rawResult;
