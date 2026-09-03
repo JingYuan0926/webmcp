@@ -2551,7 +2551,7 @@ summary:focus-visible {
   font-family: var(--panel-font);
 }
 
-.dashboard-header {
+.console-header {
   min-height: 4.75rem;
   display: flex;
   align-items: center;
@@ -2562,7 +2562,7 @@ summary:focus-visible {
   background: var(--card);
 }
 
-.dashboard-brand {
+.console-brand {
   display: inline-flex;
   align-items: center;
   gap: var(--space-3);
@@ -2570,16 +2570,23 @@ summary:focus-visible {
   text-decoration: none;
 }
 
-.dashboard-brand > span:last-child {
+.console-brand img {
+  width: 1.875rem;
+  height: 1.875rem;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.console-brand > span:last-child {
   display: grid;
   gap: 0.125rem;
 }
 
-.dashboard-brand strong {
+.console-brand strong {
   font-size: 0.875rem;
 }
 
-.dashboard-brand small {
+.console-brand small {
   color: var(--muted);
   font-size: 0.75rem;
 }
@@ -2595,14 +2602,14 @@ summary:focus-visible {
   color: var(--brand);
 }
 
-.dashboard-header nav {
+.console-header nav {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 
-.dashboard-header nav a,
-.dashboard-header nav button {
+.console-header nav a,
+.console-header nav button {
   min-height: 2.5rem;
   display: inline-flex;
   align-items: center;
@@ -2616,8 +2623,8 @@ summary:focus-visible {
   text-decoration: none;
 }
 
-.dashboard-header nav a:hover,
-.dashboard-header nav button:hover {
+.console-header nav a:hover,
+.console-header nav button:hover {
   background: color-mix(in srgb, var(--brand) 6%, var(--bg));
   color: var(--brand-dark);
 }

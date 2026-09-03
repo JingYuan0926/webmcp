@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 
+import { ConsoleHeader } from "@/components/console/ConsoleHeader";
+
 type MerchantKeys = {
   publishable: string;
   secret: string;
@@ -12,17 +14,6 @@ type MerchantKeys = {
 
 type ViewState = "loading" | "signed-out" | "ready" | "error";
 type KeyKind = "publishable" | "secret";
-
-function ShieldMark() {
-  return (
-    <span className="dashboard-mark" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="20" height="20">
-        <path d="M12 3 5 6v5c0 4.6 2.8 8.1 7 10 4.2-1.9 7-5.4 7-10V6l-7-3Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-        <path d="m9 12 2 2 4-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </span>
-  );
-}
 
 function KeyCard({
   kind,
@@ -220,17 +211,11 @@ export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUr
 
   return (
     <main className="merchant-dashboard">
-      <header className="dashboard-header">
-        <Link className="dashboard-brand" href="/">
-          <ShieldMark />
-          <span><strong>PageControl</strong><small>Merchant console</small></span>
-        </Link>
-        <nav aria-label="Dashboard navigation">
-          <Link href="/">Live demo</Link>
-          <Link href="/docs">SDK docs</Link>
-          {view === "ready" ? <button type="button" onClick={signOut}>Sign out</button> : null}
-        </nav>
-      </header>
+      <ConsoleHeader subtitle="Merchant console">
+        <Link href="/">Live demo</Link>
+        <Link href="/docs">SDK docs</Link>
+        {view === "ready" ? <button type="button" onClick={signOut}>Sign out</button> : null}
+      </ConsoleHeader>
 
       {view === "loading" ? (
         <section className="dashboard-loading" aria-label="Loading merchant dashboard" aria-busy="true">
