@@ -148,7 +148,7 @@ export function TimelineRow({ entry }: { entry: PageControlEntry }) {
               title={relativeTime(timestamp, currentTime)}
               aria-label={`${dateTimeFormat.format(new Date(entry.ts))}, ${relativeTime(timestamp, currentTime)}`}
             >
-              {dateTimeFormat.format(new Date(entry.ts))}
+              {dateTimeFormat.format(new Date(entry.ts))} · {relativeTime(timestamp, currentTime)}
             </time>
           </small>
         </span>
