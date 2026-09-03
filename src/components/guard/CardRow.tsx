@@ -105,11 +105,19 @@ export function CardRow({ open, onToggle }: { open: boolean; onToggle: () => voi
       // Opened in a new tab rather than navigating this one. A full-page
       // redirect to Stripe tears down the page mid-session, and the agent's
       // cart and journey are the things a demo is actually showing.
-      const opened = window.open(payload.url, "_blank", "noopener,noreferrer");
+      // No "noopener" in the feature string: with it, window.open always
+      // returns null, so the popup-blocked fallback below fired every time and
+      // navigated this tab as well. The opener is severed afterwards instead.
+      const opened = window.open(payload.url, "_blank");
       if (!opened) {
-        // Popup blocked. Falling back to a redirect is better than a dead button.
+        // Genuinely blocked. A redirect beats a dead button.
         window.location.href = payload.url;
         return;
+      }
+      try {
+        opened.opener = null;
+      } catch {
+        // Cross-origin already; nothing to sever.
       }
       setStatus("awaiting");
       setNotice("Finish in the Stripe tab, then come back here.");

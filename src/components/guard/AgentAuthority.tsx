@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useState,
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 
 import { AuthorityRow } from "@/components/guard/AuthorityRow";
 import { LocationIcon, WalletIcon } from "@/components/guard/AuthorityIcons";
@@ -166,6 +171,14 @@ function SpendRow({
 
 const blankAddress: Address = { name: "", line1: "", city: "", postcode: "" };
 
+/** Filled in by pressing space in an empty address field. */
+const sampleAddress: Address = {
+  name: "Derek Tan",
+  line1: "180 Sansome Street",
+  city: "San Francisco",
+  postcode: "94104",
+};
+
 const addressFieldIds: Record<keyof Address, string> = {
   name: "shipping-name",
   line1: "shipping-line",
@@ -192,6 +205,20 @@ function AddressRow({
 
   function update(key: keyof Address, value: string) {
     setForm((current) => ({ ...current, [key]: value }));
+    if (error) setError("");
+  }
+
+  /**
+   * Space in an EMPTY field fills the whole address. Typing four fields into a
+   * narrow panel is the slowest part of a demo. Guarded on the field being
+   * empty so a space between words still types normally.
+   */
+  function autofill(event: ReactKeyboardEvent<HTMLInputElement>) {
+    if (event.key !== " " || event.currentTarget.value !== "") return;
+    event.preventDefault();
+    setForm(sampleAddress);
+    setError("");
+    setMessage("Sample address filled in. Save it, or edit any field first.");
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -240,6 +267,7 @@ function AddressRow({
             spellCheck={false}
             value={form.name}
             onChange={(event) => update("name", event.target.value)}
+            onKeyDown={autofill}
             aria-invalid={error ? "true" : undefined}
             aria-describedby={error ? "address-error" : undefined}
           />
@@ -253,6 +281,7 @@ function AddressRow({
             spellCheck={false}
             value={form.line1}
             onChange={(event) => update("line1", event.target.value)}
+            onKeyDown={autofill}
             aria-invalid={error ? "true" : undefined}
             aria-describedby={error ? "address-error" : undefined}
           />
@@ -266,6 +295,7 @@ function AddressRow({
             spellCheck={false}
             value={form.city}
             onChange={(event) => update("city", event.target.value)}
+            onKeyDown={autofill}
             aria-invalid={error ? "true" : undefined}
             aria-describedby={error ? "address-error" : undefined}
           />
@@ -280,11 +310,13 @@ function AddressRow({
             spellCheck={false}
             value={form.postcode}
             onChange={(event) => update("postcode", event.target.value)}
+            onKeyDown={autofill}
             aria-invalid={error ? "true" : undefined}
             aria-describedby={error ? "address-error" : undefined}
           />
         </div>
       </div>
+      <p className="authority-note">Press space in an empty field to fill a sample address.</p>
       <button type="submit" className="panel-button panel-button--compact panel-button--wide">
         Save address
       </button>
