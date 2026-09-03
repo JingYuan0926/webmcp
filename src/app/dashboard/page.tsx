@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function DashboardPage() {
   return (
     <DashboardClient
-      signingApiUrl={process.env.NEXT_PUBLIC_PAGECONTROL_API_URL || "Not connected"}
+      signingApiUrl={process.env.NEXT_PUBLIC_PAGECONTROL_API_URL?.trim() || "https://api.pagecontrol.app"}
       allowedOrigin={process.env.NEXT_PUBLIC_PAGECONTROL_ALLOWED_ORIGIN?.trim() || "Any origin"}
     />
   );

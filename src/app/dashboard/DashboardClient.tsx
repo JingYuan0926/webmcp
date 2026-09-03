@@ -51,7 +51,7 @@ function KeyCard({
   onRotate: () => void;
 }) {
   const isSecret = kind === "secret";
-  const label = isSecret ? "Secret key" : "Publishable key";
+  const label = isSecret ? "Preview secret key" : "Preview publishable key";
   const shown = isSecret && !revealed ? `sk_demo_${"•".repeat(22)}${value.slice(-4)}` : value;
 
   return (
@@ -150,6 +150,7 @@ export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUr
   }, []);
 
   const snippet = `<script src="/pagecontrol.js"></script>`;
+  const verificationKeyUrl = `${signingApiUrl.replace(/\/$/, "")}/.well-known/pagecontrol-key.json`;
 
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -302,13 +303,16 @@ export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUr
 
           <section className="dashboard-section" aria-labelledby="dashboard-keys-title">
             <div className="dashboard-section-heading">
-              <div><p className="dashboard-eyebrow">Developer settings</p><h2 id="dashboard-keys-title">API keys</h2></div>
+              <div><p className="dashboard-eyebrow">Product preview</p><h2 id="dashboard-keys-title">Future API key management</h2></div>
               <div className="dashboard-origin-binding">
                 <span>Token is bound to</span>
                 <strong>{allowedOrigin}</strong>
               </div>
             </div>
-            <p className="dashboard-key-intro">Rotating a key replaces it immediately in this preview session.</p>
+            <p className="dashboard-key-intro">
+              These <code>pk_demo_…</code> and <code>sk_demo_…</code> values demonstrate a future
+              rotation flow. They are not the signing token or Ed25519 verification key used today.
+            </p>
             <div className="dashboard-key-grid">
               <KeyCard kind="publishable" value={keys.publishable} rotatedAt={keys.publishableRotatedAt} revealed busy={rotating === "publishable"} confirming={confirming === "publishable"} onReveal={() => {}} onCopy={() => void copy(keys.publishable, "Publishable key")} onRotate={() => void rotate("publishable")} />
               <KeyCard kind="secret" value={keys.secret} rotatedAt={keys.secretRotatedAt} revealed={secretVisible} busy={rotating === "secret"} confirming={confirming === "secret"} onReveal={() => setSecretVisible((visible) => !visible)} onCopy={() => void copy(keys.secret, "Secret key")} onRotate={() => void rotate("secret")} />
@@ -341,15 +345,15 @@ export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUr
                 <dl className="dashboard-env-list">
                   <div>
                     <dt><code>PAGECONTROL_SERVICE_TOKEN</code></dt>
-                    <dd>Use the same random value in Vercel and Render.</dd>
+                    <dd>Generate it with <code>openssl rand -base64 32</code>. Paste the same value into Vercel and Render.</dd>
                   </div>
                   <div>
                     <dt><code>PAGECONTROL_DASHBOARD_SESSION_SECRET</code></dt>
-                    <dd>Use a second random value. This belongs only to the merchant app.</dd>
+                    <dd>Run the command again for a different value. Put this second value only in Vercel.</dd>
                   </div>
                   <div>
                     <dt><code>PAGECONTROL_API_URL</code></dt>
-                    <dd>Set this to <code>{signingApiUrl}</code>.</dd>
+                    <dd>Set it to <code>{signingApiUrl}</code>. The shop server uses it to request and verify grants.</dd>
                   </div>
                 </dl>
                 <a
@@ -373,15 +377,15 @@ export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUr
                 <dl className="dashboard-env-list">
                   <div>
                     <dt><code>PAGECONTROL_SERVICE_TOKEN</code></dt>
-                    <dd>Paste the exact same value used by the merchant app.</dd>
+                    <dd>Paste the exact service-token value already stored in Vercel.</dd>
                   </div>
                   <div>
                     <dt><code>PAGECONTROL_PRIVATE_KEY</code></dt>
-                    <dd>Keep the Ed25519 signing key here, outside the storefront.</dd>
+                    <dd>Generate it with <code>openssl genpkey -algorithm ED25519 -outform DER | base64</code>. Store the output only in Render.</dd>
                   </div>
                   <div>
                     <dt><code>PAGECONTROL_ALLOWED_ORIGINS</code></dt>
-                    <dd>Allow only the exact merchant origins that may request grants.</dd>
+                    <dd>Enter exact storefront origins, separated by commas. Do not add paths or trailing slashes.</dd>
                   </div>
                 </dl>
                 <a
@@ -398,6 +402,24 @@ export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUr
               The browser dashboard never displays production secrets. The keys above are a safe,
               session-only preview of the future key-management flow.
             </p>
+
+            <article className="dashboard-public-key">
+              <div>
+                <p className="dashboard-eyebrow">Automatic verification</p>
+                <h3>Ed25519 public key</h3>
+                <p>
+                  Render derives this public key from <code>PAGECONTROL_PRIVATE_KEY</code>. The shop
+                  server downloads it automatically when it verifies a signed checkout grant. Do
+                  not paste it into the script tag or an environment variable.
+                </p>
+              </div>
+              <div>
+                <span>Published JWK endpoint</span>
+                <a href={verificationKeyUrl} target="_blank" rel="noreferrer">
+                  {verificationKeyUrl} <span aria-hidden="true">↗</span>
+                </a>
+              </div>
+            </article>
           </section>
 
           <section className="dashboard-section dashboard-install" aria-labelledby="dashboard-install-title">
@@ -405,11 +427,18 @@ export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUr
               <div><p className="dashboard-eyebrow">Quick start</p><h2 id="dashboard-install-title">Install PageCTRL</h2></div>
               <button type="button" className="dashboard-button dashboard-button--secondary" onClick={() => void copy(snippet, "Install snippet")}>Copy snippet</button>
             </div>
+            <div className="dashboard-install-note">
+              <strong>No browser key required.</strong>
+              <p>
+                This script installs the in-page guard. Signed checkout credentials stay in the
+                two server environments above, and the public verification key is fetched automatically.
+              </p>
+            </div>
             <pre><code>{snippet}</code></pre>
             <ol>
-              <li><span>1</span><p>Load PageCTRL before any tool registration.</p></li>
-              <li><span>2</span><p>Register tools through <code>document.modelContext.registerTool()</code>.</p></li>
-              <li><span>3</span><p>Watch the panel confirm every browser-reported tool is guarded.</p></li>
+              <li><span>1</span><p>Load PageCTRL before any tool registration. The browser script needs no key.</p></li>
+              <li><span>2</span><p>Add the server variables above to Vercel and Render when using signed checkout.</p></li>
+              <li><span>3</span><p>Register tools through <code>document.modelContext.registerTool()</code>, then confirm every tool is guarded.</p></li>
             </ol>
           </section>
 

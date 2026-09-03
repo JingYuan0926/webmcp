@@ -208,6 +208,10 @@ export default function DocsPage() {
                 <strong>Load order matters.</strong>
                 <p>The SDK must see tool registration to wrap it. In Next.js, load the script with <code>beforeInteractive</code>.</p>
               </div>
+              <div className="sdk-docs-callout">
+                <strong>No browser key is required.</strong>
+                <p>The script tag installs the in-page guard. Server credentials are needed only when an integration adds signed checkout.</p>
+              </div>
             </section>
 
             <section id="credentials" className="sdk-docs-section">
@@ -223,6 +227,20 @@ export default function DocsPage() {
                 Add these values to the repository-root <code>.env.local</code> file for local work,
                 or to the merchant app&apos;s Vercel environment for deployment.
               </p>
+              <div className="sdk-api-table sdk-credential-list">
+                <div>
+                  <code>PAGECONTROL_SERVICE_TOKEN</code>
+                  <p><strong>Used by:</strong> the merchant server when requesting a signed grant. <strong>Create it:</strong> run <code>openssl rand -base64 32</code>, then paste the same output into Vercel and Render.</p>
+                </div>
+                <div>
+                  <code>PAGECONTROL_DASHBOARD_SESSION_SECRET</code>
+                  <p><strong>Used by:</strong> the merchant dashboard to sign and encrypt its session cookies. <strong>Create it:</strong> run the command again and keep this different value only in Vercel.</p>
+                </div>
+                <div>
+                  <code>PAGECONTROL_API_URL</code>
+                  <p><strong>Used by:</strong> the merchant server to request grants and download the verification key. <strong>Value:</strong> <code>https://api.pagecontrol.app</code>.</p>
+                </div>
+              </div>
               <CodeBlock title="Merchant app environment">{merchantEnvironmentExample}</CodeBlock>
               <h3>Signing service</h3>
               <p>
@@ -232,7 +250,34 @@ export default function DocsPage() {
                 with <code>openssl genpkey -algorithm ED25519 -outform DER | base64</code> and paste
                 its output directly into Render.
               </p>
+              <div className="sdk-api-table sdk-credential-list">
+                <div>
+                  <code>PAGECONTROL_SERVICE_TOKEN</code>
+                  <p><strong>Used by:</strong> Render to authenticate the merchant server. <strong>Value:</strong> exactly the same random token stored in Vercel.</p>
+                </div>
+                <div>
+                  <code>PAGECONTROL_PRIVATE_KEY</code>
+                  <p><strong>Used by:</strong> Render to sign each 60-second checkout grant. <strong>Storage:</strong> Render only—never Vercel, browser code, or Git.</p>
+                </div>
+                <div>
+                  <code>PAGECONTROL_ALLOWED_ORIGINS</code>
+                  <p><strong>Used by:</strong> Render to restrict which storefronts may receive grants. <strong>Format:</strong> comma-separated exact origins with no paths or trailing slashes.</p>
+                </div>
+              </div>
               <CodeBlock title="Render service environment">{signingEnvironmentExample}</CodeBlock>
+              <h3>Public verification key</h3>
+              <p>
+                You do not copy a public key into the script or <code>.env</code>. Render derives it
+                from <code>PAGECONTROL_PRIVATE_KEY</code> and publishes it as a public JWK. The
+                merchant server downloads it automatically from <code>PAGECONTROL_API_URL</code>
+                while verifying a grant.
+              </p>
+              <ul className="sdk-source-list">
+                <li>
+                  <a href="https://api.pagecontrol.app/.well-known/pagecontrol-key.json" target="_blank" rel="noreferrer">Open the PageCTRL public JWK</a>
+                  <span>Safe to inspect and share. It verifies signatures but cannot create them.</span>
+                </li>
+              </ul>
               <div className="sdk-docs-callout">
                 <strong>Never expose either secret to browser code.</strong>
                 <p>Do not add <code>NEXT_PUBLIC_</code> to either name. After changing a deployed variable, redeploy the affected service.</p>

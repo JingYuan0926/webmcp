@@ -161,6 +161,8 @@ Set `PAGECONTROL_DASHBOARD_USERNAME`, `PAGECONTROL_DASHBOARD_PASSWORD`, and `PAG
 
 For signed checkout, put `PAGECONTROL_API_URL` and `PAGECONTROL_SERVICE_TOKEN` in the merchant app. Put the same service-token value with `PAGECONTROL_PRIVATE_KEY` and `PAGECONTROL_ALLOWED_ORIGINS` in the separate Render signing service. See the [live SDK credential guide](https://webmcp-nine.vercel.app/docs#credentials), [Vercel environment guide](https://vercel.com/docs/environment-variables/managing-environment-variables), and [Render environment guide](https://render.com/docs/configure-environment-variables).
 
+No public-key environment variable is required. Render derives the Ed25519 public key from its private key and publishes the [PageCTRL public JWK](https://api.pagecontrol.app/.well-known/pagecontrol-key.json); the merchant server downloads it automatically when verifying a grant. The dashboard's `pk_demo_…` value is only a preview of future site-key management and is not this verification key.
+
 ## Signing service
 
 The SDK itself remains dependency-free and sends no telemetry. The separate [`service/`](service/) package is the server-to-server trust layer for checkout: it keeps an Ed25519 private key away from the merchant page, publishes the public verification key, and issues short-lived signed grants. See [`service/README.md`](service/README.md) for its routes and deployment configuration.
