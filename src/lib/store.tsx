@@ -302,27 +302,11 @@ function readPersistedState(): Pick<StoreState, "items" | "address" | "orders"> 
     const raw = window.localStorage.getItem("kedai-tech-store");
     if (!raw) return { items: [], address: null, orders: [] };
     const parsed = JSON.parse(raw) as {
-      items?: Array<{ id?: unknown; qty?: unknown }>;
-      address?: Partial<Address> | null;
       orders?: unknown;
     };
-    const items = Array.isArray(parsed.items)
-      ? parsed.items.flatMap((item) => {
-          const product = typeof item.id === "string" ? storeApi.get(item.id) : null;
-          return product && typeof item.qty === "number" && Number.isInteger(item.qty) && item.qty > 0
-            ? [{ product, qty: item.qty }]
-            : [];
-        })
-      : [];
-    const candidate = parsed.address;
-    const address =
-      candidate &&
-      [candidate.name, candidate.line1, candidate.city, candidate.postcode].every(
-        (value) => typeof value === "string" && value.length > 0,
-      )
-        ? (candidate as Address)
-        : null;
-    return { items, address, orders: readPersistedOrders(parsed.orders) };
+    // Cart and shipping details are session-only. A fresh demo must never
+    // inherit another run's basket or delivery address.
+    return { items: [], address: null, orders: readPersistedOrders(parsed.orders) };
   } catch {
     return { items: [], address: null, orders: [] };
   }
@@ -355,8 +339,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       window.localStorage.setItem(
         "kedai-tech-store",
         JSON.stringify({
-          items: state.items.map((item) => ({ id: item.product.id, qty: item.qty })),
-          address: state.address,
           // Receipts survive a reload; the products are re-resolved on read.
           orders: state.orders.slice(0, 20).map((order) => ({
             id: order.id,

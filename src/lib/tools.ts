@@ -50,7 +50,16 @@ export function registerStoreTools(): Promise<boolean> {
   if (registrationPromise) return registrationPromise;
   if (typeof window === "undefined") return Promise.resolve(false);
 
+  // The beforeInteractive bootstrap publishes the read-only catalog tools
+  // before React starts. Their handlers wait for this bridge if an agent calls
+  // during hydration, so the first request still enters PageCTRL.
+  window.NorthlineToolBridge = {
+    searchProducts: (query) => JSON.stringify(storeApi.search(query)),
+    listProducts: () => JSON.stringify(storeApi.list()),
+  };
+
   registrationPromise = (async () => {
+    if (window.NorthlineWebMCPReady) await window.NorthlineWebMCPReady;
     const deadline = Date.now() + 5_000;
     while (!window.PageControl && Date.now() < deadline) {
       await new Promise<void>((resolve) => window.setTimeout(resolve, 50));

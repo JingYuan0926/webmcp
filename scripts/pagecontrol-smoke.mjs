@@ -172,6 +172,10 @@ const partnerWidgetSource = await readFile(
   new URL("../public/partner-widget.js", import.meta.url),
   "utf8",
 );
+const earlyToolsSource = await readFile(
+  new URL("../public/northline-webmcp.js", import.meta.url),
+  "utf8",
+);
 vm.runInContext(sdkSource, context, { filename: "pagecontrol.js" });
 
 const guard = window.PageControl;
@@ -703,6 +707,7 @@ function createIsolatedBrowser({
   const isolatedWindow = {
     crypto: webcrypto,
     TextEncoder,
+    location: { pathname: "/" },
     setTimeout: scaledTimeout,
     clearTimeout,
     setInterval: scaledInterval,
@@ -756,6 +761,7 @@ function createIsolatedBrowser({
     document: isolatedDocument,
     navigator: isolatedNavigator,
     guard: isolatedWindow.PageControl,
+    context: isolatedContext,
   };
 }
 
@@ -1478,6 +1484,37 @@ assert.ok(pairEntries[0].callId, "Entries must carry a callId");
 assert.equal(pairEntries[0].callId, pairEntries[1].callId, "Both records share one callId");
 assert.notEqual(pairEntries[0].hash, pairEntries[1].hash, "The chain stays append-only");
 assert.equal(pairEntries[1].prevHash, pairEntries[0].hash, "The outcome chains onto the checkpoint");
+
+// The initial catalog tools exist before React hydrates. A call made during
+// that window waits for the storefront bridge and is still recorded.
+const earlyToolsHarness = createIsolatedBrowser();
+vm.runInContext(earlyToolsSource, earlyToolsHarness.context, {
+  filename: "northline-webmcp.js",
+});
+await earlyToolsHarness.window.NorthlineWebMCPReady;
+const earlyToolNames = earlyToolsHarness.document.modelContext
+  .getTools()
+  .map((tool) => tool.name);
+assert.ok(earlyToolNames.includes("search_products"));
+assert.ok(earlyToolNames.includes("list_products"));
+const firstSearch = earlyToolsHarness.document.modelContext.executeTool(
+  "search_products",
+  JSON.stringify({ query: "mouse" }),
+);
+await new Promise((resolve) => setTimeout(resolve, 0));
+earlyToolsHarness.window.NorthlineToolBridge = {
+  searchProducts: (query) => JSON.stringify([{ id: "wireless-mouse", query }]),
+  listProducts: () => JSON.stringify([{ id: "wireless-mouse" }]),
+};
+assert.deepEqual(
+  JSON.parse(await firstSearch),
+  [{ id: "wireless-mouse", query: "mouse" }],
+);
+assert.equal(
+  earlyToolsHarness.guard.getJourney().at(-1).tool,
+  "search_products",
+  "The first pre-hydration catalog call must enter the PageCTRL journey",
+);
 
 console.log(
   `PageCTRL SDK smoke test passed (${entries.length} core entries + native, abort, migration, approval-binding, intent-summary, and call-pairing cases).`,

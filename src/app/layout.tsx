@@ -15,6 +15,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         {children}
         <Script src="/pagecontrol.js" strategy="beforeInteractive" />
+        <Script src="/northline-webmcp.js" strategy="beforeInteractive" />
       </body>
     </html>
   );

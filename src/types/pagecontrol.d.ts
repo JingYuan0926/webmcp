@@ -217,6 +217,11 @@ declare global {
   interface Window {
     PageControl?: PageControlApi;
     FastShipDeliveryTracker?: { ready?: Promise<void> };
+    NorthlineWebMCPReady?: Promise<boolean>;
+    NorthlineToolBridge?: {
+      searchProducts: (query: string) => string;
+      listProducts: () => string;
+    };
   }
 
   interface Document {
