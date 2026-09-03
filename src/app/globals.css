@@ -17,6 +17,7 @@
   --warn: #e0a03c;
   --danger: #e05252;
   --font-ui: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --panel-font: ui-rounded, "Avenir Next", "Nunito Sans", system-ui, -apple-system, sans-serif;
   --font-data: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -1028,7 +1029,6 @@ summary:focus-visible {
   --panel-accent: #ececff;
   --panel-ring: #4d4dff;
   --panel-danger: #db334a;
-  --panel-font: ui-rounded, "Avenir Next", "Nunito Sans", var(--font-ui);
   --brand: var(--panel-primary);
   --ok: var(--panel-primary);
   --danger: var(--panel-danger);
@@ -2529,10 +2529,26 @@ summary:focus-visible {
 }
 
 /* Merchant dashboard */
+/* The dashboard's rules all consume the shared store tokens, so repointing
+   them here adopts the PageCtrl panel palette without touching each rule. */
 .merchant-dashboard {
+  --bg: #fdfcfc;
+  --card: #fafafa;
+  --ink: #172c3b;
+  --muted: #3c505d;
+  --line: #d7dbe0;
+  --brand: #0000ff;
+  --brand-ink: #0000cc;
+  /* Referenced by three rules but never defined anywhere, so those colours
+     silently fell back to inherited text. */
+  --brand-dark: #0000cc;
+  --ok: #0000ff;
+  --danger: #db334a;
+  --shadow-card: 0 1px 2px color-mix(in srgb, #172c3b 8%, transparent);
   min-height: 100svh;
   background: var(--bg);
   color: var(--ink);
+  font-family: var(--panel-font);
 }
 
 .dashboard-header {
@@ -2596,7 +2612,7 @@ summary:focus-visible {
   background: transparent;
   color: var(--muted);
   font-size: 0.75rem;
-  font-weight: 750;
+  font-weight: 550;
   text-decoration: none;
 }
 
@@ -2638,7 +2654,7 @@ summary:focus-visible {
   color: var(--brand-dark);
   font-family: var(--font-data);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -2648,7 +2664,7 @@ summary:focus-visible {
 .dashboard-state-card h1 {
   max-width: 16ch;
   margin: 0;
-  font-size: clamp(2rem, 5vw, 4rem);
+  font-size: clamp(1.5rem, 2.6vw, 2.125rem);
   line-height: 0.98;
   letter-spacing: -0.055em;
 }
@@ -2715,7 +2731,7 @@ summary:focus-visible {
   margin-top: var(--space-1);
   color: var(--muted);
   font-size: 0.75rem;
-  font-weight: 750;
+  font-weight: 550;
 }
 
 .dashboard-login-card input {
@@ -2737,7 +2753,7 @@ summary:focus-visible {
   border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .dashboard-button--primary {
@@ -2810,7 +2826,7 @@ summary:focus-visible {
   color: color-mix(in srgb, var(--warn) 70%, var(--ink));
   font-family: var(--font-data);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .dashboard-summary {
@@ -2923,7 +2939,7 @@ summary:focus-visible {
 
 .dashboard-key-heading span:first-child {
   font-size: 0.875rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .dashboard-key-heading p,
@@ -2941,7 +2957,7 @@ summary:focus-visible {
   color: var(--brand-dark);
   font-family: var(--font-data);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .dashboard-key-scope.is-secret {
@@ -3012,7 +3028,7 @@ summary:focus-visible {
   color: var(--brand-dark);
   font-family: var(--font-data);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .dashboard-install li p {
@@ -3141,11 +3157,24 @@ summary:focus-visible {
 }
 
 /* SDK documentation */
+/* Same token repoint as the dashboard: these rules consume the shared store
+   tokens, so one block adopts the PageCtrl palette. */
 .sdk-docs-page {
+  --bg: #fdfcfc;
+  --card: #fafafa;
+  --ink: #172c3b;
+  --muted: #3c505d;
+  --line: #d7dbe0;
+  --brand: #0000ff;
+  --brand-ink: #0000cc;
+  --brand-dark: #0000cc;
+  --ok: #0000ff;
+  --danger: #db334a;
   min-height: 100svh;
   background:
-    radial-gradient(circle at 12% 2%, color-mix(in srgb, var(--brand) 8%, transparent), transparent 28rem),
+    radial-gradient(circle at 12% 2%, color-mix(in srgb, var(--brand) 5%, transparent), transparent 28rem),
     var(--bg);
+  font-family: var(--panel-font);
 }
 
 .sdk-docs-header {
@@ -3214,7 +3243,7 @@ summary:focus-visible {
   padding: 0 var(--space-3);
   color: var(--muted);
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 500;
   text-decoration: none;
 }
 
@@ -3243,7 +3272,7 @@ summary:focus-visible {
   margin: 0;
   color: var(--brand-ink);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -3252,7 +3281,7 @@ summary:focus-visible {
   max-width: 18ch;
   margin: var(--space-4) 0;
   font-size: clamp(2.5rem, 6vw, 4.75rem);
-  font-weight: 650;
+  font-weight: 500;
   letter-spacing: -0.065em;
   line-height: 0.98;
 }
@@ -3279,7 +3308,7 @@ summary:focus-visible {
   background: color-mix(in srgb, var(--brand) 5%, var(--card));
   color: var(--brand-ink);
   font-size: 0.75rem;
-  font-weight: 750;
+  font-weight: 550;
 }
 
 .sdk-docs-hero > aside {
@@ -3295,7 +3324,7 @@ summary:focus-visible {
 .sdk-docs-hero > aside > span {
   color: var(--ok);
   font-size: 0.6875rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -3321,7 +3350,7 @@ summary:focus-visible {
   padding-top: var(--space-3);
   color: var(--panel-ink);
   font-size: 0.8125rem;
-  font-weight: 750;
+  font-weight: 550;
   text-decoration: none;
 }
 
@@ -3357,14 +3386,14 @@ summary:focus-visible {
   padding: 0 var(--space-3);
   color: var(--muted);
   font-size: 0.8125rem;
-  font-weight: 650;
+  font-weight: 500;
   text-decoration: none;
 }
 
 .sdk-docs-sidebar a[aria-current="location"] {
   color: var(--ink);
   background: color-mix(in srgb, var(--brand) 7%, var(--bg));
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .sdk-docs-content {
@@ -3384,7 +3413,7 @@ summary:focus-visible {
 .sdk-docs-section h2 {
   margin: var(--space-3) 0 var(--space-4);
   font-size: clamp(1.75rem, 4vw, 2.5rem);
-  font-weight: 680;
+  font-weight: 500;
   letter-spacing: -0.045em;
   line-height: 1.08;
 }
@@ -3706,7 +3735,7 @@ summary:focus-visible {
   width: fit-content;
   color: var(--brand-ink);
   font-size: 0.8125rem;
-  font-weight: 750;
+  font-weight: 550;
   text-underline-offset: 0.2em;
 }
 
@@ -3783,7 +3812,7 @@ summary:focus-visible {
   display: inline-flex;
   align-items: center;
   color: var(--brand-ink);
-  font-weight: 750;
+  font-weight: 550;
   text-decoration: none;
 }
 
