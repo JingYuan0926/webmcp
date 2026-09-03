@@ -1051,15 +1051,25 @@ summary:focus-visible {
   top: var(--space-5);
   left: 0;
   transform: translateX(-100%);
-  width: 2.5rem;
+  width: 1.5rem;
   height: 2.5rem;
   display: grid;
   place-items: center;
+  box-sizing: border-box;
+  padding: 0;
   border: 1px solid var(--panel-line);
   border-right: 0;
   border-radius: var(--radius-sm) 0 0 var(--radius-sm);
   background: var(--panel-bg);
   color: var(--panel-muted);
+}
+
+.guard-hide-button::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  width: 2.5rem;
 }
 
 .guard-hide-button:hover {
@@ -2202,9 +2212,14 @@ summary:focus-visible {
     top: var(--space-4);
     left: var(--space-4);
     transform: none;
+    width: 2.5rem;
     border: 0;
     border-radius: var(--radius-sm);
     background: transparent;
+  }
+
+  .guard-hide-button::after {
+    content: none;
   }
 
   .guard-header {

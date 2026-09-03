@@ -27,7 +27,7 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
         aria-label="Hide PageControl panel"
         title="Hide PageControl"
       >
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
           <path d="m14 7-5 5 5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
