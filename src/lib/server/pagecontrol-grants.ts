@@ -147,10 +147,14 @@ export async function verifyAndConsumeCheckoutGrant(
     if (!signatureValid) return { ok: false, code: "grant_invalid" };
 
     const nowSeconds = Math.floor(Date.now() / 1000);
+    // The signing service and this app are separate deployments with separate
+    // clocks. Five seconds of allowance was tight enough that ordinary drift
+    // rejected valid grants; the 60-second lifetime still bounds the window.
+    const CLOCK_SKEW_SECONDS = 60;
 
-    // Each binding is checked on its own so a failure names the exact field.
-    // The reason is logged server-side only; the client still receives the
-    // generic grant_mismatch, which tells an attacker nothing.
+    // Each binding is checked on its own so a failure names the exact field and
+    // both values. The reason is logged server-side only; the client still gets
+    // the opaque grant_mismatch, which tells an attacker nothing.
     const failures: string[] = [];
     const check = (field: string, ok: boolean, detail?: string): void => {
       if (!ok) failures.push(detail ? `${field} (${detail})` : field);
@@ -175,13 +179,17 @@ export async function verifyAndConsumeCheckoutGrant(
       claims.sessionId === expected.quote.sessionId,
       `signed=${claims.sessionId} expected=${expected.quote.sessionId}`,
     );
-    check("iat", Number.isInteger(claims.iat) && claims.iat <= nowSeconds + 5, `iat=${claims.iat} now=${nowSeconds}`);
+    check(
+      "iat",
+      Number.isInteger(claims.iat) && claims.iat <= nowSeconds + CLOCK_SKEW_SECONDS,
+      `iat=${claims.iat} now=${nowSeconds} skew=${claims.iat - nowSeconds}s`,
+    );
     check(
       "exp",
-      Number.isInteger(claims.exp) && claims.exp > nowSeconds,
+      Number.isInteger(claims.exp) && claims.exp > nowSeconds - CLOCK_SKEW_SECONDS,
       `exp=${claims.exp} now=${nowSeconds} expiredBy=${nowSeconds - claims.exp}s`,
     );
-    check("ttl", claims.exp - claims.iat <= 60, `ttl=${claims.exp - claims.iat}s`);
+    check("lifetime", claims.exp - claims.iat <= 60, `lifetime=${claims.exp - claims.iat}s`);
     check("nonce", typeof claims.nonce === "string" && claims.nonce.length >= 16);
     check("jti", typeof claims.jti === "string" && claims.jti.length >= 16);
 
