@@ -53,8 +53,8 @@ function signature(payload: string): string {
 
 export function dashboardCredentialsMatch(username: unknown, password: unknown): boolean {
   if (typeof username !== "string" || typeof password !== "string") return false;
-  const expectedUsername = process.env.PAGECONTROL_DASHBOARD_USERNAME || "merchant";
-  const expectedPassword = process.env.PAGECONTROL_DASHBOARD_PASSWORD || "pagecontrol-demo";
+  const expectedUsername = process.env.PAGECONTROL_DASHBOARD_USERNAME || "q";
+  const expectedPassword = process.env.PAGECONTROL_DASHBOARD_PASSWORD || "q";
   return equal(username, expectedUsername) && equal(password, expectedPassword);
 }
 

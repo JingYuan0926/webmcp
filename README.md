@@ -153,7 +153,7 @@ A tool can add `guard: { getCost(inputs), getQty(inputs) }`. PageControl removes
 
 Open `/dashboard` to see the merchant integration flow. The preview includes a demo sign-in, publishable and secret keys, reveal and two-step rotation controls, and a copyable installation snippet. Preview keys are encrypted into an httpOnly session cookie, reset when the merchant signs out, and do not authorize production traffic.
 
-Set `PAGECONTROL_DASHBOARD_USERNAME`, `PAGECONTROL_DASHBOARD_PASSWORD`, and `PAGECONTROL_DASHBOARD_SESSION_SECRET` for a stable deployed preview. Local development defaults to `merchant` / `pagecontrol-demo`.
+Set `PAGECONTROL_DASHBOARD_USERNAME`, `PAGECONTROL_DASHBOARD_PASSWORD`, and `PAGECONTROL_DASHBOARD_SESSION_SECRET` for a stable deployed preview. The demo defaults to `q` / `q`.
 
 ## Optional signing service
 

@@ -254,12 +254,12 @@ export function DashboardClient({ signingApiUrl }: { signingApiUrl: string }) {
             <div>
               <p className="dashboard-eyebrow">Demo account</p>
               <h2>Sign in</h2>
-              <p>Use the credentials in the private testing instructions.</p>
+              <p>Use <strong>q</strong> for both fields.</p>
             </div>
-            <label htmlFor="dashboard-username">Username</label>
-            <input id="dashboard-username" name="username" type="text" autoComplete="username" spellCheck={false} required />
+            <label htmlFor="dashboard-username">Email or username</label>
+            <input id="dashboard-username" name="username" type="text" autoComplete="username" spellCheck={false} defaultValue="q" required />
             <label htmlFor="dashboard-password">Password</label>
-            <input id="dashboard-password" name="password" type="password" autoComplete="current-password" spellCheck={false} required aria-describedby={error ? "dashboard-login-error" : undefined} aria-invalid={error ? "true" : undefined} />
+            <input id="dashboard-password" name="password" type="password" autoComplete="current-password" spellCheck={false} defaultValue="q" required aria-describedby={error ? "dashboard-login-error" : undefined} aria-invalid={error ? "true" : undefined} />
             {error ? <p id="dashboard-login-error" className="dashboard-error" role="alert">{error}</p> : null}
             <button type="submit" className="dashboard-button dashboard-button--primary" disabled={loginBusy} aria-busy={loginBusy}>
               {loginBusy ? "Signing in…" : "Sign in"}
