@@ -27,7 +27,7 @@ export function StorePane() {
         <div>
           <p className="store-brand">Northline Tech</p>
           <h1 id="catalog-title">Better tech for everyday work.</h1>
-          <p>Reliable desk gear, useful upgrades, and straightforward support—all selected to make your setup work better.</p>
+          <p>Reliable desk gear and useful upgrades, selected to make your setup work better.</p>
         </div>
         <SearchBar value={query} onChange={setQuery} resultCount={products.length} />
       </section>
