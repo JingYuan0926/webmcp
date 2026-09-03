@@ -219,7 +219,7 @@ export function createPageControlServer({ allowedOrigins = ALLOWED_ORIGINS } = {
       return;
     }
 
-    json(response, 404, { ok: false, code: "not_found", message: "No PageControl API route exists here." });
+    json(response, 404, { ok: false, code: "not_found", message: "No PageCTRL API route exists here." });
   });
 }
 
@@ -232,7 +232,7 @@ if (isEntryPoint) {
   server.listen(PORT, "0.0.0.0", () => {
     const address = server.address();
     const port = typeof address === "object" && address ? address.port : PORT;
-    console.log(`PageControl signing service listening on ${port}`);
+    console.log(`PageCTRL signing service listening on ${port}`);
     if (keys.ephemeral) {
       console.warn("PAGECONTROL_PRIVATE_KEY is missing. This process is using an ephemeral development key.");
     }

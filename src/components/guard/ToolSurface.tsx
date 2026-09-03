@@ -13,7 +13,7 @@ export function ToolSurface({ surface }: { surface: PageControlSurface }) {
         <div className="tool-surface-warning" role="alert">
           <strong>{surface.unguarded.length} unguarded</strong>
           <span>{surface.unguarded.join(", ")}</span>
-          <p>These tools were registered outside PageControl.</p>
+          <p>These tools were registered outside PageCTRL.</p>
         </div>
       ) : (
         <p className="tool-surface-ok">Every tool reported by the browser is protected.</p>

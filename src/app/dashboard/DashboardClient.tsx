@@ -223,7 +223,7 @@ export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUr
       <header className="dashboard-header">
         <Link className="dashboard-brand" href="/">
           <ShieldMark />
-          <span><strong>PageControl</strong><small>Merchant console</small></span>
+          <span><strong>PageCTRL</strong><small>Merchant console</small></span>
         </Link>
         <nav aria-label="Dashboard navigation">
           <Link href="/">Live demo</Link>
@@ -242,7 +242,7 @@ export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUr
         <section className="dashboard-login-shell">
           <div className="dashboard-login-copy">
             <p className="dashboard-eyebrow">Merchant access</p>
-            <h1>Connect your site to PageControl.</h1>
+            <h1>Connect your site to PageCTRL.</h1>
             <p>Sign in to preview API keys, the install tag, and the separate signing service.</p>
             <ul>
               <li>Detect the complete WebMCP tool surface.</li>
@@ -283,7 +283,7 @@ export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUr
             <div>
               <p className="dashboard-eyebrow">Merchant integration</p>
               <h1>Keys, coverage, and signing in one place.</h1>
-              <p>Connect PageControl without placing a signing secret in the merchant page.</p>
+              <p>Connect PageCTRL without placing a signing secret in the merchant page.</p>
             </div>
             <span className="dashboard-preview-badge">Preview environment</span>
           </section>
@@ -311,12 +311,12 @@ export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUr
 
           <section className="dashboard-section dashboard-install" aria-labelledby="dashboard-install-title">
             <div className="dashboard-section-heading">
-              <div><p className="dashboard-eyebrow">Quick start</p><h2 id="dashboard-install-title">Install PageControl</h2></div>
+              <div><p className="dashboard-eyebrow">Quick start</p><h2 id="dashboard-install-title">Install PageCTRL</h2></div>
               <button type="button" className="dashboard-button dashboard-button--secondary" onClick={() => void copy(snippet, "Install snippet")}>Copy snippet</button>
             </div>
             <pre><code>{snippet}</code></pre>
             <ol>
-              <li><span>1</span><p>Load PageControl before any tool registration.</p></li>
+              <li><span>1</span><p>Load PageCTRL before any tool registration.</p></li>
               <li><span>2</span><p>Register tools through <code>document.modelContext.registerTool()</code>.</p></li>
               <li><span>3</span><p>Watch the panel confirm every browser-reported tool is guarded.</p></li>
             </ol>

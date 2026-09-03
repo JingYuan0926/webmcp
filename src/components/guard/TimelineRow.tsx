@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 
-import type { JourneyGroup } from "@/components/guard/Timeline";
-
 const verdictTone: Record<PageControlEntry["verdict"], "ok" | "warn" | "danger"> = {
   allowed: "ok",
   approved: "ok",
@@ -40,11 +38,8 @@ function duration(ms: number): string {
   return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
 }
 
-export function TimelineRow({ group }: { group: JourneyGroup }) {
+export function TimelineRow({ entry }: { entry: PageControlEntry }) {
   const [expanded, setExpanded] = useState(false);
-  // A group always has at least one record; the outcome wins when both exist.
-  const entry = (group.final ?? group.pending)!;
-  const waited = Boolean(group.pending && group.final);
   const detailId = `journey-entry-${entry.id}`;
 
   return (
@@ -60,15 +55,7 @@ export function TimelineRow({ group }: { group: JourneyGroup }) {
         <span className="timeline-main">
           <strong>{entry.tool}</strong>
           <small>
-            {waited ? (
-              <>
-                {timeFormat.format(new Date(group.pending!.ts))}
-                <span className="timeline-arrow" aria-label="then"> → </span>
-                {timeFormat.format(new Date(group.final!.ts))}
-              </>
-            ) : (
-              timeFormat.format(new Date(entry.ts))
-            )}
+            {timeFormat.format(new Date(entry.ts))}
             {" · "}
             {duration(entry.durationMs)}
           </small>
@@ -81,15 +68,10 @@ export function TimelineRow({ group }: { group: JourneyGroup }) {
       </button>
       {expanded ? (
         <div id={detailId} className="timeline-detail">
-          {waited ? (
-            <div>
-              <span>Checkpoint</span>
-              <pre>
-                {`#${group.pending!.seq} approval_pending · ${group.pending!.note}
-#${group.final!.seq} ${group.final!.verdict} · ${group.final!.note}`}
-              </pre>
-            </div>
-          ) : null}
+          <div>
+            <span>Decision</span>
+            <pre>{entry.note}</pre>
+          </div>
           <div>
             <span>Args · redacted</span>
             <pre>{renderValue(entry.args)}</pre>

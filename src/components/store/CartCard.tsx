@@ -56,7 +56,7 @@ export function CartCard() {
   async function checkout() {
     const guard = window.PageControl;
     if (!guard) {
-      setError("PageControl is not ready yet.");
+      setError("PageCTRL is not ready yet.");
       return;
     }
     setBusy(true);
@@ -168,7 +168,7 @@ export function CartCard() {
       {state.items.length > 0 && (!state.address || !cardReady) ? (
         <p className="checkout-hint">
           Set the {!state.address && !cardReady ? "address and card" : !state.address ? "address" : "card"} under{" "}
-          <strong>Agent authority</strong> in the PageControl panel.
+          <strong>Agent authority</strong> in the PageCTRL panel.
         </p>
       ) : null}
       {error ? (

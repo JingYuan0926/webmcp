@@ -40,7 +40,7 @@ const toolUsageRank = new Map<string, number>(toolUsageOrder.map((name, index) =
 type CapKey = keyof typeof capCopy;
 
 function humanizeToolName(name: string) {
-  const words = name.replace(/^pagecontrol_/, "PageControl ").replaceAll("_", " ");
+  const words = name.replace(/^pagecontrol_/, "PageCTRL ").replaceAll("_", " ");
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
@@ -157,7 +157,7 @@ function PolicyRow({
       humanConfirmed ? { humanConfirmed: true } : undefined,
     ) ?? {
       ok: false,
-      message: "PageControl is not available.",
+      message: "PageCTRL is not available.",
     };
     setOk(result.ok);
     setMessage(result.ok ? "" : result.message);
@@ -177,7 +177,7 @@ function PolicyRow({
     });
     const result = window.PageControl?.setUserPolicy(name, rule) ?? {
       ok: false,
-      message: "PageControl is not available.",
+      message: "PageCTRL is not available.",
     };
     setOk(result.ok);
     setMessage(result.ok ? "Limits saved." : result.message);
@@ -353,7 +353,7 @@ export function PolicyList({
       </p>
       <div className="policy-list">
         {storeTools.map(renderPolicyRow)}
-        {pageControlTools.length ? <h3 className="policy-subheading">PageControl tools</h3> : null}
+        {pageControlTools.length ? <h3 className="policy-subheading">PageCTRL tools</h3> : null}
         {pageControlTools.map(renderPolicyRow)}
       </div>
     </section>

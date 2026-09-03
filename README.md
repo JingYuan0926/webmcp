@@ -1,26 +1,26 @@
-# PageControl
+# PageCTRL
 
 The trust layer for the agent-native web. One script. Policies, approvals, and a flight recorder for every WebMCP tool call.
 
-## Why PageControl exists
+## Why PageCTRL exists
 
 AI agents can act inside a web page through WebMCP. A page registers JavaScript tools, and an agent can search, edit, buy, or delete through those tools.
 
 These calls run inside the page. They do not cross the network, so a firewall, API gateway, payment rail, or browser extension cannot reliably inspect them.
 
-The page is the only control point that sees the tool definition, arguments, result, and user state together. PageControl puts the policy layer there.
+The page is the only control point that sees the tool definition, arguments, result, and user state together. PageCTRL puts the policy layer there.
 
 ## The design problem
 
 Blocking an agent is easy. Blocking it without making it useless is the hard part.
 
-A guard that only says no turns the agent into a dead end. PageControl answers every blocked call with a plain sentence: which rule stopped it, and what the limit is. The agent reads that, adapts, and retries inside the rule. Refused fifty cables, it asks for five.
+A guard that only says no turns the agent into a dead end. PageCTRL answers every blocked call with a plain sentence: which rule stopped it, and what the limit is. The agent reads that, adapts, and retries inside the rule. Refused fifty cables, it asks for five.
 
 The guard also registers its own WebMCP tools. The agent can ask why it was blocked, read its own record, and request a budget change that a human must approve. The result is a boundary the agent can work inside, not a wall it keeps hitting.
 
 ## The demo
 
-The app is one shared workspace. Northline Tech, a US technology store, sits on the left. The PageControl panel sits on the right. A human and an agent change the same cart and address.
+The app is one shared workspace. Northline Tech, a US technology store, sits on the left. The PageCTRL panel sits on the right. A human and an agent change the same cart and address.
 
 The included test harness covers a deterministic ten-step run. The agent lists products, adds a safe quantity, hits quantity and amount caps, receives an instruction-like seller reply, asks why a call was blocked, and reaches two human approval gates. It then reads its own journey record before a third-party widget attempts to replace checkout and add an unreviewed tool.
 
@@ -49,9 +49,9 @@ Merchant rules are the floor. They stay locked after setup. Users can deny more 
 
 ## How this uses WebMCP
 
-PageControl patches `document.modelContext.registerTool` before application code runs and mirrors the same context on `navigator.modelContext` for older clients. Every registered `execute()` function is replaced with a guarded pipeline for validation, policy resolution, rate limits, caps, budgets, approvals, execution timeouts, redaction, output scanning, and journey hashing. PageControl also registers `pagecontrol_get_journey`, `pagecontrol_explain_block`, and `pagecontrol_set_budget` as WebMCP tools through that same pipeline. An approval gate leaves `execute()` pending until a human selects Allow or Deny; that in-page human checkpoint is not possible in classic server-side MCP.
+PageCTRL patches `document.modelContext.registerTool` before application code runs and mirrors the same context on `navigator.modelContext` for older clients. Every registered `execute()` function is replaced with a guarded pipeline for validation, policy resolution, rate limits, caps, budgets, approvals, execution timeouts, redaction, output scanning, and journey hashing. PageCTRL also registers `pagecontrol_get_journey`, `pagecontrol_explain_block`, and `pagecontrol_set_budget` as WebMCP tools through that same pipeline. An approval gate leaves `execute()` pending until a human selects Allow or Deny; that in-page human checkpoint is not possible in classic server-side MCP.
 
-The SDK also audits the browser's native tool list through `document.modelContext.getTools()` and the `toolchange` event. The panel compares that list with PageControl's own registry and warns when a tool exists that PageControl did not wrap, including a tool registered before the SDK loaded.
+The SDK also audits the browser's native tool list through `document.modelContext.getTools()` and the `toolchange` event. The panel compares that list with PageCTRL's own registry and warns when a tool exists that PageCTRL did not wrap, including a tool registered before the SDK loaded.
 
 After `seal()`, the public `approve`, `deny`, and `setBudget` methods refuse—even if a script cached them earlier. Approval events expose only opaque display handles. The built-in dialog and panel settle requests through browser-trusted user actions, so a page script cannot approve its own call with a synthetic click.
 
@@ -59,7 +59,7 @@ When the browser does not provide WebMCP, the SDK installs a compatible in-page 
 
 ## Native WebMCP
 
-PageControl binds directly to `document.modelContext` when the browser provides it and mirrors that context on `navigator.modelContext` for older clients. Registration options, annotations, and execution cancellation signals pass through to the native API. If WebMCP appears shortly after page load, PageControl adopts it once and migrates every already-guarded tool without dropping the sealed policy state.
+PageCTRL binds directly to `document.modelContext` when the browser provides it and mirrors that context on `navigator.modelContext` for older clients. Registration options, annotations, and execution cancellation signals pass through to the native API. If WebMCP appears shortly after page load, PageCTRL adopts it once and migrates every already-guarded tool without dropping the sealed policy state.
 
 The shim is only a demo fallback. The interface always shows the active mode:
 
@@ -69,7 +69,7 @@ The shim is only a demo fallback. The interface always shows the active mode:
 
 ## How we attacked it
 
-A guard that nobody attacked is a guess. Two adversarial review rounds tried to break PageControl and confirmed sixteen defects. All are fixed. Every security defect carries a regression test in `scripts/pagecontrol-smoke.mjs`.
+A guard that nobody attacked is a guess. Two adversarial review rounds tried to break PageCTRL and confirmed sixteen defects. All are fixed. Every security defect carries a regression test in `scripts/pagecontrol-smoke.mjs`.
 
 These four attacks worked, and matter most:
 
@@ -85,7 +85,7 @@ The remaining twelve were smaller: a tool that stayed callable after `unregister
 
 ## What happens when things fail
 
-Failure behavior is a security decision. A guard that fails quietly is worse than no guard, because it creates false confidence. PageControl never fails open.
+Failure behavior is a security decision. A guard that fails quietly is worse than no guard, because it creates false confidence. PageCTRL never fails open.
 
 | Situation | Behavior |
 | --- | --- |
@@ -102,14 +102,14 @@ Failure behavior is a security decision. A guard that fails quietly is worse tha
 
 Checkout charges a real Stripe card in test mode. The agent triggers the charge and never sees the card.
 
-The three things a shopper delegates — how much the agent may spend, which card it charges, and where the order ships — sit together under **Agent authority** in the PageControl panel. Budget is authority, and so are the other two.
+The three things a shopper delegates — how much the agent may spend, which card it charges, and where the order ships — sit together under **Agent authority** in the PageCTRL panel. Budget is authority, and so are the other two.
 
 The shopper saves a card on Stripe's own hosted setup page. Card details never reach this origin at all, so the browser never loads Stripe.js and no publishable key is needed. Stripe returns a `pm_...` handle that stays on the server behind an httpOnly cookie. There is deliberately no tool for adding, reading, or changing a card.
 
 The `checkout` tool still takes zero arguments. What it does now:
 
 1. The cart is priced **on the server**, from the server's own catalog. Client-supplied prices are ignored. The result is a single-use quote that expires in five minutes.
-2. The guard's `getCost` hook pins that quote to one PageControl call and returns its total. That total is the number on the approval card.
+2. The guard's `getCost` hook pins that quote to one PageCTRL call and returns its total. That total is the number on the approval card.
 3. A human approves.
 4. `execute()` re-checks the live cart and displayed amount against that call's pinned quote.
 5. The shop server asks `https://api.pagecontrol.app` for a 60-second Ed25519 grant. The browser never receives the service credential.
@@ -117,7 +117,7 @@ The `checkout` tool still takes zero arguments. What it does now:
 
 The call binding is the point. Cost is derived at check time but execution happens later, so without that binding a second checkout can overwrite the first quote while its approval remains open. `scripts/pagecontrol-smoke.mjs` covers cart mutation, matching amounts, and two overlapping approvals with different totals.
 
-Failure messages the agent can see are a fixed set of strings. Stripe's own error text is logged server-side and never returned, because PageControl passes a tool's error straight into model context.
+Failure messages the agent can see are a fixed set of strings. Stripe's own error text is logged server-side and never returned, because PageCTRL passes a tool's error straight into model context.
 
 ### Setup
 
@@ -151,7 +151,7 @@ The session store is in-memory, so saved cards reset when the dev server restart
 </script>
 ```
 
-A tool can add `guard: { getCost(inputs), getQty(inputs) }`. PageControl removes this extension before native registration and uses it to enforce amount, quantity, and budget rules.
+A tool can add `guard: { getCost(inputs), getQty(inputs) }`. PageCTRL removes this extension before native registration and uses it to enforce amount, quantity, and budget rules.
 
 ## Merchant dashboard preview
 
@@ -167,7 +167,7 @@ The signing key runs on a separate origin the merchant deployment does not contr
 
 Production service tokens can be scoped to exact merchant origins with `PAGECONTROL_ALLOWED_ORIGINS`, so a leaked token cannot issue grants outside its configured origin allowlist.
 
-This prevents a page script from calling the charge route with only a quote id. It does not stop a malicious merchant: the merchant owns its Stripe account and backend and could charge outside PageControl entirely. An in-page prompt also remains visually forgeable until a browser-owned or cross-origin approval surface exists.
+This prevents a page script from calling the charge route with only a quote id. It does not stop a malicious merchant: the merchant owns its Stripe account and backend and could charge outside PageCTRL entirely. An in-page prompt also remains visually forgeable until a browser-owned or cross-origin approval surface exists.
 
 ## Run locally
 

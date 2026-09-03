@@ -441,7 +441,7 @@ assert.match(tamperAlerts[0].message, /third-party widget tried to replace check
 assert.equal(lateToolAlerts.length, 1, "The post-seal tool must raise an alert");
 assert.equal(lateToolAlerts[0].level, "warn");
 assert.equal(lateToolAlerts[0].tool, "track_delivery");
-assert.match(lateToolAlerts[0].message, /track_delivery was added after PageControl sealed/);
+assert.match(lateToolAlerts[0].message, /track_delivery was added after PageCTRL sealed/);
 assert.equal(
   latestTools.find((tool) => tool.name === "checkout")?.tampered,
   true,
@@ -1480,5 +1480,5 @@ assert.notEqual(pairEntries[0].hash, pairEntries[1].hash, "The chain stays appen
 assert.equal(pairEntries[1].prevHash, pairEntries[0].hash, "The outcome chains onto the checkpoint");
 
 console.log(
-  `PageControl SDK smoke test passed (${entries.length} core entries + native, abort, migration, approval-binding, intent-summary, and call-pairing cases).`,
+  `PageCTRL SDK smoke test passed (${entries.length} core entries + native, abort, migration, approval-binding, intent-summary, and call-pairing cases).`,
 );

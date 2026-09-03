@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { DashboardClient } from "@/app/dashboard/DashboardClient";
 
 export const metadata: Metadata = {
-  title: "Merchant Console | PageControl",
-  description: "Preview PageControl merchant keys, installation, and signing infrastructure.",
+  title: "Merchant Console | PageCTRL",
+  description: "Preview PageCTRL merchant keys, installation, and signing infrastructure.",
 };
 
 export default function DashboardPage() {

@@ -102,7 +102,7 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
         {!snapshot.available ? (
           <div className="panel-error" role="status">
             <strong>SDK not loaded</strong>
-            <span>The store still works. Reload to reconnect PageControl.</span>
+            <span>The store still works. Reload to reconnect PageCTRL.</span>
           </div>
         ) : null}
         <AgentAuthority budget={snapshot.budget} />

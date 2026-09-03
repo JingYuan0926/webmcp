@@ -3,7 +3,7 @@ import Link from "next/link";
 import { DocsSidebar } from "./DocsSidebar";
 
 export const metadata: Metadata = {
-  title: "PageControl SDK documentation",
+  title: "PageCTRL SDK documentation",
   description: "Install and configure the in-page trust layer for WebMCP tools.",
 };
 
@@ -95,8 +95,8 @@ const apiRows = [
   ["getPolicies()", "Read merchant, user, and effective policy maps."],
   ["getJourney() / exportJourney()", "Read or download the redacted, hash-chained flight record."],
   ["getEnvironment()", "Return native WebMCP or shim mode and the active API surface."],
-  ["canInterceptNativeRegistration()", "Check whether direct modelContext.registerTool calls enter PageControl on this host."],
-  ["getSurface()", "Compare browser-reported WebMCP tools with the tools PageControl wrapped."],
+  ["canInterceptNativeRegistration()", "Check whether direct modelContext.registerTool calls enter PageCTRL on this host."],
+  ["getSurface()", "Compare browser-reported WebMCP tools with the tools PageCTRL wrapped."],
   ["explainLast()", "Return the plain-language reason for the most recent blocked call."],
 ] as const;
 
@@ -107,7 +107,7 @@ const eventRows = [
   ["tools", "The registered tool surface or a tool's tamper status changed."],
   ["budget", "Reserved or spent session budget changed."],
   ["state", "The kill switch paused or resumed execution."],
-  ["environment", "PageControl entered native WebMCP or fallback shim mode."],
+  ["environment", "PageCTRL entered native WebMCP or fallback shim mode."],
   ["surface", "The guarded and unguarded browser-reported tool lists changed."],
 ] as const;
 
@@ -145,9 +145,9 @@ export default function DocsPage() {
     <div className="sdk-docs-page">
       <header className="sdk-docs-header">
         <div className="sdk-docs-header-inner">
-          <Link className="sdk-docs-brand" href="/" aria-label="PageControl demo home">
+          <Link className="sdk-docs-brand" href="/" aria-label="PageCTRL demo home">
             <span><ShieldMark /></span>
-            <strong>PageControl SDK</strong>
+            <strong>PageCTRL SDK</strong>
             <small>v1.0.0</small>
           </Link>
           <nav aria-label="Documentation utilities">
@@ -166,7 +166,7 @@ export default function DocsPage() {
             <p className="sdk-docs-eyebrow">WebMCP runtime guard</p>
             <h1 id="sdk-docs-title">Put a human-controlled boundary around in-page agent tools.</h1>
             <p>
-              PageControl wraps WebMCP tool execution with validation, policies, budgets, approvals,
+              PageCTRL wraps WebMCP tool execution with validation, policies, budgets, approvals,
               tamper detection, and a redacted flight recorder. It runs entirely inside the page.
             </p>
             <div className="sdk-docs-badges" aria-label="SDK characteristics">
@@ -189,7 +189,7 @@ export default function DocsPage() {
               <p className="sdk-docs-kicker">01 · Install</p>
               <h2>Quick start</h2>
               <p>
-                Today, PageControl ships as one dependency-free browser file. Self-host that reviewed
+                Today, PageCTRL ships as one dependency-free browser file. Self-host that reviewed
                 file and load it before any script that registers WebMCP tools.
               </p>
               <CodeBlock title="HTML">{quickStart}</CodeBlock>
@@ -203,7 +203,7 @@ export default function DocsPage() {
               <p className="sdk-docs-kicker">02 · Understand</p>
               <h2>One guarded execution path</h2>
               <p>
-                When native WebMCP exists, PageControl registers wrapped tools with
+                When native WebMCP exists, PageCTRL registers wrapped tools with
                 <code> document.modelContext</code>. It mirrors the active context to
                 <code> navigator.modelContext</code> for older clients.
               </p>
@@ -214,7 +214,7 @@ export default function DocsPage() {
                 <li><span>4</span><div><strong>Record</strong><p>Redact sensitive strings and append a hash-linked journey entry.</p></div></li>
               </ol>
               <p className="sdk-docs-note">
-                If native WebMCP arrives after page load, PageControl watches for 10 seconds and migrates already-guarded tools. Without native support, the same pipeline remains available through its demo shim.
+                If native WebMCP arrives after page load, PageCTRL watches for 10 seconds and migrates already-guarded tools. Without native support, the same pipeline remains available through its demo shim.
               </p>
             </section>
 
@@ -222,7 +222,7 @@ export default function DocsPage() {
               <p className="sdk-docs-kicker">03 · Align</p>
               <h2>One guard, two beneficiaries</h2>
               <p>
-                PageControl faces both directions. It gives people the confidence to delegate a task,
+                PageCTRL faces both directions. It gives people the confidence to delegate a task,
                 while giving merchants a controlled WebMCP surface instead of unrestricted automation.
               </p>
               <div className="sdk-audience-grid">
@@ -258,7 +258,7 @@ export default function DocsPage() {
               <h2>Register a guarded tool</h2>
               <p>
                 A tool uses the normal WebMCP definition. The optional <code>label</code> and
-                <code> guard</code> fields stay inside PageControl and are removed before native registration.
+                <code> guard</code> fields stay inside PageCTRL and are removed before native registration.
               </p>
               <CodeBlock title="JavaScript">{toolExample}</CodeBlock>
               <div className="sdk-docs-grid">
@@ -268,8 +268,8 @@ export default function DocsPage() {
                 <div><strong>signal</strong><p>Registration and execution cancellation propagate safely.</p></div>
               </div>
               <div className="sdk-docs-callout">
-                <strong>PageControl audits the browser&apos;s real tool surface.</strong>
-                <p>It calls <code>document.modelContext.getTools()</code> after setup and whenever the native <code>toolchange</code> event fires. A browser-reported tool that PageControl did not wrap is shown as unguarded.</p>
+                <strong>PageCTRL audits the browser&apos;s real tool surface.</strong>
+                <p>It calls <code>document.modelContext.getTools()</code> after setup and whenever the native <code>toolchange</code> event fires. A browser-reported tool that PageCTRL did not wrap is shown as unguarded.</p>
               </div>
             </section>
 
@@ -293,12 +293,12 @@ export default function DocsPage() {
               <p className="sdk-docs-kicker">06 · Decide</p>
               <h2>Use the built-in human approval UI</h2>
               <p>
-                PageControl renders its own keyboard-accessible approval dialog with Run once and Block
+                PageCTRL renders its own keyboard-accessible approval dialog with Run once and Block
                 actions. Unanswered requests deny themselves after 60 seconds. Pausing the guard denies
                 every pending request.
               </p>
               <p className="sdk-docs-note">
-                The dialog needs no merchant UI code. Public events contain an opaque display handle, never the internal approval id. After <code>seal()</code>, only a browser-trusted click in PageControl&apos;s controls can resolve the request.
+                The dialog needs no merchant UI code. Public events contain an opaque display handle, never the internal approval id. After <code>seal()</code>, only a browser-trusted click in PageCTRL&apos;s controls can resolve the request.
               </p>
               <CodeBlock title="JavaScript">{approvalExample}</CodeBlock>
             </section>
@@ -328,21 +328,21 @@ export default function DocsPage() {
               <p className="sdk-docs-kicker">09 · Scope</p>
               <h2>Protect the action layer, not the whole internet</h2>
               <p>
-                PageControl sees structured WebMCP calls inside the page. It does not sit on the network
+                PageCTRL sees structured WebMCP calls inside the page. It does not sit on the network
                 path, so it cannot see ordinary crawlers, DDoS traffic, or direct server attacks.
               </p>
-              <div className="sdk-boundary-table" role="table" aria-label="PageControl protection boundary">
-                <div role="row"><strong role="columnheader">Risk</strong><strong role="columnheader">PageControl</strong><strong role="columnheader">Right layer</strong></div>
-                <div role="row"><span role="cell">Malformed WebMCP inputs</span><b role="cell" data-state="yes">Protects</b><span role="cell">PageControl validation</span></div>
-                <div role="row"><span role="cell">Runaway calls or oversized orders</span><b role="cell" data-state="yes">Protects</b><span role="cell">PageControl policies</span></div>
-                <div role="row"><span role="cell">A script replacing a sealed tool</span><b role="cell" data-state="yes">Protects</b><span role="cell">PageControl tamper guard</span></div>
+              <div className="sdk-boundary-table" role="table" aria-label="PageCTRL protection boundary">
+                <div role="row"><strong role="columnheader">Risk</strong><strong role="columnheader">PageCTRL</strong><strong role="columnheader">Right layer</strong></div>
+                <div role="row"><span role="cell">Malformed WebMCP inputs</span><b role="cell" data-state="yes">Protects</b><span role="cell">PageCTRL validation</span></div>
+                <div role="row"><span role="cell">Runaway calls or oversized orders</span><b role="cell" data-state="yes">Protects</b><span role="cell">PageCTRL policies</span></div>
+                <div role="row"><span role="cell">A script replacing a sealed tool</span><b role="cell" data-state="yes">Protects</b><span role="cell">PageCTRL tamper guard</span></div>
                 <div role="row"><span role="cell">Scraping and crawling</span><b role="cell" data-state="no">Outside scope</b><span role="cell">Edge and bot controls</span></div>
                 <div role="row"><span role="cell">DDoS or server exploitation</span><b role="cell" data-state="no">Outside scope</b><span role="cell">Network and application security</span></div>
                 <div role="row"><span role="cell">A malicious page owner</span><b role="cell" data-state="no">Outside scope</b><span role="cell">Browser or extension verification</span></div>
               </div>
               <div className="sdk-docs-callout">
                 <strong>The layers complement each other.</strong>
-                <p>Edge security decides which automated traffic reaches a site. PageControl decides what an admitted agent may do through WebMCP.</p>
+                <p>Edge security decides which automated traffic reaches a site. PageCTRL decides what an admitted agent may do through WebMCP.</p>
               </div>
             </section>
 
@@ -350,14 +350,14 @@ export default function DocsPage() {
               <p className="sdk-docs-kicker">10 · Verify</p>
               <h2>Trust and privacy boundary</h2>
               <div className="sdk-docs-grid">
-                <div><strong>Zero SDK network calls</strong><p>The browser SDK calls no PageControl backend and sends no telemetry.</p></div>
+                <div><strong>Zero SDK network calls</strong><p>The browser SDK calls no PageCTRL backend and sends no telemetry.</p></div>
                 <div><strong>Memory-only journey</strong><p>The record disappears with the tab unless the user exports it.</p></div>
                 <div><strong>Redacted before logging</strong><p>Email addresses and long card-number-like strings are masked first.</p></div>
                 <div><strong>Honest boundary</strong><p>An in-page guard cannot protect a user from the page owner itself.</p></div>
               </div>
               <h3>Production distribution</h3>
               <p>
-                This repository does not claim a live PageControl CDN. For production distribution,
+                This repository does not claim a live PageCTRL CDN. For production distribution,
                 publish an immutable versioned asset and provide its real Subresource Integrity hash.
                 The browser then rejects any changed file, including one served by a compromised CDN.
               </p>
@@ -385,11 +385,11 @@ export default function DocsPage() {
                 merchant integration work or moves a trust decision into a stronger browser boundary.
               </p>
               <ol className="sdk-roadmap-list">
-                <li><span>1</span><div><strong>Versioned distribution</strong><p>Publish immutable releases from a PageControl origin with a real SRI hash and CORS headers.</p></div></li>
+                <li><span>1</span><div><strong>Versioned distribution</strong><p>Publish immutable releases from a PageCTRL origin with a real SRI hash and CORS headers.</p></div></li>
                 <li><span>2</span><div><strong>Placement Web Component</strong><p>Add an <code>&lt;page-control-panel&gt;</code> custom element for layout only. The boot script must still load first so no tool registration escapes the guard.</p></div></li>
-                <li><span>3</span><div><strong>Cross-origin approval frame</strong><p>Serve the sensitive decision UI from a PageControl origin. The browser same-origin policy then prevents the host page from reading its internal DOM.</p></div></li>
+                <li><span>3</span><div><strong>Cross-origin approval frame</strong><p>Serve the sensitive decision UI from a PageCTRL origin. The browser same-origin policy then prevents the host page from reading its internal DOM.</p></div></li>
                 <li><span>4</span><div><strong>Independent verification</strong><p>A companion extension can warn when a site claims protection without loading the genuine release.</p></div></li>
-                <li><span>5</span><div><strong>Browser-owned prompt</strong><p>Long term, the browser should own the unforgeable approval surface while PageControl supplies policy decisions.</p></div></li>
+                <li><span>5</span><div><strong>Browser-owned prompt</strong><p>Long term, the browser should own the unforgeable approval surface while PageCTRL supplies policy decisions.</p></div></li>
               </ol>
               <CodeBlock title="Roadmap sketch — not implemented">{componentRoadmapExample}</CodeBlock>
               <h3>Architecture references</h3>
@@ -397,7 +397,7 @@ export default function DocsPage() {
                 <li><a href="https://docs.stripe.com/payments/elements" target="_blank" rel="noreferrer">Stripe Web Elements</a><span>Sensitive fields are tokenized inside hosted Elements instead of touching the merchant server.</span></li>
                 <li><a href="https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Same-origin_policy" target="_blank" rel="noreferrer">MDN: Same-origin policy</a><span>Explains the browser boundary that restricts cross-origin frame access.</span></li>
                 <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_custom_elements" target="_blank" rel="noreferrer">MDN: Custom elements</a><span>Defines the standards-based path to an <code>&lt;page-control-panel&gt;</code> placement API.</span></li>
-                <li><a href="https://developers.cloudflare.com/bots/" target="_blank" rel="noreferrer">Cloudflare bot solutions</a><span>Shows why scraping and request-level bot control belong at the edge, outside PageControl.</span></li>
+                <li><a href="https://developers.cloudflare.com/bots/" target="_blank" rel="noreferrer">Cloudflare bot solutions</a><span>Shows why scraping and request-level bot control belong at the edge, outside PageCTRL.</span></li>
               </ul>
             </section>
           </article>
@@ -405,7 +405,7 @@ export default function DocsPage() {
       </main>
 
       <footer className="sdk-docs-footer">
-        <p>PageControl · Open-source WebMCP runtime guard</p>
+        <p>PageCTRL · Open-source WebMCP runtime guard</p>
         <Link href="/">Open the live demo</Link>
       </footer>
     </div>

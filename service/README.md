@@ -1,6 +1,6 @@
-# PageControl signing service
+# PageCTRL signing service
 
-This small Node service keeps PageControl's Ed25519 private key outside the merchant site. It issues 60-second approval grants and publishes the public verification key.
+This small Node service keeps PageCTRL's Ed25519 private key outside the merchant site. It issues 60-second approval grants and publishes the public verification key.
 
 ## Routes
 

@@ -85,7 +85,7 @@ export function registerStoreTools(): Promise<boolean> {
     // by construction rather than by policy.
 
     if (!document.modelContext) {
-      throw new Error("PageControl could not initialize the WebMCP tool registry.");
+      throw new Error("PageCTRL could not initialize the WebMCP tool registry.");
     }
 
     const searchProductsSchema = {

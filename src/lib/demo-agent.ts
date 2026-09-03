@@ -81,7 +81,7 @@ export async function runTestAgent(
 ): Promise<{ ok: boolean; message: string }> {
   const guard = typeof window === "undefined" ? undefined : window.PageControl;
   if (!guard) {
-    return { ok: false, message: "PageControl SDK is not available." };
+    return { ok: false, message: "PageCTRL SDK is not available." };
   }
   try {
     try {
