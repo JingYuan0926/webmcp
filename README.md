@@ -155,9 +155,11 @@ A tool can add `guard: { getCost(inputs), getQty(inputs) }`. PageCTRL removes th
 
 ## Merchant dashboard preview
 
-Open `/dashboard` to see the merchant integration flow. The preview includes a demo sign-in, publishable and secret keys, reveal and two-step rotation controls, and a copyable installation snippet. Preview keys are encrypted into an httpOnly session cookie, reset when the merchant signs out, and do not authorize production traffic.
+Open `/dashboard` to see the merchant integration flow. The preview includes a demo sign-in, publishable and secret keys, reveal and two-step rotation controls, a copyable installation snippet, and a production setup map showing which variables belong in Vercel and Render. Preview keys are encrypted into an httpOnly session cookie, reset when the merchant signs out, and do not authorize production traffic.
 
 Set `PAGECONTROL_DASHBOARD_USERNAME`, `PAGECONTROL_DASHBOARD_PASSWORD`, and `PAGECONTROL_DASHBOARD_SESSION_SECRET` for a stable deployed preview. The demo defaults to `q` / `q`.
+
+For signed checkout, put `PAGECONTROL_API_URL` and `PAGECONTROL_SERVICE_TOKEN` in the merchant app. Put the same service-token value with `PAGECONTROL_PRIVATE_KEY` and `PAGECONTROL_ALLOWED_ORIGINS` in the separate Render signing service. See the [live SDK credential guide](https://webmcp-nine.vercel.app/docs#credentials), [Vercel environment guide](https://vercel.com/docs/environment-variables/managing-environment-variables), and [Render environment guide](https://render.com/docs/configure-environment-variables).
 
 ## Signing service
 
@@ -190,7 +192,7 @@ Open `http://localhost:3000`. Test native WebMCP in ChatGPT's in-app browser or 
 - `src/lib/server/` — Stripe client, signed-grant verification, server spend ledger, cookie session, and quote pricing.
 - `src/app/api/` — payment routes plus the authenticated dashboard preview API.
 - `src/app/dashboard/` — merchant sign-in and session-scoped API key preview.
-- `service/` — standalone Ed25519 signing service for Railway or another Node host.
+- `service/` — standalone Ed25519 signing service deployed on Render.
 - `src/lib/use-pagecontrol.ts` — React bridge for SDK events.
 - `src/lib/demo-agent.ts` — deterministic ten-step security demo.
 - `src/components/store/` — storefront, cart, and orders interface.

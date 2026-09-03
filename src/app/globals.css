@@ -2998,6 +2998,127 @@ summary:focus-visible {
   margin-top: var(--space-4);
 }
 
+.dashboard-config-intro {
+  max-width: 62ch;
+  margin: var(--space-3) 0 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.dashboard-config-intro code,
+.dashboard-env-list code {
+  color: var(--ink);
+  font-family: var(--font-data);
+}
+
+.dashboard-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.dashboard-config-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+
+.dashboard-config-card > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.dashboard-config-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: -0.025em;
+}
+
+.dashboard-config-card .dashboard-eyebrow {
+  margin-bottom: var(--space-1);
+}
+
+.dashboard-config-step {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand) 9%, var(--card));
+  color: var(--brand-dark);
+  font-family: var(--font-data);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.dashboard-env-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
+}
+
+.dashboard-env-list > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.dashboard-env-list dt,
+.dashboard-env-list dd {
+  margin: 0;
+}
+
+.dashboard-env-list dt {
+  overflow-wrap: anywhere;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.dashboard-env-list dd {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.dashboard-resource-link {
+  min-height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: flex-start;
+  margin-top: auto;
+  border-radius: var(--radius-sm);
+  color: var(--brand-dark);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.dashboard-section-heading > .dashboard-resource-link {
+  align-self: end;
+}
+
+.dashboard-resource-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.dashboard-security-note {
+  margin: var(--space-4) 0 0;
+  border-left: 0.1875rem solid var(--brand);
+  padding-left: var(--space-3);
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
 .dashboard-install pre {
   margin: var(--space-5) 0 0;
   overflow-x: auto;
@@ -3109,6 +3230,7 @@ summary:focus-visible {
 
   .dashboard-summary,
   .dashboard-key-grid,
+  .dashboard-config-grid,
   .dashboard-install ol {
     grid-template-columns: 1fr;
   }
@@ -3145,6 +3267,10 @@ summary:focus-visible {
   .dashboard-section-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .dashboard-section-heading > .dashboard-resource-link {
+    align-self: flex-start;
   }
 
   .dashboard-section-heading > p {

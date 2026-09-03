@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 const sections = [
   { id: "quick-start", label: "Quick start" },
+  { id: "credentials", label: "Server credentials" },
   { id: "execution", label: "Execution model" },
   { id: "value", label: "Who it protects" },
   { id: "tools", label: "Register tools" },

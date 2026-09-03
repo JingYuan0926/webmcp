@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 
 type MerchantKeys = {
@@ -12,6 +12,11 @@ type MerchantKeys = {
 
 type ViewState = "loading" | "signed-out" | "ready" | "error";
 type KeyKind = "publishable" | "secret";
+
+const VERCEL_ENVIRONMENT_GUIDE =
+  "https://vercel.com/docs/environment-variables/managing-environment-variables";
+const RENDER_ENVIRONMENT_GUIDE =
+  "https://render.com/docs/configure-environment-variables";
 
 function ShieldMark() {
   return (
@@ -54,7 +59,11 @@ function KeyCard({
       <div className="dashboard-key-heading">
         <div>
           <span>{label}</span>
-          <p>{isSecret ? "Use only from a trusted server." : "Safe to place in an install tag."}</p>
+          <p>
+            {isSecret
+              ? "Preview only. This is not the signing service token."
+              : "Preview only. The v1 browser SDK needs no key."}
+          </p>
         </div>
         <span className={`dashboard-key-scope${isSecret ? " is-secret" : ""}`}>
           {isSecret ? "Server" : "Browser"}
@@ -140,10 +149,7 @@ export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUr
     };
   }, []);
 
-  const snippet = useMemo(() => {
-    if (!keys) return "";
-    return `<script src="/pagecontrol.js"\n        data-publishable-key="${keys.publishable}"></script>`;
-  }, [keys]);
+  const snippet = `<script src="/pagecontrol.js"></script>`;
 
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -307,6 +313,91 @@ export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUr
               <KeyCard kind="publishable" value={keys.publishable} rotatedAt={keys.publishableRotatedAt} revealed busy={rotating === "publishable"} confirming={confirming === "publishable"} onReveal={() => {}} onCopy={() => void copy(keys.publishable, "Publishable key")} onRotate={() => void rotate("publishable")} />
               <KeyCard kind="secret" value={keys.secret} rotatedAt={keys.secretRotatedAt} revealed={secretVisible} busy={rotating === "secret"} confirming={confirming === "secret"} onReveal={() => setSecretVisible((visible) => !visible)} onCopy={() => void copy(keys.secret, "Secret key")} onRotate={() => void rotate("secret")} />
             </div>
+          </section>
+
+          <section className="dashboard-section" aria-labelledby="dashboard-config-title">
+            <div className="dashboard-section-heading">
+              <div>
+                <p className="dashboard-eyebrow">Production setup</p>
+                <h2 id="dashboard-config-title">Put each secret in the right service</h2>
+              </div>
+              <Link className="dashboard-resource-link" href="/docs#credentials">
+                Read the SDK setup <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+            <p className="dashboard-config-intro">
+              Generate two different random secrets. Keep both server-side and never add
+              <code> NEXT_PUBLIC_</code> to either name.
+            </p>
+            <div className="dashboard-config-grid">
+              <article className="dashboard-config-card">
+                <div>
+                  <span className="dashboard-config-step">1</span>
+                  <div>
+                    <p className="dashboard-eyebrow">Merchant app · Vercel</p>
+                    <h3>Storefront environment</h3>
+                  </div>
+                </div>
+                <dl className="dashboard-env-list">
+                  <div>
+                    <dt><code>PAGECONTROL_SERVICE_TOKEN</code></dt>
+                    <dd>Use the same random value in Vercel and Render.</dd>
+                  </div>
+                  <div>
+                    <dt><code>PAGECONTROL_DASHBOARD_SESSION_SECRET</code></dt>
+                    <dd>Use a second random value. This belongs only to the merchant app.</dd>
+                  </div>
+                  <div>
+                    <dt><code>PAGECONTROL_API_URL</code></dt>
+                    <dd>Set this to <code>{signingApiUrl}</code>.</dd>
+                  </div>
+                </dl>
+                <a
+                  className="dashboard-resource-link"
+                  href={VERCEL_ENVIRONMENT_GUIDE}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open Vercel environment guide <span aria-hidden="true">↗</span>
+                </a>
+              </article>
+
+              <article className="dashboard-config-card">
+                <div>
+                  <span className="dashboard-config-step">2</span>
+                  <div>
+                    <p className="dashboard-eyebrow">Signing service · Render</p>
+                    <h3>Signing environment</h3>
+                  </div>
+                </div>
+                <dl className="dashboard-env-list">
+                  <div>
+                    <dt><code>PAGECONTROL_SERVICE_TOKEN</code></dt>
+                    <dd>Paste the exact same value used by the merchant app.</dd>
+                  </div>
+                  <div>
+                    <dt><code>PAGECONTROL_PRIVATE_KEY</code></dt>
+                    <dd>Keep the Ed25519 signing key here, outside the storefront.</dd>
+                  </div>
+                  <div>
+                    <dt><code>PAGECONTROL_ALLOWED_ORIGINS</code></dt>
+                    <dd>Allow only the exact merchant origins that may request grants.</dd>
+                  </div>
+                </dl>
+                <a
+                  className="dashboard-resource-link"
+                  href={RENDER_ENVIRONMENT_GUIDE}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open Render environment guide <span aria-hidden="true">↗</span>
+                </a>
+              </article>
+            </div>
+            <p className="dashboard-security-note">
+              The browser dashboard never displays production secrets. The keys above are a safe,
+              session-only preview of the future key-management flow.
+            </p>
           </section>
 
           <section className="dashboard-section dashboard-install" aria-labelledby="dashboard-install-title">

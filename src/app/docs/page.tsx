@@ -28,6 +28,17 @@ const quickStart = `<script src="/pagecontrol.js"></script>
   guard.seal();
 </script>`;
 
+const merchantEnvironmentExample = `# Merchant app — .env.local or Vercel
+PAGECONTROL_API_URL=https://api.pagecontrol.app
+PAGECONTROL_SERVICE_TOKEN=PASTE_THE_SHARED_RANDOM_SECRET
+PAGECONTROL_DASHBOARD_SESSION_SECRET=PASTE_A_DIFFERENT_RANDOM_SECRET`;
+
+const signingEnvironmentExample = `# Signing service — Render
+PAGECONTROL_SERVICE_TOKEN=PASTE_THE_SHARED_RANDOM_SECRET
+PAGECONTROL_PRIVATE_KEY=PASTE_THE_ED25519_PRIVATE_KEY
+PAGECONTROL_ALLOWED_ORIGINS=https://your-store.example
+PAGECONTROL_ISSUER=https://api.pagecontrol.app`;
+
 const toolExample = `await PageControl.registerTool({
   name: "add_to_cart",
   label: "Add to cart",
@@ -199,8 +210,51 @@ export default function DocsPage() {
               </div>
             </section>
 
+            <section id="credentials" className="sdk-docs-section">
+              <p className="sdk-docs-kicker">02 · Configure</p>
+              <h2>Keep credentials on the server</h2>
+              <p>
+                The browser SDK needs no secret. Signed checkout adds two server environments: the
+                merchant app and the separate PageCTRL signing service. Create two different random
+                secrets with <code>openssl rand -base64 32</code>.
+              </p>
+              <h3>Merchant app</h3>
+              <p>
+                Add these values to the repository-root <code>.env.local</code> file for local work,
+                or to the merchant app&apos;s Vercel environment for deployment.
+              </p>
+              <CodeBlock title="Merchant app environment">{merchantEnvironmentExample}</CodeBlock>
+              <h3>Signing service</h3>
+              <p>
+                Add these values to the Render service environment. The
+                <code> PAGECONTROL_SERVICE_TOKEN</code> value must match the merchant app exactly.
+                The dashboard session secret does not belong in Render. Generate the Ed25519 key
+                with <code>openssl genpkey -algorithm ED25519 -outform DER | base64</code> and paste
+                its output directly into Render.
+              </p>
+              <CodeBlock title="Render service environment">{signingEnvironmentExample}</CodeBlock>
+              <div className="sdk-docs-callout">
+                <strong>Never expose either secret to browser code.</strong>
+                <p>Do not add <code>NEXT_PUBLIC_</code> to either name. After changing a deployed variable, redeploy the affected service.</p>
+              </div>
+              <ul className="sdk-source-list">
+                <li>
+                  <a href="https://vercel.com/docs/environment-variables/managing-environment-variables" target="_blank" rel="noreferrer">Vercel environment variables</a>
+                  <span>Where to store the merchant app values and apply them to a deployment.</span>
+                </li>
+                <li>
+                  <a href="https://render.com/docs/configure-environment-variables" target="_blank" rel="noreferrer">Render environment variables</a>
+                  <span>Where to store the signing token, private key, and allowed origins.</span>
+                </li>
+                <li>
+                  <Link href="/dashboard">Merchant dashboard</Link>
+                  <span>See the two environments side by side without exposing production secrets.</span>
+                </li>
+              </ul>
+            </section>
+
             <section id="execution" className="sdk-docs-section">
-              <p className="sdk-docs-kicker">02 · Understand</p>
+              <p className="sdk-docs-kicker">03 · Understand</p>
               <h2>One guarded execution path</h2>
               <p>
                 When native WebMCP exists, PageCTRL registers wrapped tools with
@@ -219,7 +273,7 @@ export default function DocsPage() {
             </section>
 
             <section id="value" className="sdk-docs-section">
-              <p className="sdk-docs-kicker">03 · Align</p>
+              <p className="sdk-docs-kicker">04 · Align</p>
               <h2>One guard, two beneficiaries</h2>
               <p>
                 PageCTRL faces both directions. It gives people the confidence to delegate a task,
@@ -254,7 +308,7 @@ export default function DocsPage() {
             </section>
 
             <section id="tools" className="sdk-docs-section">
-              <p className="sdk-docs-kicker">04 · Register</p>
+              <p className="sdk-docs-kicker">05 · Register</p>
               <h2>Register a guarded tool</h2>
               <p>
                 A tool uses the normal WebMCP definition. The optional <code>label</code> and
@@ -274,7 +328,7 @@ export default function DocsPage() {
             </section>
 
             <section id="policies" className="sdk-docs-section">
-              <p className="sdk-docs-kicker">05 · Control</p>
+              <p className="sdk-docs-kicker">06 · Control</p>
               <h2>Layer merchant and user policy</h2>
               <p>
                 The merchant sets the minimum protection. A user can make it stricter immediately.
@@ -290,7 +344,7 @@ export default function DocsPage() {
             </section>
 
             <section id="approvals" className="sdk-docs-section">
-              <p className="sdk-docs-kicker">06 · Decide</p>
+              <p className="sdk-docs-kicker">07 · Decide</p>
               <h2>Use the built-in human approval UI</h2>
               <p>
                 PageCTRL renders its own keyboard-accessible approval dialog with Run once and Block
@@ -304,7 +358,7 @@ export default function DocsPage() {
             </section>
 
             <section id="api" className="sdk-docs-section">
-              <p className="sdk-docs-kicker">07 · Reference</p>
+              <p className="sdk-docs-kicker">08 · Reference</p>
               <h2>Client API</h2>
               <div className="sdk-api-table">
                 {apiRows.map(([method, description]) => (
@@ -314,7 +368,7 @@ export default function DocsPage() {
             </section>
 
             <section id="events" className="sdk-docs-section">
-              <p className="sdk-docs-kicker">08 · Observe</p>
+              <p className="sdk-docs-kicker">09 · Observe</p>
               <h2>Events</h2>
               <p><code>PageControl.on(event, callback)</code> returns an unsubscribe function.</p>
               <div className="sdk-api-table sdk-api-table--events">
@@ -325,7 +379,7 @@ export default function DocsPage() {
             </section>
 
             <section id="scope" className="sdk-docs-section">
-              <p className="sdk-docs-kicker">09 · Scope</p>
+              <p className="sdk-docs-kicker">10 · Scope</p>
               <h2>Protect the action layer, not the whole internet</h2>
               <p>
                 PageCTRL sees structured WebMCP calls inside the page. It does not sit on the network
@@ -347,7 +401,7 @@ export default function DocsPage() {
             </section>
 
             <section id="trust" className="sdk-docs-section">
-              <p className="sdk-docs-kicker">10 · Verify</p>
+              <p className="sdk-docs-kicker">11 · Verify</p>
               <h2>Trust and privacy boundary</h2>
               <div className="sdk-docs-grid">
                 <div><strong>Zero SDK network calls</strong><p>The browser SDK calls no PageCTRL backend and sends no telemetry.</p></div>
@@ -378,7 +432,7 @@ export default function DocsPage() {
             </section>
 
             <section id="roadmap" className="sdk-docs-section">
-              <p className="sdk-docs-kicker">11 · Extend</p>
+              <p className="sdk-docs-kicker">12 · Extend</p>
               <h2>Roadmap: move trust outside the host page</h2>
               <p>
                 These are deliberate next layers, not claims about the current release. Each one reduces

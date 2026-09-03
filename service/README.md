@@ -15,7 +15,7 @@ This small Node service keeps PageCTRL's Ed25519 private key outside the merchan
 - `PAGECONTROL_SERVICE_TOKEN` — server-to-server credential required by `/grant`.
 - `PAGECONTROL_ALLOWED_ORIGINS` — comma-separated exact origins that may receive grants. Whitespace is trimmed; wildcards and trailing-slash aliases are not accepted. When unset, the service allows any valid origin and prints a startup warning.
 - `PAGECONTROL_ISSUER` — canonical API origin. Defaults to `https://api.pagecontrol.app`.
-- `PORT` — supplied automatically by Railway.
+- `PORT` — supplied automatically by Render.
 
 Generate a production key without writing it to the repository:
 
@@ -23,19 +23,25 @@ Generate a production key without writing it to the repository:
 openssl genpkey -algorithm ED25519 -outform DER | base64
 ```
 
-Store the output directly in Railway as `PAGECONTROL_PRIVATE_KEY`. Generate `PAGECONTROL_SERVICE_TOKEN` with a password manager or `openssl rand -base64 32`.
+Store the output directly in Render as `PAGECONTROL_PRIVATE_KEY`. Generate `PAGECONTROL_SERVICE_TOKEN` with a password manager or `openssl rand -base64 32`.
 
-## Railway
+## Render
 
-From this folder:
+Create a Render Web Service with this repository, then use:
 
 ```bash
-railway init
-railway variables set PAGECONTROL_PRIVATE_KEY="..." PAGECONTROL_SERVICE_TOKEN="..." PAGECONTROL_ALLOWED_ORIGINS="https://merchant.example"
-railway up
+Root directory: service
+Build command: npm install
+Start command: npm start
 ```
 
-Set the Railway health-check path to `/health`. Never place either secret in the merchant page or commit it to Git.
+In the Render dashboard, open **Environment** and set `PAGECONTROL_PRIVATE_KEY`,
+`PAGECONTROL_SERVICE_TOKEN`, and `PAGECONTROL_ALLOWED_ORIGINS`. The service token
+must exactly match the server-side value in the merchant app. See the
+[Render environment guide](https://render.com/docs/configure-environment-variables).
+
+Set the health-check path to `/health`. Never place either secret in the
+merchant page or commit it to Git.
 
 ## Local check
 
