@@ -72,16 +72,6 @@ function setCard(next: SavedCard | null): void {
   announce();
 }
 
-export async function loadCard(): Promise<void> {
-  try {
-    const response = await fetch("/api/payments/method", { credentials: "same-origin" });
-    const payload = await response.json();
-    setCard(payload?.card ?? null);
-  } catch {
-    setCard(null);
-  }
-}
-
 export function rememberCard(next: SavedCard | null): void {
   setCard(next);
 }

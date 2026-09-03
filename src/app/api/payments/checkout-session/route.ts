@@ -1,29 +1,28 @@
 import { NextResponse } from "next/server";
 
+import { requireSession, setCustomer } from "@/lib/server/session";
 import {
   LIVE_KEY_MESSAGE,
   liveKeyBlocked,
   stripe,
   stripeConfigured,
 } from "@/lib/server/stripe";
-import { requireSession, setCustomer } from "@/lib/server/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Opens a card-saving session. The returned client secret lets the Stripe
- * Elements iframe send card details straight to Stripe; they never transit
- * this process.
+ * Opens a Stripe-hosted card setup page. The shopper leaves for
+ * checkout.stripe.com, enters the card there, and comes back with only a
+ * session id — card details never touch this origin at all.
  */
-export async function POST() {
+export async function POST(request: Request) {
   if (!stripeConfigured()) {
     return NextResponse.json(
       { ok: false, code: "stripe_unconfigured", message: "Stripe keys are not set." },
       { status: 503 },
     );
   }
-
   if (liveKeyBlocked()) {
     return NextResponse.json(
       { ok: false, code: "live_key_blocked", message: LIVE_KEY_MESSAGE },
@@ -40,22 +39,29 @@ export async function POST() {
           metadata: { app: "northline-tech", session: session.id },
         })
       ).id;
-
     if (!session.stripeCustomerId) setCustomer(session, customerId);
 
-    const intent = await stripe().setupIntents.create({
+    const origin = new URL(request.url).origin;
+    const checkout = await stripe().checkout.sessions.create({
+      mode: "setup",
+      currency: "usd",
       customer: customerId,
       payment_method_types: ["card"],
-      // The shopper is present now; later charges are merchant-initiated.
-      usage: "off_session",
-      metadata: { app: "northline-tech" },
+      success_url: `${origin}/?card_setup=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/?card_setup=cancelled`,
     });
 
-    return NextResponse.json({ ok: true, clientSecret: intent.client_secret });
+    if (!checkout.url) {
+      return NextResponse.json(
+        { ok: false, code: "setup_failed", message: "Stripe did not return a checkout URL." },
+        { status: 502 },
+      );
+    }
+    return NextResponse.json({ ok: true, url: checkout.url });
   } catch (error) {
-    console.error("[setup-intent]", error);
+    console.error("[payments/checkout-session]", error);
     return NextResponse.json(
-      { ok: false, code: "setup_failed", message: "Could not start card setup." },
+      { ok: false, code: "setup_failed", message: "Could not open Stripe card setup." },
       { status: 500 },
     );
   }

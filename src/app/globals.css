@@ -918,6 +918,10 @@ summary:focus-visible {
   font-size: 0.75rem;
 }
 
+.wallet-note--after {
+  margin: var(--space-3) 0 0;
+}
+
 .wallet-note {
   margin: 0 0 var(--space-3);
   color: var(--muted);
@@ -933,17 +937,6 @@ summary:focus-visible {
   font-size: 0.95em;
 }
 
-.wallet-form {
-  display: grid;
-  gap: var(--space-4);
-  margin-top: var(--space-4);
-}
-
-.wallet-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
-}
 
 .inline-message {
   min-height: 1rem;

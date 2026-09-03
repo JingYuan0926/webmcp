@@ -34,9 +34,9 @@ export async function POST(request: Request) {
     );
   }
 
-  let setupIntentId: unknown;
+  let checkoutSessionId: unknown;
   try {
-    ({ setupIntentId } = await request.json());
+    ({ checkoutSessionId } = await request.json());
   } catch {
     return NextResponse.json(
       { ok: false, code: "bad_request", message: "Malformed request." },
@@ -44,24 +44,35 @@ export async function POST(request: Request) {
     );
   }
 
-  if (typeof setupIntentId !== "string" || !setupIntentId.startsWith("seti_")) {
+  if (typeof checkoutSessionId !== "string" || !checkoutSessionId.startsWith("cs_")) {
     return NextResponse.json(
-      { ok: false, code: "bad_request", message: "Missing setup intent." },
+      { ok: false, code: "bad_request", message: "Missing checkout session." },
       { status: 400 },
     );
   }
 
   try {
     const session = await requireSession();
-    const intent = await stripe().setupIntents.retrieve(setupIntentId);
+    const checkout = await stripe().checkout.sessions.retrieve(checkoutSessionId, {
+      expand: ["setup_intent"],
+    });
 
-    if (intent.customer !== session.stripeCustomerId) {
+    // The session id travels back through the URL bar, so bind it to this
+    // browser session before trusting it.
+    const checkoutCustomer =
+      typeof checkout.customer === "string" ? checkout.customer : checkout.customer?.id;
+    if (!checkoutCustomer || checkoutCustomer !== session.stripeCustomerId) {
       return NextResponse.json(
         { ok: false, code: "forbidden", message: "That setup belongs to another session." },
         { status: 403 },
       );
     }
-    if (intent.status !== "succeeded") {
+
+    const intent =
+      checkout.setup_intent && typeof checkout.setup_intent !== "string"
+        ? checkout.setup_intent
+        : null;
+    if (!intent || intent.status !== "succeeded") {
       return NextResponse.json(
         { ok: false, code: "setup_incomplete", message: "Card setup did not complete." },
         { status: 400 },

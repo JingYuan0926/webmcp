@@ -1,78 +1,109 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { loadStripe, type Stripe } from "@stripe/stripe-js";
-import {
-  Elements,
-  PaymentElement,
-  useElements,
-  useStripe,
-} from "@stripe/react-stripe-js";
 
-import { loadCard, rememberCard, savedCard, subscribe, type SavedCard } from "@/lib/payments-client";
+import { rememberCard, savedCard, subscribe, type SavedCard } from "@/lib/payments-client";
 
-const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-
-let stripePromise: Promise<Stripe | null> | null = null;
-function getStripe(): Promise<Stripe | null> {
-  if (!publishableKey) return Promise.resolve(null);
-  if (!stripePromise) stripePromise = loadStripe(publishableKey);
-  return stripePromise;
-}
+type Status = "loading" | "idle" | "redirecting" | "returning";
 
 /**
- * The card panel. Card details are typed into an iframe served by Stripe, so
- * they are never readable by this application's JavaScript — and therefore
- * never reachable through a WebMCP tool.
+ * The payment panel. Adding a card hands the shopper to Stripe's own hosted
+ * setup page, so card details never reach this origin at all — not the DOM,
+ * not this bundle, and therefore not any WebMCP tool.
  */
 export function WalletCard() {
   const [card, setCard] = useState<SavedCard | null>(() => savedCard());
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [status, setStatus] = useState<"idle" | "starting" | "collecting">("idle");
+  const [configured, setConfigured] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<Status>("loading");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  useEffect(() => {
-    void loadCard();
-    return subscribe(() => setCard(savedCard()));
-  }, []);
-
-  const startSetup = useCallback(async () => {
-    setError("");
-    setNotice("");
-    setStatus("starting");
+  // Finish a setup the shopper started on Stripe, then tidy the URL so a
+  // reload does not replay it.
+  const completeReturn = useCallback(async (checkoutSessionId: string) => {
+    setStatus("returning");
     try {
-      const response = await fetch("/api/payments/setup-intent", {
+      const response = await fetch("/api/payments/method", {
         method: "POST",
         credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ checkoutSessionId }),
       });
       const payload = await response.json();
-      if (!payload?.ok || !payload.clientSecret) {
-        setError(payload?.message ?? "Could not start card setup.");
-        setStatus("idle");
-        return;
+      if (payload?.ok && payload.card) {
+        rememberCard(payload.card as SavedCard);
+        setNotice("Card saved. The agent can now check out without ever seeing it.");
+      } else {
+        setError(payload?.message ?? "The card could not be saved.");
       }
-      setClientSecret(payload.clientSecret);
-      setStatus("collecting");
     } catch {
       setError("Could not reach the payment service.");
+    } finally {
       setStatus("idle");
     }
   }, []);
 
-  const cancelSetup = useCallback(() => {
-    setClientSecret(null);
-    setStatus("idle");
-    setError("");
-  }, []);
+  useEffect(() => {
+    const unsubscribe = subscribe(() => setCard(savedCard()));
 
-  const onSaved = useCallback((next: SavedCard) => {
-    rememberCard(next);
-    setCard(next);
-    setClientSecret(null);
-    setStatus("idle");
-    setNotice("Card saved. The agent can now check out without ever seeing it.");
-  }, []);
+    const params = new URLSearchParams(window.location.search);
+    const outcome = params.get("card_setup");
+    const sessionId = params.get("session_id");
+
+    if (outcome) {
+      params.delete("card_setup");
+      params.delete("session_id");
+      const query = params.toString();
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname + (query ? `?${query}` : "") + window.location.hash,
+      );
+    }
+
+    void (async () => {
+      try {
+        const response = await fetch("/api/payments/method", { credentials: "same-origin" });
+        const payload = await response.json();
+        setConfigured(Boolean(payload?.configured));
+        rememberCard(payload?.card ?? null);
+      } catch {
+        setConfigured(false);
+        rememberCard(null);
+      }
+
+      if (outcome === "success" && sessionId) {
+        await completeReturn(sessionId);
+      } else {
+        if (outcome === "cancelled") setNotice("Card setup was cancelled.");
+        setStatus("idle");
+      }
+    })();
+
+    return unsubscribe;
+  }, [completeReturn]);
+
+  async function startSetup() {
+    setError("");
+    setNotice("");
+    setStatus("redirecting");
+    try {
+      const response = await fetch("/api/payments/checkout-session", {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      const payload = await response.json();
+      if (!payload?.ok || !payload.url) {
+        setError(payload?.message ?? "Could not open Stripe card setup.");
+        setStatus("idle");
+        return;
+      }
+      window.location.href = payload.url;
+    } catch {
+      setError("Could not reach the payment service.");
+      setStatus("idle");
+    }
+  }
 
   async function removeCard() {
     setError("");
@@ -80,7 +111,6 @@ export function WalletCard() {
     try {
       await fetch("/api/payments/method", { method: "DELETE", credentials: "same-origin" });
       rememberCard(null);
-      setCard(null);
       setNotice("Card removed.");
     } catch {
       setError("Could not remove the card.");
@@ -97,7 +127,12 @@ export function WalletCard() {
         {card ? <span className="saved-badge">Saved</span> : null}
       </div>
 
-      {!publishableKey ? (
+      {status === "loading" || status === "returning" ? (
+        <div className="compact-empty">
+          <strong>{status === "returning" ? "Saving your card…" : "Checking…"}</strong>
+          <span>One moment.</span>
+        </div>
+      ) : configured === false ? (
         <div className="compact-empty">
           <strong>Stripe is not configured</strong>
           <span>
@@ -121,13 +156,6 @@ export function WalletCard() {
             Remove card
           </button>
         </>
-      ) : status === "collecting" && clientSecret ? (
-        <Elements
-          stripe={getStripe()}
-          options={{ clientSecret, appearance: { theme: "flat", variables: { borderRadius: "8px" } } }}
-        >
-          <SaveCardForm onSaved={onSaved} onCancel={cancelSetup} onError={setError} />
-        </Elements>
       ) : (
         <>
           <div className="compact-empty">
@@ -138,10 +166,13 @@ export function WalletCard() {
             type="button"
             className="button button-primary full-width"
             onClick={startSetup}
-            disabled={status === "starting"}
+            disabled={status === "redirecting"}
           >
-            {status === "starting" ? "Opening…" : "Add a card"}
+            {status === "redirecting" ? "Opening Stripe…" : "Add a card with Stripe ↗"}
           </button>
+          <p className="wallet-note wallet-note--after">
+            Opens Stripe&rsquo;s hosted page. Your card details never reach this site.
+          </p>
         </>
       )}
 
@@ -155,77 +186,5 @@ export function WalletCard() {
         </p>
       )}
     </section>
-  );
-}
-
-function SaveCardForm({
-  onSaved,
-  onCancel,
-  onError,
-}: {
-  onSaved: (card: SavedCard) => void;
-  onCancel: () => void;
-  onError: (message: string) => void;
-}) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [saving, setSaving] = useState(false);
-
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!stripe || !elements) return;
-    setSaving(true);
-    onError("");
-
-    // Card details go from the iframe straight to Stripe. Only the resulting
-    // SetupIntent id comes back into this page.
-    const { error, setupIntent } = await stripe.confirmSetup({
-      elements,
-      redirect: "if_required",
-    });
-
-    if (error) {
-      onError(error.message ?? "The card could not be saved.");
-      setSaving(false);
-      return;
-    }
-    if (setupIntent?.status !== "succeeded") {
-      onError("Card setup did not complete.");
-      setSaving(false);
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/payments/method", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ setupIntentId: setupIntent.id }),
-      });
-      const payload = await response.json();
-      if (!payload?.ok || !payload.card) {
-        onError(payload?.message ?? "The card could not be saved.");
-        setSaving(false);
-        return;
-      }
-      onSaved(payload.card as SavedCard);
-    } catch {
-      onError("Could not reach the payment service.");
-      setSaving(false);
-    }
-  }
-
-  return (
-    <form className="wallet-form" onSubmit={submit}>
-      <PaymentElement options={{ layout: "tabs" }} />
-      <div className="wallet-actions">
-        <button type="button" className="button button-secondary" onClick={onCancel} disabled={saving}>
-          Cancel
-        </button>
-        <button type="submit" className="button button-primary" disabled={!stripe || saving}>
-          {saving ? "Saving…" : "Save card"}
-        </button>
-      </div>
-    </form>
   );
 }
