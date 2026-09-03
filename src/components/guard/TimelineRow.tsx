@@ -52,7 +52,9 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 
 function humanizeIdentifier(value: string): string {
   const words = value.replace(/[-_]+/g, " ").trim();
-  return words ? words.charAt(0).toUpperCase() + words.slice(1) : value;
+  return words
+    ? words.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase())
+    : value;
 }
 
 function toolLabel(tool: string): string {
@@ -72,7 +74,7 @@ function entryContext(entry: PageControlEntry): string | null {
 
   if (typeof args.query === "string" && args.query.trim()) {
     const query = args.query.trim();
-    return `“${query.length > 42 ? `${query.slice(0, 39)}…` : query}”`;
+    return query.length > 42 ? `${query.slice(0, 39)}…` : query;
   }
 
   return null;
