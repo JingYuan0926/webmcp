@@ -1036,9 +1036,10 @@ summary:focus-visible {
   position: fixed;
   z-index: 60;
   right: var(--space-5);
-  bottom: 5.25rem;
+  /* Clears the trigger, which stands 4.875rem tall from a 1.25rem inset. */
+  bottom: 6.75rem;
   width: min(27rem, calc(100vw - 2rem));
-  max-height: min(48rem, calc(100svh - 7rem));
+  max-height: min(48rem, calc(100svh - 8.5rem));
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--panel-line);
@@ -1101,32 +1102,34 @@ summary:focus-visible {
   right: var(--space-5);
   bottom: var(--space-5);
   z-index: 61;
-  width: 3.25rem;
-  height: 3.25rem;
+  width: 4.875rem;
+  height: 4.875rem;
   display: grid;
   place-items: center;
   padding: 0;
-  /* White disc so the logo sits on its own ground rather than being tinted
-     by the brand fill. */
-  border: 1px solid color-mix(in srgb, var(--panel-primary) 18%, var(--panel-line));
+  /* The mark is the button. No disc, no ring — it reads on its own. */
+  border: 0;
   border-radius: 999px;
-  background: #fff;
-  box-shadow:
-    0 0.75rem 2rem color-mix(in srgb, var(--panel-ink) 14%, transparent),
-    0 0.125rem 0.5rem color-mix(in srgb, var(--panel-ink) 10%, transparent);
+  background: none;
+  box-shadow: none;
   font-family: var(--panel-font);
 }
 
 .show-guard-button img {
-  width: 1.625rem;
-  height: 1.625rem;
+  width: 4.875rem;
+  height: 4.875rem;
   object-fit: contain;
 }
 
-.show-guard-button:hover,
-.show-guard-button:focus-visible,
-.show-guard-button.is-open {
-  border-color: var(--panel-primary);
+/* With no frame left to tint, hover and open state are carried by the mark. */
+.show-guard-button:hover img,
+.show-guard-button.is-open img {
+  opacity: 0.82;
+}
+
+.show-guard-button:focus-visible {
+  outline: 2px solid var(--panel-primary);
+  outline-offset: 3px;
 }
 
 .guard-wordmark {

@@ -62,7 +62,7 @@ function PageControlDemo() {
           aria-expanded={panelOpen}
           aria-controls="pagecontrol-panel"
         >
-          <Image src="/logo.png" alt="" width={26} height={26} priority />
+          <Image src="/logo.png" alt="" width={78} height={78} priority />
         </button>
       </div>
     </div>
