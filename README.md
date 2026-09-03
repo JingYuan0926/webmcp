@@ -109,11 +109,13 @@ The shopper saves a card on Stripe's own hosted setup page. Card details never r
 The `checkout` tool still takes zero arguments. What it does now:
 
 1. The cart is priced **on the server**, from the server's own catalog. Client-supplied prices are ignored. The result is a single-use quote that expires in five minutes.
-2. The guard's `getCost` hook pins that quote and returns its total. That total is the number on the approval card.
+2. The guard's `getCost` hook pins that quote to one PageControl call and returns its total. That total is the number on the approval card.
 3. A human approves.
-4. `execute()` re-checks the live cart against the pinned quote. If anything moved during the approval window, the charge is refused and nothing is billed. Otherwise the server charges the quote's own amount off-session.
+4. `execute()` re-checks the live cart and displayed amount against that call's pinned quote.
+5. The shop server asks `https://api.pagecontrol.app` for a 60-second Ed25519 grant. The browser never receives the service credential.
+6. The charge route verifies the signature, origin, session, quote, exact minor-unit amount, expiry, and one-time nonce. It also reserves the amount against an independent server-side $300 session budget before Stripe runs.
 
-Step 4 is the point. Cost is derived at check time but execution happens later, so without that binding a cart mutated inside the approval window charges an amount nobody approved — a $29.99 approval settling a $4,009.99 cart, with the journey recording `approved`. `scripts/pagecontrol-smoke.mjs` covers both the refusal and the matching-amount case.
+The call binding is the point. Cost is derived at check time but execution happens later, so without that binding a second checkout can overwrite the first quote while its approval remains open. `scripts/pagecontrol-smoke.mjs` covers cart mutation, matching amounts, and two overlapping approvals with different totals.
 
 Failure messages the agent can see are a fixed set of strings. Stripe's own error text is logged server-side and never returned, because PageControl passes a tool's error straight into model context.
 
@@ -157,11 +159,13 @@ Open `/dashboard` to see the merchant integration flow. The preview includes a d
 
 Set `PAGECONTROL_DASHBOARD_USERNAME`, `PAGECONTROL_DASHBOARD_PASSWORD`, and `PAGECONTROL_DASHBOARD_SESSION_SECRET` for a stable deployed preview. The demo defaults to `q` / `q`.
 
-## Optional signing service
+## Signing service
 
-The SDK itself remains dependency-free and makes no PageControl network requests. The separate [`service/`](service/) package is an optional server-to-server trust layer: it keeps an Ed25519 private key away from the merchant page, publishes the public verification key, and issues short-lived signed grants. See [`service/README.md`](service/README.md) for its routes, environment variables, and Railway deployment steps.
+The SDK itself remains dependency-free and sends no telemetry. The separate [`service/`](service/) package is the server-to-server trust layer for checkout: it keeps an Ed25519 private key away from the merchant page, publishes the public verification key, and issues short-lived signed grants. See [`service/README.md`](service/README.md) for its routes and deployment configuration.
 
-The service is not yet connected to the demo checkout path. Its presence does not make an in-page prompt unforgeable; that still requires a browser-owned or cross-origin approval surface.
+The signing key runs on a separate origin the merchant deployment does not control. Putting that private key inside the merchant's own deployment would defeat the purpose of the separate trust boundary.
+
+This prevents a page script from calling the charge route with only a quote id. It does not stop a malicious merchant: the merchant owns its Stripe account and backend and could charge outside PageControl entirely. An in-page prompt also remains visually forgeable until a browser-owned or cross-origin approval surface exists.
 
 ## Run locally
 
@@ -181,7 +185,7 @@ Open `http://localhost:3000`. Test native WebMCP in ChatGPT's in-app browser or 
 - `src/lib/store.tsx` — React store, reducer, persistence, and imperative tool facade.
 - `src/lib/tools.ts` — merchant policy and eleven WebMCP store tools.
 - `src/lib/payments-client.ts` — quote cache, the synchronous pin the guard reads, and the charge call.
-- `src/lib/server/` — Stripe client, cookie session holding the card handle, and server-side quote pricing.
+- `src/lib/server/` — Stripe client, signed-grant verification, server spend ledger, cookie session, and quote pricing.
 - `src/app/api/` — payment routes plus the authenticated dashboard preview API.
 - `src/app/dashboard/` — merchant sign-in and session-scoped API key preview.
 - `service/` — standalone Ed25519 signing service for Railway or another Node host.
