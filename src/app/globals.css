@@ -2591,16 +2591,6 @@ summary:focus-visible {
   font-size: 0.75rem;
 }
 
-.dashboard-mark {
-  width: 2.5rem;
-  height: 2.5rem;
-  display: grid;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--brand) 45%, var(--line));
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--brand) 8%, var(--card));
-  color: var(--brand);
-}
 
 .console-header nav {
   display: flex;
@@ -3118,13 +3108,13 @@ summary:focus-visible {
 }
 
 @media (max-width: 38rem) {
-  .dashboard-header {
+  .console-header {
     align-items: flex-start;
     padding-right: var(--space-4);
     padding-left: var(--space-4);
   }
 
-  .dashboard-header nav a:first-child {
+  .console-header nav a:first-child {
     display: none;
   }
 
