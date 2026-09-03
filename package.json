@@ -6,8 +6,9 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint src scripts public/pagecontrol.js public/partner-widget.js next.config.ts eslint.config.mjs",
+    "lint": "eslint src scripts service public/pagecontrol.js public/partner-widget.js next.config.ts eslint.config.mjs",
     "test:sdk": "node scripts/pagecontrol-smoke.mjs",
+    "test:service": "npm --prefix service test",
     "journey:sample": "node scripts/pagecontrol-smoke.mjs --write-sample"
   },
   "dependencies": {
