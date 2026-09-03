@@ -24,12 +24,16 @@ export function stripeConfigured(): boolean {
   return Boolean(process.env.STRIPE_SECRET_KEY);
 }
 
-/** Guards against a live key in a demo that intentionally charges cards. */
-export function assertTestMode(): void {
+/**
+ * True when a live secret key is configured without an explicit opt-in. This
+ * demo charges cards on an agent's say-so, so a live key is refused by
+ * default: a mistake here spends real money.
+ */
+export function liveKeyBlocked(): boolean {
   const key = process.env.STRIPE_SECRET_KEY ?? "";
-  if (key.startsWith("sk_live_") && process.env.ALLOW_LIVE_STRIPE_KEY !== "1") {
-    throw new Error(
-      "Refusing to run against a live Stripe key. Use a sk_test_ key, or set ALLOW_LIVE_STRIPE_KEY=1.",
-    );
-  }
+  return key.startsWith("sk_live_") && process.env.ALLOW_LIVE_STRIPE_KEY !== "1";
 }
+
+export const LIVE_KEY_MESSAGE =
+  "This is a live Stripe key, so nothing ran. Swap it for a test key (sk_test_… and " +
+  "pk_test_…) from the Stripe dashboard's Test mode, then restart the dev server.";

@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 
 import { claimQuote, quoteTotalDecimal, releaseQuote } from "@/lib/server/quotes";
 import { publicCard, readSession } from "@/lib/server/session";
-import { assertTestMode, stripe, stripeConfigured } from "@/lib/server/stripe";
+import {
+  LIVE_KEY_MESSAGE,
+  liveKeyBlocked,
+  stripe,
+  stripeConfigured,
+} from "@/lib/server/stripe";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +20,7 @@ export const dynamic = "force-dynamic";
  */
 const FAILURES: Record<string, string> = {
   stripe_unconfigured: "Payments are not configured on this server.",
+  live_key_blocked: LIVE_KEY_MESSAGE,
   bad_request: "The checkout request was malformed.",
   no_session: "No shopping session. Reload the page.",
   no_card: "No card is on file. Save a card before checking out.",
@@ -36,6 +42,8 @@ function fail(code: keyof typeof FAILURES | string, status = 400) {
 
 export async function POST(request: Request) {
   if (!stripeConfigured()) return fail("stripe_unconfigured", 503);
+  // Checked before the quote is claimed, so a blocked run does not burn it.
+  if (liveKeyBlocked()) return fail("live_key_blocked", 403);
 
   let quoteId: unknown;
   try {
@@ -53,7 +61,6 @@ export async function POST(request: Request) {
   const { quote } = claim;
 
   try {
-    assertTestMode();
     const intent = await stripe().paymentIntents.create(
       {
         amount: quote.amountMinor,

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { assertTestMode, stripe, stripeConfigured } from "@/lib/server/stripe";
+import {
+  LIVE_KEY_MESSAGE,
+  liveKeyBlocked,
+  stripe,
+  stripeConfigured,
+} from "@/lib/server/stripe";
 import { requireSession, setCustomer } from "@/lib/server/session";
 
 export const runtime = "nodejs";
@@ -19,8 +24,14 @@ export async function POST() {
     );
   }
 
+  if (liveKeyBlocked()) {
+    return NextResponse.json(
+      { ok: false, code: "live_key_blocked", message: LIVE_KEY_MESSAGE },
+      { status: 403 },
+    );
+  }
+
   try {
-    assertTestMode();
     const session = await requireSession();
     const customerId =
       session.stripeCustomerId ??
