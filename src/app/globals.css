@@ -1777,12 +1777,22 @@ summary:focus-visible {
   line-height: 1.4;
 }
 
+.policy-group {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .policy-subheading {
-  margin: var(--space-3) 0 0;
+  margin: var(--space-2) 0 0;
   color: var(--panel-muted);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
+}
+
+.policy-group:first-child .policy-subheading {
+  margin-top: 0;
 }
 
 .policy-row {
@@ -1801,14 +1811,15 @@ summary:focus-visible {
   padding: var(--space-2) var(--space-3);
 }
 
+/* The glyph alone. The tile behind it was competing with the label it sits
+   next to, and every row had one. */
 .policy-action-icon {
-  width: 2rem;
-  height: 2rem;
+  width: 1.25rem;
+  height: 1.25rem;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-sm);
-  background: var(--panel-accent);
-  color: var(--panel-primary);
+  flex: 0 0 auto;
+  color: var(--panel-muted);
 }
 
 .policy-detail-trigger {
