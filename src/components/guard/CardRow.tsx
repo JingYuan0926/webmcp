@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { rememberCard, savedCard, subscribe, type SavedCard } from "@/lib/payments-client";
 
 import { AuthorityRow } from "@/components/guard/AuthorityRow";
+import { CardBrandIcon, CardIcon } from "@/components/guard/AuthorityIcons";
 
 type Status = "loading" | "idle" | "redirecting" | "returning";
 
@@ -126,13 +127,15 @@ export function CardRow({ open, onToggle }: { open: boolean; onToggle: () => voi
       : status === "returning"
         ? "Saving your card…"
         : card
-          ? `${card.brand} ····${card.last4}`
+          ? `···· ${card.last4}`
           : "Not set";
 
   return (
     <AuthorityRow
       label="Charges to"
       value={value}
+      icon={<CardIcon />}
+      badge={card ? <CardBrandIcon brand={card.brand} /> : null}
       empty={!card && status !== "loading" && status !== "returning"}
       editorId="card-editor"
       editLabel="Edit payment card"

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import type { JourneyGroup } from "@/components/guard/Timeline";
+
 const verdictTone: Record<PageControlEntry["verdict"], "ok" | "warn" | "danger"> = {
   allowed: "ok",
   approved: "ok",
@@ -17,6 +19,13 @@ const verdictTone: Record<PageControlEntry["verdict"], "ok" | "warn" | "danger">
   paused: "danger",
 };
 
+const timeFormat = new Intl.DateTimeFormat("en-MY", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+});
+
 function renderValue(value: unknown): string {
   if (typeof value === "string") return value;
   if (value === null || value === undefined) return "—";
@@ -27,15 +36,16 @@ function renderValue(value: unknown): string {
   }
 }
 
-export function TimelineRow({ entry }: { entry: PageControlEntry }) {
+function duration(ms: number): string {
+  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
+}
+
+export function TimelineRow({ group }: { group: JourneyGroup }) {
   const [expanded, setExpanded] = useState(false);
+  // A group always has at least one record; the outcome wins when both exist.
+  const entry = (group.final ?? group.pending)!;
+  const waited = Boolean(group.pending && group.final);
   const detailId = `journey-entry-${entry.id}`;
-  const time = new Intl.DateTimeFormat("en-MY", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).format(new Date(entry.ts));
 
   return (
     <article className={`timeline-row${entry.suspicious ? " timeline-row--suspicious" : ""}`}>
@@ -49,7 +59,19 @@ export function TimelineRow({ entry }: { entry: PageControlEntry }) {
         <span className="timeline-seq">#{entry.seq}</span>
         <span className="timeline-main">
           <strong>{entry.tool}</strong>
-          <small>{time} · {entry.durationMs}ms</small>
+          <small>
+            {waited ? (
+              <>
+                {timeFormat.format(new Date(group.pending!.ts))}
+                <span className="timeline-arrow" aria-label="then"> → </span>
+                {timeFormat.format(new Date(group.final!.ts))}
+              </>
+            ) : (
+              timeFormat.format(new Date(entry.ts))
+            )}
+            {" · "}
+            {duration(entry.durationMs)}
+          </small>
         </span>
         {entry.suspicious ? <span className="injection-badge">INJECTION?</span> : null}
         <span className={`verdict-chip verdict-chip--${verdictTone[entry.verdict]}`}>{entry.verdict}</span>
@@ -59,6 +81,15 @@ export function TimelineRow({ entry }: { entry: PageControlEntry }) {
       </button>
       {expanded ? (
         <div id={detailId} className="timeline-detail">
+          {waited ? (
+            <div>
+              <span>Checkpoint</span>
+              <pre>
+                {`#${group.pending!.seq} approval_pending · ${group.pending!.note}
+#${group.final!.seq} ${group.final!.verdict} · ${group.final!.note}`}
+              </pre>
+            </div>
+          ) : null}
           <div>
             <span>Args · redacted</span>
             <pre>{renderValue(entry.args)}</pre>
@@ -76,4 +107,3 @@ export function TimelineRow({ entry }: { entry: PageControlEntry }) {
     </article>
   );
 }
-

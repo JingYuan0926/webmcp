@@ -250,14 +250,31 @@ export function registerStoreTools(): Promise<boolean> {
             const { items } = storeApi.cart();
             const address = storeApi.getAddress();
             const card = savedCard();
-            const lines = items.map((item) => `${item.qty} × ${item.product.name}`);
-            const shipTo = address
-              ? `Ship to ${address.name}, ${address.line1}, ${address.city} ${address.postcode}`
-              : "No shipping address";
-            const payWith = card
-              ? `Pay with ${card.brand} ····${card.last4}`
-              : "No card saved";
-            return [lines.join("\n"), shipTo, payWith].filter(Boolean).join("\n");
+
+            // At most six rows: the guard caps a summary at eight, and ship-to
+            // and pay-with take the last two.
+            const shown = items.slice(0, 5);
+            const rows: PageControlSummaryRow[] = shown.map((item) => ({
+              icon: "item",
+              text: `${item.qty} × ${item.product.name}`,
+            }));
+            const hidden = items.length - shown.length;
+            if (hidden > 0) {
+              rows.push({ icon: "item", text: `and ${hidden} more line${hidden === 1 ? "" : "s"}` });
+            }
+
+            rows.push({
+              icon: "ship",
+              text: address
+                ? `${address.name}, ${address.line1}, ${address.city} ${address.postcode}`
+                : "No shipping address",
+            });
+            rows.push(
+              card
+                ? { icon: "card", brand: card.brand, text: `···· ${card.last4}` }
+                : { icon: "card", text: "No card saved" },
+            );
+            return rows;
           },
         },
         execute: async (_inputs, context) => {

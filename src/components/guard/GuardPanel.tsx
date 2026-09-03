@@ -17,6 +17,7 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
   const [runError, setRunError] = useState("");
   const tampered = snapshot.tools.some((tool) => tool.tampered);
   const status = tampered ? "Tamper detected" : snapshot.guardState.paused ? "Paused" : "Live";
+  const alerting = tampered || snapshot.guardState.paused;
   const ready = snapshot.available && snapshot.tools.some((tool) => tool.name === "list_products");
 
   async function runSecurityDemo() {
@@ -33,30 +34,42 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
   }
 
   return (
-    <div className="guard-panel-shell" hidden={hidden}>
+    <div
+      id="pagecontrol-panel"
+      className="guard-panel-shell"
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby="pagecontrol-title"
+      hidden={hidden}
+    >
       <button
         type="button"
         className="guard-hide-button"
         onClick={onHide}
-        aria-label="Hide PageControl panel"
-        title="Hide PageControl"
+        aria-label="Close PageCtrl settings"
+        title="Close"
       >
-        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-          <path d="m14 7-5 5 5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+          <path d="m7 7 10 10m0-10L7 17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
       </button>
-      <aside className="guard-panel" aria-label="PageControl panel">
+      <aside className="guard-panel" aria-label="PageCtrl panel">
         <header className="guard-header">
           <div>
             <div className="guard-wordmark">
-              <strong>PageControl</strong>
+              <strong id="pagecontrol-title">PageCTRL</strong>
             </div>
-            <p className="guard-tagline">PageControl — the in-page policy layer for WebMCP.</p>
+            <p className="guard-tagline">Review what your agent can access and do.</p>
           </div>
-          <div className="guard-live">
-            <span className={tampered || snapshot.guardState.paused ? "is-alert" : ""} aria-hidden="true" />
-            <strong>{status}</strong>
-          </div>
+          {/* Healthy is the default, so it says nothing at all. Paused and
+              tamper are the states worth surfacing. */}
+          {alerting ? (
+            <div className="guard-live">
+              <strong>{status}</strong>
+            </div>
+          ) : (
+            <span className="sr-only">{status}</span>
+          )}
         </header>
 
         {snapshot.environment.native ? (

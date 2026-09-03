@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 
+import {
+  BoxIcon,
+  CardBrandIcon,
+  CardIcon,
+  LocationIcon,
+} from "@/components/guard/AuthorityIcons";
 import { formatUSD } from "@/lib/catalog";
 
 function Countdown({ expiresAt }: { expiresAt: number }) {
@@ -35,9 +41,30 @@ export function ApprovalsList({ approvals }: { approvals: PageControlApproval[] 
               <strong>{approval.tool}</strong>
               <Countdown expiresAt={approval.expiresAt} />
             </div>
-            <p className={approval.summary ? "approval-intent" : undefined}>
-              {approval.summary ?? approval.argsSummary}
-            </p>
+            {Array.isArray(approval.summary) ? (
+              <ul className="approval-rows">
+                {approval.summary.map((row, index) => (
+                  <li key={index} className="approval-row">
+                    <span className="approval-row-lead">
+                      {row.brand ? (
+                        <CardBrandIcon brand={row.brand} height={13} />
+                      ) : row.icon === "ship" ? (
+                        <LocationIcon />
+                      ) : row.icon === "card" ? (
+                        <CardIcon />
+                      ) : (
+                        <BoxIcon />
+                      )}
+                    </span>
+                    <span>{row.text}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className={approval.summary ? "approval-intent" : undefined}>
+                {approval.summary ?? approval.argsSummary}
+              </p>
+            )}
             {typeof approval.cost === "number" ? (
               <span className="approval-cost">Cost {formatUSD(approval.cost)}</span>
             ) : null}

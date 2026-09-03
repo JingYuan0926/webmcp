@@ -386,6 +386,9 @@
         id: makeId(),
         seq: sequence,
         ts: new Date().toISOString(),
+        // Links the entries a single guarded call produces — an approval
+        // checkpoint and its outcome are two records of one action.
+        callId: partial.callId ? String(partial.callId) : null,
         tool: String(partial.tool || "unknown"),
         verdict: VERDICTS[partial.verdict] ? partial.verdict : "error",
         args: redact(partial.args === undefined ? null : partial.args),
@@ -402,6 +405,7 @@
       var hashPayload = {
         seq: entry.seq,
         ts: entry.ts,
+        callId: entry.callId,
         tool: entry.tool,
         verdict: entry.verdict,
         args: entry.args,
@@ -634,10 +638,11 @@
     return blockedText(details.blockReason || details.verdict);
   }
 
-  async function recordAbort(name, inputs, startedAt, policySource, simulated) {
+  async function recordAbort(name, inputs, startedAt, policySource, simulated, callId) {
     var message = "Tool call aborted by agent.";
     await appendEntry({
       tool: name,
+      callId: callId,
       verdict: "error",
       args: inputs,
       result: null,
@@ -650,24 +655,75 @@
     return "ERROR from PageControl: " + message;
   }
 
+  var SUMMARY_ICONS = {
+    item: '<svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><path d="M2.5 6.2 10 3l7.5 3.2v7.6L10 17l-7.5-3.2Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M2.5 6.2 10 9.5l7.5-3.3M10 9.5V17" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+    ship: '<svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><path d="M10 17.5s5.5-4.6 5.5-9a5.5 5.5 0 0 0-11 0c0 4.4 5.5 9 5.5 9Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="10" cy="8.4" r="2.1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
+    card: '<svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="11" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 8.5h15" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
+  };
+
+  // Drawn inline so the dialog stays self-contained on any merchant page. A
+  // site that wants the licensed network artwork can swap these strings.
+  var BRAND_MARKS = {
+    visa: '<svg viewBox="0 0 48 16" width="34" height="12" aria-hidden="true"><text x="24" y="13" text-anchor="middle" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="15" font-weight="700" font-style="italic" fill="#1A1F71">VISA</text></svg>',
+    mastercard: '<svg viewBox="0 0 48 16" width="34" height="12" aria-hidden="true"><circle cx="19" cy="8" r="7" fill="#EB001B"/><circle cx="29" cy="8" r="7" fill="#F79E1B"/><path d="M24 2.6a7 7 0 0 0 0 10.8 7 7 0 0 0 0-10.8Z" fill="#FF5F00"/></svg>',
+    amex: '<svg viewBox="0 0 48 16" width="34" height="12" aria-hidden="true"><rect width="48" height="16" rx="2" fill="#1F72CD"/><text x="24" y="11.5" text-anchor="middle" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" font-size="7.5" font-weight="700" fill="#FFFFFF">AMEX</text></svg>',
+  };
+
+  /**
+   * A summary may be a plain string, or rows of {icon, text, brand} so the
+   * dialog can show what is being bought, where it ships, and which card pays.
+   * Everything here is bounded and type-checked: row text is rendered as text,
+   * never markup, and brand only ever selects an SDK-owned mark.
+   */
+  function normalizeSummary(value) {
+    if (Array.isArray(value)) {
+      if (!value.length || value.length > 8) {
+        throw new TypeError("Derived summary must be a non-empty string, or 1 to 8 rows.");
+      }
+      return value.map(function (row) {
+        var text = row && typeof row.text === "string" ? row.text : "";
+        if (!text.trim()) throw new TypeError("Derived summary must be a non-empty string, or rows with text.");
+        return {
+          icon: row.icon === "item" || row.icon === "ship" || row.icon === "card" ? row.icon : null,
+          text: text.length > 160 ? text.slice(0, 157) + "…" : text,
+          brand:
+            typeof row.brand === "string" && Object.prototype.hasOwnProperty.call(BRAND_MARKS, row.brand.toLowerCase())
+              ? row.brand.toLowerCase()
+              : null,
+        };
+      });
+    }
+    if (typeof value !== "string" || !value.trim()) {
+      throw new TypeError("Derived summary must be a non-empty string, or rows.");
+    }
+    return value.length > 600 ? value.slice(0, 597) + "…" : value;
+  }
+
   function ensureApprovalStyles() {
     if (document.getElementById("pagecontrol-styles")) return;
     var style = document.createElement("style");
     style.id = "pagecontrol-styles";
     style.textContent =
-      ".pagecontrol-overlay{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:20px;background:rgba(16,22,19,.72);font-family:system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif}" +
-      ".pagecontrol-card{width:min(440px,100%);border:1px solid #27332e;border-radius:16px;background:#1a2420;color:#e2ece8;box-shadow:0 24px 80px rgba(0,0,0,.42);padding:24px}" +
-      ".pagecontrol-kicker{margin:0 0 8px;color:#2fbf94;font:700 12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase}" +
-      ".pagecontrol-title{margin:0;font-size:22px;line-height:1.25}" +
-      ".pagecontrol-copy{margin:10px 0 0;color:#8fa39c;font-size:14px;line-height:1.55;overflow-wrap:anywhere}" +
-      ".pagecontrol-copy--intent{white-space:pre-line;color:#e2ece8}" +
-      ".pagecontrol-cost{margin:16px 0 0;padding:12px;border-radius:10px;background:#101613;color:#e2ece8;font:600 14px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}" +
-      ".pagecontrol-countdown{margin:14px 0 0;color:#e0a03c;font:600 13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}" +
-      ".pagecontrol-actions{display:flex;gap:12px;margin-top:20px}" +
-      ".pagecontrol-button{min-height:44px;flex:1;border:1px solid #27332e;border-radius:10px;padding:10px 16px;background:#101613;color:#e2ece8;font:700 14px/1 system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;cursor:pointer}" +
-      ".pagecontrol-button--allow{border-color:#2fbf94;background:#0d7a68;color:#ffffff}" +
-      ".pagecontrol-button:hover{filter:brightness(1.08)}" +
-      ".pagecontrol-button:focus-visible{outline:3px solid #e2ece8;outline-offset:3px}" +
+      // Light palette matching the merchant panel. The SDK still ships its own
+      // values rather than reading host CSS variables, so a page that never
+      // styles PageControl still gets a coherent dialog.
+      ".pagecontrol-overlay{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:20px;background:rgba(23,44,59,.38);font-family:ui-rounded,\"Avenir Next\",\"Nunito Sans\",system-ui,-apple-system,sans-serif}" +
+      ".pagecontrol-card{width:min(440px,100%);border:1px solid #d7dbe0;border-radius:16px;background:#fdfcfc;color:#172c3b;box-shadow:0 24px 60px rgba(23,44,59,.18),0 2px 8px rgba(23,44,59,.08);padding:24px}" +
+      ".pagecontrol-kicker{margin:0 0 6px;color:#0000ff;font:600 11px/1.4 inherit;letter-spacing:.06em}" +
+      ".pagecontrol-rows{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:7px}" +
+      ".pagecontrol-row{display:flex;align-items:center;gap:9px;color:#172c3b;font-size:13px;line-height:1.4;overflow-wrap:anywhere}" +
+      ".pagecontrol-row-lead{flex:0 0 34px;display:inline-flex;align-items:center;justify-content:flex-start;color:#3c505d;line-height:0}" +
+      ".pagecontrol-title{margin:0;color:#172c3b;font-size:21px;font-weight:600;line-height:1.25;letter-spacing:-.02em}" +
+      ".pagecontrol-copy{margin:10px 0 0;color:#3c505d;font-size:14px;line-height:1.55;overflow-wrap:anywhere}" +
+      ".pagecontrol-copy--intent{white-space:pre-line;color:#172c3b}" +
+      ".pagecontrol-cost{margin:16px 0 0;padding:12px;border:1px solid #e2e2ff;border-radius:10px;background:#ececff;color:#172c3b;font:600 14px/1.4 inherit;font-variant-numeric:tabular-nums}" +
+      ".pagecontrol-countdown{margin:14px 0 0;color:#b07515;font:550 13px/1.4 inherit;font-variant-numeric:tabular-nums}" +
+      ".pagecontrol-actions{display:flex;gap:10px;margin-top:20px}" +
+      ".pagecontrol-button{min-height:44px;flex:1;border:1px solid #d7dbe0;border-radius:10px;padding:10px 16px;background:#ffffff;color:#172c3b;font:550 14px/1 inherit;cursor:pointer}" +
+      ".pagecontrol-button--allow{border-color:#0000ff;background:#0000ff;color:#ffffff}" +
+      ".pagecontrol-button:hover{background:#f1f3f6}" +
+      ".pagecontrol-button--allow:hover{background:#1a1aff;border-color:#1a1aff}" +
+      ".pagecontrol-button:focus-visible{outline:2px solid #0000ff;outline-offset:2px}" +
       "@media(prefers-reduced-motion:no-preference){.pagecontrol-card{animation:pagecontrol-enter 200ms cubic-bezier(0,0,.2,1)}.pagecontrol-button{transition:filter 100ms cubic-bezier(0,0,.2,1),transform 100ms cubic-bezier(0,0,.2,1)}.pagecontrol-button:active{transform:scale(.98)}@keyframes pagecontrol-enter{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}}";
     (document.head || document.documentElement).appendChild(style);
   }
@@ -711,16 +767,36 @@
     card.className = "pagecontrol-card";
     var kicker = document.createElement("p");
     kicker.className = "pagecontrol-kicker";
-    kicker.textContent = "PageControl approval";
+    kicker.textContent = "PageCTRL approval";
     var title = document.createElement("h2");
     title.id = "pagecontrol-title";
     title.className = "pagecontrol-title";
     title.textContent = "Run " + first.public.tool + "?";
-    var copy = document.createElement("p");
     // Prefer the tool's own description of what it will do. Falling back to the
     // raw arguments is only useful when they carry the meaning.
-    copy.className = first.public.summary ? "pagecontrol-copy pagecontrol-copy--intent" : "pagecontrol-copy";
-    copy.textContent = first.public.summary || first.public.argsSummary;
+    var copy;
+    if (Array.isArray(first.public.summary)) {
+      copy = document.createElement("ul");
+      copy.className = "pagecontrol-rows";
+      first.public.summary.forEach(function (row) {
+        var item = document.createElement("li");
+        item.className = "pagecontrol-row";
+        var lead = document.createElement("span");
+        lead.className = "pagecontrol-row-lead";
+        // SDK-authored markup only; row text below is set as text, never HTML.
+        if (row.brand) lead.innerHTML = BRAND_MARKS[row.brand];
+        else if (row.icon) lead.innerHTML = SUMMARY_ICONS[row.icon];
+        item.appendChild(lead);
+        var text = document.createElement("span");
+        text.textContent = row.text;
+        item.appendChild(text);
+        copy.appendChild(item);
+      });
+    } else {
+      copy = document.createElement("p");
+      copy.className = first.public.summary ? "pagecontrol-copy pagecontrol-copy--intent" : "pagecontrol-copy";
+      copy.textContent = first.public.summary || first.public.argsSummary;
+    }
     card.appendChild(kicker);
     card.appendChild(title);
     card.appendChild(copy);
@@ -819,7 +895,9 @@
         expiresAt: now() + APPROVAL_TTL_MS,
       };
       if (typeof cost === "number") publicItem.cost = cost;
-      if (typeof intentSummary === "string" && intentSummary) publicItem.summary = intentSummary;
+      if (Array.isArray(intentSummary) ? intentSummary.length : typeof intentSummary === "string" && intentSummary) {
+        publicItem.summary = intentSummary;
+      }
       var item = {
         id: id,
         public: publicItem,
@@ -947,11 +1025,12 @@
     var safeInputs = inputs === undefined ? {} : inputs;
     var sourceSignal = executionContext && executionContext.signal;
     if (sourceSignal && sourceSignal.aborted) {
-      return recordAbort(name, safeInputs, startedAt, null, simulated);
+      return recordAbort(name, safeInputs, startedAt, null, simulated, callId);
     }
     if (paused) {
       return recordBlocked({
         tool: name,
+        callId: callId,
         verdict: "paused",
         args: safeInputs,
         result: null,
@@ -966,6 +1045,7 @@
     if (!record) {
       return recordBlocked({
         tool: name,
+        callId: callId,
         verdict: "denied",
         args: safeInputs,
         result: null,
@@ -980,6 +1060,7 @@
     if (argumentErrors.length) {
       return recordBlocked({
         tool: name,
+        callId: callId,
         verdict: "invalid_args",
         args: safeInputs,
         result: null,
@@ -1002,6 +1083,7 @@
       var denyNote = policy.denyMessage || "The effective policy denies this tool.";
       return recordBlocked({
         tool: name,
+        callId: callId,
         verdict: "denied",
         args: safeInputs,
         result: null,
@@ -1021,6 +1103,7 @@
       rateWindows.set(name, windowEntries);
       return recordBlocked({
         tool: name,
+        callId: callId,
         verdict: "rate_limited",
         args: safeInputs,
         result: null,
@@ -1054,16 +1137,13 @@
       // agent's arguments. Tools whose arguments are empty by design derive a
       // plain-language summary from page state instead.
       if (record.guardMeta && typeof record.guardMeta.getSummary === "function") {
-        intentSummary = record.guardMeta.getSummary(safeInputs, guardContext);
-        if (typeof intentSummary !== "string" || !intentSummary.trim()) {
-          throw new TypeError("Derived summary must be a non-empty string.");
-        }
-        if (intentSummary.length > 600) intentSummary = intentSummary.slice(0, 597) + "…";
+        intentSummary = normalizeSummary(record.guardMeta.getSummary(safeInputs, guardContext));
       }
     } catch (error) {
       var guardError = error instanceof Error ? error.message : String(error);
       return recordBlocked({
         tool: name,
+        callId: callId,
         verdict: "invalid_args",
         args: safeInputs,
         result: null,
@@ -1078,6 +1158,7 @@
     if (typeof policy.maxQty === "number" && typeof qty === "number" && qty > policy.maxQty) {
       return recordBlocked({
         tool: name,
+        callId: callId,
         verdict: "capped",
         args: safeInputs,
         result: null,
@@ -1091,6 +1172,7 @@
     if (typeof policy.maxAmount === "number" && typeof cost === "number" && cost > policy.maxAmount) {
       return recordBlocked({
         tool: name,
+        callId: callId,
         verdict: "capped",
         args: safeInputs,
         result: null,
@@ -1113,6 +1195,7 @@
       if (cost + budget.spent > budget.limit) {
         return recordBlocked({
           tool: name,
+          callId: callId,
           verdict: "budget_denied",
           args: safeInputs,
           result: null,
@@ -1134,6 +1217,7 @@
       var approvalPromise = requestApproval(name, safeInputs, cost, sourceSignal, intentSummary);
       await appendEntry({
         tool: name,
+        callId: callId,
         verdict: "approval_pending",
         args: safeInputs,
         result: null,
@@ -1145,12 +1229,13 @@
       var decision = await approvalPromise;
       if (decision.reason === "aborted" || (sourceSignal && sourceSignal.aborted)) {
         refundBudgetReservation();
-        return recordAbort(name, safeInputs, startedAt, resolved.source, simulated);
+        return recordAbort(name, safeInputs, startedAt, resolved.source, simulated, callId);
       }
       if (paused || decision.reason === "paused") {
         refundBudgetReservation();
         return recordBlocked({
           tool: name,
+          callId: callId,
           verdict: "paused",
           args: safeInputs,
           result: null,
@@ -1165,6 +1250,7 @@
         refundBudgetReservation();
         return recordBlocked({
           tool: name,
+          callId: callId,
           verdict: "human_denied",
           args: safeInputs,
           result: null,
@@ -1181,7 +1267,7 @@
     try {
       if (sourceSignal && sourceSignal.aborted) {
         refundBudgetReservation();
-        return recordAbort(name, safeInputs, startedAt, resolved.source, simulated);
+        return recordAbort(name, safeInputs, startedAt, resolved.source, simulated, callId);
       }
       var rawResult = await executeWithTimeout(record, safeInputs, executionContext || {}, {
         callId: callId,
@@ -1209,6 +1295,7 @@
       budgetReserved = false;
       await appendEntry({
         tool: name,
+        callId: callId,
         verdict: approvedByHuman ? "approved" : "allowed",
         args: safeInputs,
         result: result,
@@ -1223,10 +1310,11 @@
       refundBudgetReservation();
       var message = error instanceof Error ? error.message : String(error);
       if ((sourceSignal && sourceSignal.aborted) || (error && error.name === "AbortError")) {
-        return recordAbort(name, safeInputs, startedAt, resolved.source, simulated);
+        return recordAbort(name, safeInputs, startedAt, resolved.source, simulated, callId);
       }
       await appendEntry({
         tool: name,
+        callId: callId,
         verdict: "error",
         args: safeInputs,
         result: null,

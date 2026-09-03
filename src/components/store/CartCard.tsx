@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { CardBrandIcon } from "@/components/guard/AuthorityIcons";
 import { formatUSD } from "@/lib/catalog";
 import { hasCard, refreshQuote, savedCard, subscribe, type SavedCard } from "@/lib/payments-client";
 import { flashed, useStore } from "@/lib/store";
@@ -146,7 +147,14 @@ export function CartCard() {
         </p>
         <p>
           <span>Pays with</span>
-          <strong>{card ? `${card.brand} ····${card.last4}` : "Not set"}</strong>
+          {card ? (
+            <strong className="order-card">
+              <CardBrandIcon brand={card.brand} height={13} />
+              <span>···· {card.last4}</span>
+            </strong>
+          ) : (
+            <strong>Not set</strong>
+          )}
         </p>
       </div>
       <button

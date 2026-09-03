@@ -22,6 +22,9 @@ export function AuthorityRow({
   onToggle,
   flashing = false,
   meter,
+  icon,
+  badge,
+  full = false,
   onSubmit,
   trustedBudgetControl = false,
   children,
@@ -36,6 +39,12 @@ export function AuthorityRow({
   onToggle: () => void;
   flashing?: boolean;
   meter?: ReactNode;
+  /** Small glyph beside the label. */
+  icon?: ReactNode;
+  /** Rendered before the value, e.g. a card brand mark. */
+  badge?: ReactNode;
+  /** Spans both columns even when collapsed. */
+  full?: boolean;
   /** When given, the editor is a form and this handles its submit. */
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
   /** Lets the sealed SDK accept only a browser-trusted budget form submission. */
@@ -51,10 +60,23 @@ export function AuthorityRow({
     .join(" ");
 
   return (
-    <li className={`authority-row${flashing ? " is-flashing" : ""}`}>
+    <li
+      className={[
+        "authority-row",
+        full ? "authority-row--full" : "",
+        open ? "is-open" : "",
+        flashing ? "is-flashing" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <div className="authority-row-head">
+        {icon ? (
+          <span className="authority-icon" aria-hidden="true">
+            {icon}
+          </span>
+        ) : null}
         <span className="authority-label">{label}</span>
-        <span className={valueClass}>{value}</span>
         <button
           type="button"
           className="budget-edit-button"
@@ -64,7 +86,7 @@ export function AuthorityRow({
           title={editLabel}
           onClick={onToggle}
         >
-          <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+          <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
             <path
               d="m4 13.5-.7 3.2 3.2-.7L15.8 6.7a1.6 1.6 0 0 0 0-2.3l-.2-.2a1.6 1.6 0 0 0-2.3 0L4 13.5Z"
               fill="none"
@@ -76,6 +98,10 @@ export function AuthorityRow({
             <path d="m12 5.5 2.5 2.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
           </svg>
         </button>
+      </div>
+      <div className="authority-value-line">
+        {badge}
+        <span className={valueClass}>{value}</span>
       </div>
       {meter}
       {onSubmit ? (

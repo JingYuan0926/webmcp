@@ -1,7 +1,41 @@
 import { TimelineRow } from "@/components/guard/TimelineRow";
 
+export type JourneyGroup = {
+  key: string;
+  pending: PageControlEntry | null;
+  final: PageControlEntry | null;
+};
+
+/**
+ * A call that waits for a human writes two journal records: the checkpoint and
+ * its outcome. Both stay in the hash chain — it is append-only, and that is the
+ * point — but they are one action, so the timeline shows them as one row with
+ * both timestamps.
+ */
+export function groupJourney(entries: PageControlEntry[]): JourneyGroup[] {
+  const groups: JourneyGroup[] = [];
+  const openByCall = new Map<string, number>();
+
+  for (const entry of entries) {
+    if (entry.verdict === "approval_pending" && entry.callId) {
+      openByCall.set(entry.callId, groups.length);
+      groups.push({ key: entry.id, pending: entry, final: null });
+      continue;
+    }
+    const at = entry.callId ? openByCall.get(entry.callId) : undefined;
+    if (at !== undefined && entry.callId) {
+      groups[at].final = entry;
+      openByCall.delete(entry.callId);
+      continue;
+    }
+    groups.push({ key: entry.id, pending: null, final: entry });
+  }
+
+  return groups;
+}
+
 export function Timeline({ entries }: { entries: PageControlEntry[] }) {
-  const visibleEntries = entries.slice(-60).reverse();
+  const visibleGroups = groupJourney(entries).slice(-60).reverse();
   return (
     <section className="timeline-section" aria-labelledby="timeline-title">
       <div className="panel-section-heading timeline-heading">
@@ -11,9 +45,9 @@ export function Timeline({ entries }: { entries: PageControlEntry[] }) {
         </div>
         <span className="panel-caption">Newest first</span>
       </div>
-      {visibleEntries.length ? (
+      {visibleGroups.length ? (
         <div className="timeline-list">
-          {visibleEntries.map((entry) => <TimelineRow key={entry.id} entry={entry} />)}
+          {visibleGroups.map((group) => <TimelineRow key={group.key} group={group} />)}
         </div>
       ) : (
         <div className="panel-empty">
@@ -27,4 +61,3 @@ export function Timeline({ entries }: { entries: PageControlEntry[] }) {
     </section>
   );
 }
-
