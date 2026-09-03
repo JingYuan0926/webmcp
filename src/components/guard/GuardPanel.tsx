@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 import { AgentAuthority } from "@/components/guard/AgentAuthority";
@@ -46,24 +47,21 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
         type="button"
         className="guard-hide-button"
         onClick={onHide}
-        aria-label="Close PageControl settings"
+        aria-label="Close PageCtrl settings"
         title="Close"
       >
         <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
           <path d="m7 7 10 10m0-10L7 17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
       </button>
-      <aside className="guard-panel" aria-label="PageControl panel">
+      <aside className="guard-panel" aria-label="PageCtrl panel">
         <header className="guard-header">
           <div>
             <div className="guard-wordmark">
               <span className="guard-mark" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="18" height="18">
-                  <path d="M12 3 5 6v5c0 4.6 2.8 8.1 7 10 4.2-1.9 7-5.4 7-10V6l-7-3Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                  <path d="m9 12 2 2 4-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <Image src="/logo.png" alt="" width={30} height={30} priority />
               </span>
-              <strong id="pagecontrol-title">PageControl</strong>
+              <strong id="pagecontrol-title">PageCtrl</strong>
             </div>
             <p className="guard-tagline">Review what your agent can access and do.</p>
           </div>

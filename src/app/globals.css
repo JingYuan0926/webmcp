@@ -1106,52 +1106,33 @@ summary:focus-visible {
   display: grid;
   place-items: center;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--panel-primary) 78%, var(--panel-line));
+  /* White disc so the logo sits on its own ground rather than being tinted
+     by the brand fill. */
+  border: 1px solid color-mix(in srgb, var(--panel-primary) 18%, var(--panel-line));
   border-radius: 999px;
-  background: var(--panel-primary);
-  color: var(--panel-primary-foreground);
+  background: #fff;
   box-shadow:
-    0 0.75rem 2rem color-mix(in srgb, var(--panel-primary) 28%, transparent),
-    0 0.125rem 0.5rem color-mix(in srgb, var(--panel-ink) 16%, transparent);
+    0 0.75rem 2rem color-mix(in srgb, var(--panel-ink) 14%, transparent),
+    0 0.125rem 0.5rem color-mix(in srgb, var(--panel-ink) 10%, transparent);
   font-family: var(--panel-font);
 }
 
-.show-guard-button::before {
-  content: attr(data-label);
-  position: absolute;
-  right: calc(100% + var(--space-3));
-  width: max-content;
-  padding: 0.45rem 0.7rem;
-  border: 1px solid var(--panel-line);
-  border-radius: var(--radius-sm);
-  background: var(--panel-bg);
-  color: var(--panel-ink);
-  box-shadow: var(--shadow-card);
-  font-size: 0.75rem;
-  font-weight: 500;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(0.25rem);
+.show-guard-button img {
+  width: 1.625rem;
+  height: 1.625rem;
+  object-fit: contain;
 }
 
 .show-guard-button:hover,
 .show-guard-button:focus-visible,
 .show-guard-button.is-open {
   border-color: var(--panel-primary);
-  background: var(--panel-bg);
-  color: var(--panel-primary);
-}
-
-.show-guard-button:hover::before,
-.show-guard-button:focus-visible::before {
-  opacity: 1;
-  transform: translateX(0);
 }
 
 .guard-wordmark {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .guard-wordmark strong {
@@ -1160,14 +1141,19 @@ summary:focus-visible {
   letter-spacing: -0.03em;
 }
 
+/* The logo carries its own colour and silhouette, so it needs no tile behind
+   it — just space to sit in. */
 .guard-mark {
-  width: 2rem;
-  height: 2rem;
+  width: 1.875rem;
+  height: 1.875rem;
   display: grid;
   place-items: center;
-  border-radius: 0.65rem;
-  background: var(--panel-primary);
-  color: var(--panel-primary-foreground);
+}
+
+.guard-mark img {
+  width: 1.875rem;
+  height: 1.875rem;
+  object-fit: contain;
 }
 
 .guard-tagline {

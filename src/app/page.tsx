@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 import { GuardPanel } from "@/components/guard/GuardPanel";
@@ -57,15 +58,11 @@ function PageControlDemo() {
           type="button"
           className={`show-guard-button${panelOpen ? " is-open" : ""}`}
           onClick={() => setPanelOpen((open) => !open)}
-          aria-label={panelOpen ? "Close PageControl settings" : "Open PageControl settings"}
+          aria-label={panelOpen ? "Close PageCtrl settings" : "Open PageCtrl settings"}
           aria-expanded={panelOpen}
           aria-controls="pagecontrol-panel"
-          data-label={panelOpen ? "Close PageControl" : "PageControl"}
         >
-          <svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true">
-            <path d="M12 3 5 6v5c0 4.6 2.8 8.1 7 10 4.2-1.9 7-5.4 7-10V6l-7-3Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-            <path d="m9 12 2 2 4-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <Image src="/logo.png" alt="" width={26} height={26} priority />
         </button>
       </div>
     </div>
