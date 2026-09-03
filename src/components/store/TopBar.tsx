@@ -19,6 +19,7 @@ export function TopBar() {
         <a href="#catalog">Shop</a>
         <a href="#delivery">Delivery</a>
         <a href="/docs">SDK Docs</a>
+        <a href="/dashboard">Dashboard</a>
       </nav>
 
       <div className="store-utilities">

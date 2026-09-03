@@ -40,6 +40,12 @@
 
   var registry = new Map();
   var listeners = new Map();
+  var surface = { guarded: [], unguarded: [] };
+  var surfaceContext = null;
+  var surfaceListener = null;
+  var surfaceAuditQueued = false;
+  var surfaceAuditFailed = false;
+  var reportedUnguarded = new Set();
   var journey = [];
   var pendingApprovals = new Map();
   var rateWindows = new Map();
@@ -263,6 +269,88 @@
 
   function emitEnvironment() {
     emit("environment", environment);
+  }
+
+  function emitSurface() {
+    emit("surface", surface);
+  }
+
+  function toolName(tool) {
+    return tool && typeof tool.name === "string" ? tool.name : "";
+  }
+
+  async function auditSurface() {
+    surfaceAuditQueued = false;
+    var context = modelContext;
+    var registeredNames = Array.from(registry.keys()).sort();
+    if (!context || typeof context.getTools !== "function") {
+      surface = { guarded: registeredNames, unguarded: [] };
+      emitSurface();
+      return;
+    }
+    try {
+      var discovered = await Promise.resolve(context.getTools());
+      if (context !== modelContext) return;
+      var names = Array.from(
+        new Set(
+          (Array.isArray(discovered) ? discovered : [])
+            .map(toolName)
+            .filter(Boolean),
+        ),
+      ).sort();
+      var guarded = names.filter(function (name) {
+        return registry.has(name);
+      });
+      var unguarded = names.filter(function (name) {
+        return !registry.has(name);
+      });
+      surface = { guarded: guarded, unguarded: unguarded };
+      emitSurface();
+      unguarded.forEach(function (name) {
+        if (reportedUnguarded.has(name)) return;
+        alertGuard(
+          "danger",
+          "UNGUARDED_TOOL",
+          "Not protected — " + name + " was registered outside PageControl.",
+          name,
+        );
+      });
+      reportedUnguarded = new Set(unguarded);
+      surfaceAuditFailed = false;
+    } catch {
+      if (!surfaceAuditFailed) {
+        surfaceAuditFailed = true;
+        alertGuard(
+          "warn",
+          "SURFACE_AUDIT_FAILED",
+          "PageControl could not read the browser's current tool list.",
+          null,
+        );
+      }
+    }
+  }
+
+  function scheduleSurfaceAudit() {
+    if (surfaceAuditQueued) return;
+    surfaceAuditQueued = true;
+    Promise.resolve().then(auditSurface);
+  }
+
+  function observeSurface(context) {
+    if (surfaceContext && surfaceListener && typeof surfaceContext.removeEventListener === "function") {
+      surfaceContext.removeEventListener("toolchange", surfaceListener);
+    }
+    surfaceContext = context || null;
+    surfaceListener = null;
+    if (surfaceContext && typeof surfaceContext.addEventListener === "function") {
+      surfaceListener = scheduleSurfaceAudit;
+      surfaceContext.addEventListener("toolchange", surfaceListener);
+    }
+    scheduleSurfaceAudit();
+  }
+
+  function getSurface() {
+    return clone(surface);
   }
 
   function getEnvironment() {
@@ -1177,6 +1265,7 @@
     if (event === "budget") callback(clone(budget));
     if (event === "state") callback({ paused: paused });
     if (event === "environment") callback(getEnvironment());
+    if (event === "surface") callback(getSurface());
     return function () {
       var callbacks = listeners.get(event);
       if (callbacks) callbacks.delete(callback);
@@ -1332,6 +1421,7 @@
     registry.delete(record.name);
     rateWindows.delete(record.name);
     emitTools();
+    scheduleSurfaceAudit();
     return true;
   }
 
@@ -1381,6 +1471,7 @@
       return result;
     }
     attachRegistrationAbort(record, options, binding);
+    scheduleSurfaceAudit();
     return result;
   }
 
@@ -1517,6 +1608,7 @@
 
     modelContext = context;
     activeBinding = binding;
+    observeSurface(context);
     environment = { native: true, api: apiName };
     lateNativeAdopted = true;
     lateNativeAdopting = false;
@@ -1576,6 +1668,7 @@
     activeBinding = wrapContext(modelContext);
   }
   assignSharedContext(modelContext, environment.api);
+  observeSurface(modelContext);
 
   async function init(config) {
     if (initialized) return { ok: true, message: "PageControl is already initialized." };
@@ -1651,6 +1744,7 @@
 
   function seal() {
     sealed = true;
+    scheduleSurfaceAudit();
     if (!Object.isFrozen(api)) Object.freeze(api);
     return { ok: true, message: "PageControl is sealed." };
   }
@@ -1675,6 +1769,7 @@
     exportJourney: exportJourney,
     explainLast: explainLast,
     getEnvironment: getEnvironment,
+    getSurface: getSurface,
     resetTamperStatus: resetTamperStatus,
     seal: seal,
   };

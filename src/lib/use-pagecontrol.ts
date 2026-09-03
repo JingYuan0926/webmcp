@@ -12,6 +12,7 @@ export type GuardSnapshot = {
   alerts: GuardAlert[];
   guardState: { paused: boolean };
   environment: PageControlEnvironment;
+  surface: PageControlSurface;
   available: boolean;
   policies: PageControlPolicies;
 };
@@ -31,6 +32,7 @@ export function usePageControl(): GuardSnapshot {
     native: false,
     api: "shim",
   });
+  const [surface, setSurface] = useState<PageControlSurface>({ guarded: [], unguarded: [] });
   const [available, setAvailable] = useState(false);
   const [policyRevision, setPolicyRevision] = useState(0);
 
@@ -51,6 +53,7 @@ export function usePageControl(): GuardSnapshot {
       setAvailable(true);
       setEntries(guard.getJourney());
       setEnvironment(guard.getEnvironment());
+      setSurface(guard.getSurface());
       cleanups.push(
         guard.on("entry", (entry) => {
           setEntries((current) => [...current, entry]);
@@ -90,6 +93,9 @@ export function usePageControl(): GuardSnapshot {
         guard.on("environment", (nextEnvironment) => {
           setEnvironment(nextEnvironment);
         }),
+        guard.on("surface", (nextSurface) => {
+          setSurface(nextSurface);
+        }),
       );
     }
 
@@ -116,6 +122,7 @@ export function usePageControl(): GuardSnapshot {
     alerts,
     guardState,
     environment,
+    surface,
     available,
     policies,
   };

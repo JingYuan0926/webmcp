@@ -7,6 +7,7 @@ import { AlertsStrip } from "@/components/guard/AlertsStrip";
 import { ApprovalsList } from "@/components/guard/ApprovalsList";
 import { PolicyList } from "@/components/guard/PolicyList";
 import { Timeline } from "@/components/guard/Timeline";
+import { ToolSurface } from "@/components/guard/ToolSurface";
 import { demoSteps, runTestAgent } from "@/lib/demo-agent";
 import { usePageControl } from "@/lib/use-pagecontrol";
 
@@ -96,6 +97,7 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
         {/* Alerts are current state; the timeline is history. */}
         <AlertsStrip alerts={snapshot.alerts} />
         <Timeline entries={snapshot.entries} />
+        <ToolSurface surface={snapshot.surface} />
         <PolicyList
           tools={snapshot.tools}
           policies={snapshot.policies}

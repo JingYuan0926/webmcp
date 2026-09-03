@@ -721,7 +721,27 @@ assert.equal(typeof brokenContextHarness.document.modelContext.registerTool, "fu
 // Native context present before PageControl: options and annotations survive,
 // while execution still passes through the guard pipeline.
 const preexistingNative = createNativeModelContext();
+const bypassPageControlRegistration = preexistingNative.registerTool.bind(preexistingNative);
+await preexistingNative.registerTool({
+  name: "registered_before_pagecontrol",
+  description: "A tool that existed before the guard loaded.",
+  inputSchema: objectSchema(),
+  execute: async () => "unguarded",
+});
 const nativeHarness = createIsolatedBrowser({ documentContext: preexistingNative });
+await new Promise((resolve) => setTimeout(resolve, 0));
+assert.deepEqual(nativeHarness.guard.getSurface().unguarded, ["registered_before_pagecontrol"]);
+await bypassPageControlRegistration({
+  name: "registered_outside_pagecontrol",
+  description: "A tool that bypasses the wrapped registration method.",
+  inputSchema: objectSchema(),
+  execute: async () => "unguarded",
+});
+await new Promise((resolve) => setTimeout(resolve, 0));
+assert.deepEqual(nativeHarness.guard.getSurface().unguarded, [
+  "registered_before_pagecontrol",
+  "registered_outside_pagecontrol",
+]);
 assert.deepEqual(nativeHarness.guard.getEnvironment(), { native: true, api: "document" });
 assert.equal(nativeHarness.document.modelContext, nativeHarness.navigator.modelContext);
 await nativeHarness.guard.init({

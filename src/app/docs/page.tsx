@@ -97,6 +97,7 @@ const apiRows = [
   ["getPolicies()", "Read merchant, user, and effective policy maps."],
   ["getJourney() / exportJourney()", "Read or download the redacted, hash-chained flight record."],
   ["getEnvironment()", "Return native WebMCP or shim mode and the active API surface."],
+  ["getSurface()", "Compare browser-reported WebMCP tools with the tools PageControl wrapped."],
   ["explainLast()", "Return the plain-language reason for the most recent blocked call."],
 ] as const;
 
@@ -108,6 +109,7 @@ const eventRows = [
   ["budget", "Reserved or spent session budget changed."],
   ["state", "The kill switch paused or resumed execution."],
   ["environment", "PageControl entered native WebMCP or fallback shim mode."],
+  ["surface", "The guarded and unguarded browser-reported tool lists changed."],
 ] as const;
 
 function ShieldMark() {
@@ -169,7 +171,7 @@ export default function DocsPage() {
               tamper detection, and a redacted flight recorder. It runs entirely inside the page.
             </p>
             <div className="sdk-docs-badges" aria-label="SDK characteristics">
-              <span>One script</span><span>No dependencies</span><span>No server</span>
+              <span>One script</span><span>No dependencies</span><span>No SDK telemetry</span>
             </div>
           </div>
           <aside aria-label="Integration summary">
@@ -266,6 +268,10 @@ export default function DocsPage() {
                 <div><strong>annotations</strong><p>Pass through to native WebMCP unchanged.</p></div>
                 <div><strong>signal</strong><p>Registration and execution cancellation propagate safely.</p></div>
               </div>
+              <div className="sdk-docs-callout">
+                <strong>PageControl audits the browser&apos;s real tool surface.</strong>
+                <p>It calls <code>document.modelContext.getTools()</code> after setup and whenever the native <code>toolchange</code> event fires. A browser-reported tool that PageControl did not wrap is shown as unguarded.</p>
+              </div>
             </section>
 
             <section id="policies" className="sdk-docs-section">
@@ -345,7 +351,7 @@ export default function DocsPage() {
               <p className="sdk-docs-kicker">10 · Verify</p>
               <h2>Trust and privacy boundary</h2>
               <div className="sdk-docs-grid">
-                <div><strong>Zero SDK network calls</strong><p>No fetch, beacon, WebSocket, cookie, or PageControl backend.</p></div>
+                <div><strong>Zero SDK network calls</strong><p>The browser SDK calls no PageControl backend and sends no telemetry.</p></div>
                 <div><strong>Memory-only journey</strong><p>The record disappears with the tab unless the user exports it.</p></div>
                 <div><strong>Redacted before logging</strong><p>Email addresses and long card-number-like strings are masked first.</p></div>
                 <div><strong>Honest boundary</strong><p>An in-page guard cannot protect a user from the page owner itself.</p></div>
@@ -380,9 +386,9 @@ export default function DocsPage() {
                 merchant integration work or moves a trust decision into a stronger browser boundary.
               </p>
               <ol className="sdk-roadmap-list">
-                <li><span>1</span><div><strong>Versioned distribution</strong><p>Publish immutable releases from an PageControl origin with a real SRI hash and CORS headers.</p></div></li>
+                <li><span>1</span><div><strong>Versioned distribution</strong><p>Publish immutable releases from a PageControl origin with a real SRI hash and CORS headers.</p></div></li>
                 <li><span>2</span><div><strong>Placement Web Component</strong><p>Add an <code>&lt;page-control-panel&gt;</code> custom element for layout only. The boot script must still load first so no tool registration escapes the guard.</p></div></li>
-                <li><span>3</span><div><strong>Cross-origin approval frame</strong><p>Serve the sensitive decision UI from an PageControl origin. The browser same-origin policy then prevents the host page from reading its internal DOM.</p></div></li>
+                <li><span>3</span><div><strong>Cross-origin approval frame</strong><p>Serve the sensitive decision UI from a PageControl origin. The browser same-origin policy then prevents the host page from reading its internal DOM.</p></div></li>
                 <li><span>4</span><div><strong>Independent verification</strong><p>A companion extension can warn when a site claims protection without loading the genuine release.</p></div></li>
                 <li><span>5</span><div><strong>Browser-owned prompt</strong><p>Long term, the browser should own the unforgeable approval surface while PageControl supplies policy decisions.</p></div></li>
               </ol>

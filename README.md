@@ -51,6 +51,8 @@ Merchant rules are the floor. They stay locked after setup. Users can deny more 
 
 PageControl patches `document.modelContext.registerTool` before application code runs and mirrors the same context on `navigator.modelContext` for older clients. Every registered `execute()` function is replaced with a guarded pipeline for validation, policy resolution, rate limits, caps, budgets, approvals, execution timeouts, redaction, output scanning, and journey hashing. PageControl also registers `pagecontrol_get_journey`, `pagecontrol_explain_block`, and `pagecontrol_set_budget` as WebMCP tools through that same pipeline. An approval gate leaves `execute()` pending until a human selects Allow or Deny; that in-page human checkpoint is not possible in classic server-side MCP.
 
+The SDK also audits the browser's native tool list through `document.modelContext.getTools()` and the `toolchange` event. The panel compares that list with PageControl's own registry and warns when a tool exists that PageControl did not wrap, including a tool registered before the SDK loaded.
+
 When the browser does not provide WebMCP, the SDK installs a compatible in-page shim. The demo therefore runs in a normal browser while using the same guarded path as a native client.
 
 ## Native WebMCP
@@ -147,6 +149,18 @@ The session store is in-memory, so saved cards reset when the dev server restart
 
 A tool can add `guard: { getCost(inputs), getQty(inputs) }`. PageControl removes this extension before native registration and uses it to enforce amount, quantity, and budget rules.
 
+## Merchant dashboard preview
+
+Open `/dashboard` to see the merchant integration flow. The preview includes a demo sign-in, publishable and secret keys, reveal and two-step rotation controls, and a copyable installation snippet. Preview keys are encrypted into an httpOnly session cookie, reset when the merchant signs out, and do not authorize production traffic.
+
+Set `PAGECONTROL_DASHBOARD_USERNAME`, `PAGECONTROL_DASHBOARD_PASSWORD`, and `PAGECONTROL_DASHBOARD_SESSION_SECRET` for a stable deployed preview. Local development defaults to `merchant` / `pagecontrol-demo`.
+
+## Optional signing service
+
+The SDK itself remains dependency-free and makes no PageControl network requests. The separate [`service/`](service/) package is an optional server-to-server trust layer: it keeps an Ed25519 private key away from the merchant page, publishes the public verification key, and issues short-lived signed grants. See [`service/README.md`](service/README.md) for its routes, environment variables, and Railway deployment steps.
+
+The service is not yet connected to the demo checkout path. Its presence does not make an in-page prompt unforgeable; that still requires a browser-owned or cross-origin approval surface.
+
 ## Run locally
 
 ```bash
@@ -166,7 +180,9 @@ Open `http://localhost:3000`. Test native WebMCP in ChatGPT's in-app browser or 
 - `src/lib/tools.ts` — merchant policy and eleven WebMCP store tools.
 - `src/lib/payments-client.ts` — quote cache, the synchronous pin the guard reads, and the charge call.
 - `src/lib/server/` — Stripe client, cookie session holding the card handle, and server-side quote pricing.
-- `src/app/api/` — setup intent, saved payment method, cart quote, and charge confirmation routes.
+- `src/app/api/` — payment routes plus the authenticated dashboard preview API.
+- `src/app/dashboard/` — merchant sign-in and session-scoped API key preview.
+- `service/` — standalone Ed25519 signing service for Railway or another Node host.
 - `src/lib/use-pagecontrol.ts` — React bridge for SDK events.
 - `src/lib/demo-agent.ts` — deterministic ten-step security demo.
 - `src/components/store/` — storefront, cart, and orders interface.
@@ -180,7 +196,7 @@ This project is an entry for the OpenAI WebMCP Challenge. OpenAI Codex helped bu
 
 - Multi-model evaluation runs.
 - Anomaly detection on journeys.
-- Hosted policy dashboard.
+- Persistent organizations, production API keys, and a hosted policy dashboard.
 
 ## License
 

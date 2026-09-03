@@ -72,6 +72,11 @@ declare global {
     api: "document" | "navigator" | "shim";
   };
 
+  type PageControlSurface = {
+    guarded: string[];
+    unguarded: string[];
+  };
+
   type PageControlPolicies = {
     merchant: Record<string, PageControlRule>;
     user: Record<string, PageControlRule>;
@@ -114,6 +119,7 @@ declare global {
     alert: PageControlAlert;
     state: { paused: boolean };
     environment: PageControlEnvironment;
+    surface: PageControlSurface;
   };
 
   type ModelContext = {
@@ -170,6 +176,7 @@ declare global {
     exportJourney: () => string;
     explainLast: () => string;
     getEnvironment: () => PageControlEnvironment;
+    getSurface: () => PageControlSurface;
     resetTamperStatus: () => { ok: boolean; message: string };
     seal: () => { ok: boolean; message: string };
   };
