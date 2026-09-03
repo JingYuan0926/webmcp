@@ -6,6 +6,7 @@ import { AddressCard } from "@/components/store/AddressCard";
 import { CartCard } from "@/components/store/CartCard";
 import { ProductGrid } from "@/components/store/ProductGrid";
 import { SearchBar } from "@/components/store/SearchBar";
+import { WalletCard } from "@/components/store/WalletCard";
 import { catalog } from "@/lib/catalog";
 
 export function StorePane() {
@@ -52,6 +53,7 @@ export function StorePane() {
         <aside className="store-sidebar" aria-label="Cart and account details">
           <div id="partner-slot" aria-live="polite" />
           <CartCard />
+          <WalletCard />
           <AddressCard />
         </aside>
       </div>

@@ -1,8 +1,32 @@
 "use client";
 
+import {
+  chargeQuote,
+  hasCard,
+  pinQuote,
+  takePinnedQuote,
+  type CartLine,
+} from "@/lib/payments-client";
 import { storeApi, type Address } from "@/lib/store";
 
 let registrationPromise: Promise<boolean> | null = null;
+
+/**
+ * Every message a failed checkout can show the agent. They are fixed strings:
+ * PageControl passes a thrown error straight into model context, so nothing
+ * from Stripe or the network is ever allowed to reach this path.
+ */
+const CHECKOUT_ERRORS: Record<string, string> = {
+  no_quote:
+    "No priced quote was pinned for this cart. Reload the cart and try checkout again.",
+  expired: "The approved price expired before the charge ran. Start checkout again.",
+  cart_changed:
+    "The cart changed after the price was approved. Nothing was charged. Start checkout again.",
+};
+
+function cartLines(): CartLine[] {
+  return storeApi.cart().items.map((item) => ({ id: item.product.id, qty: item.qty }));
+}
 
 const objectSchema = (properties: Record<string, unknown>, required: string[] = []) => ({
   type: "object",
@@ -48,8 +72,13 @@ export function registerStoreTools(): Promise<boolean> {
         },
         search_products: { maxPerMinute: 60 },
         list_products: { maxPerMinute: 60 },
+        payment_method_status: { mode: "allow", maxPerMinute: 20 },
       },
     });
+    // There is deliberately no tool for adding, changing, or reading a payment
+    // card. The card is saved by a human through a Stripe iframe and lives on
+    // the server behind an httpOnly cookie, so it is outside the agent's reach
+    // by construction rather than by policy.
 
     if (!document.modelContext) {
       throw new Error("PageControl could not initialize the WebMCP tool registry.");
@@ -152,13 +181,62 @@ export function registerStoreTools(): Promise<boolean> {
           ),
       },
       {
+        name: "payment_method_status",
+        label: "Check the payment method",
+        description:
+          "Report whether the account holder has a card saved for checkout. Returns no card details.",
+        inputSchema: objectSchema({}),
+        annotations: { readOnlyHint: true, untrustedContentHint: false },
+        execute: async () =>
+          JSON.stringify({
+            ready: hasCard(),
+            message: hasCard()
+              ? "A card is saved. Checkout can proceed."
+              : "No card is saved. The account holder must add one in the Payment card panel.",
+          }),
+      },
+      {
         name: "checkout",
         label: "Place the order",
-        description: "Place an order for the current cart at the saved address.",
+        description:
+          "Place an order for the current cart at the saved address, charged to the card the " +
+          "account holder saved earlier. Takes no arguments and accepts no payment details.",
         inputSchema: objectSchema({}),
         annotations: { readOnlyHint: false, untrustedContentHint: false },
-        guard: { getCost: () => storeApi.cart().total },
-        execute: async () => JSON.stringify(storeApi.checkout()),
+        guard: {
+          // Runs synchronously inside the guard. Returns the amount the human
+          // sees on the approval card and pins the exact server quote behind
+          // it, so the charge cannot be for a different cart than the one
+          // approved.
+          getCost: () => pinQuote(cartLines()),
+        },
+        execute: async () => {
+          const ready = storeApi.canCheckout();
+          // Throwing rather than returning: the guard refunds the budget
+          // reservation on the error path, so a failed order never consumes
+          // the session budget.
+          if (!ready.ok) throw new Error(ready.message);
+
+          const pin = takePinnedQuote(cartLines());
+          if (!pin.ok) throw new Error(CHECKOUT_ERRORS[pin.code]);
+
+          let charge;
+          try {
+            charge = await chargeQuote(pin.quoteId);
+          } catch {
+            throw new Error("The payment service is unreachable. Nothing was charged.");
+          }
+          if (!charge.ok) throw new Error(charge.message);
+
+          return JSON.stringify(
+            storeApi.checkout({
+              orderId: charge.orderId,
+              total: charge.total,
+              currency: charge.currency,
+              card: charge.card,
+            }),
+          );
+        },
       },
       {
         name: "contact_seller",

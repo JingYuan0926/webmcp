@@ -1070,6 +1070,117 @@ assert.equal(retryHarness.document.modelContext, retryHarness.navigator.modelCon
 assert.equal(retryHarness.document.modelContext, retryNative);
 assert.equal(await retryHarness.guard.invoke("migration_retry", {}), "retry-ok");
 
+// A human approves a specific amount, not a tool name. The cost is derived at
+// check time but execute() runs later, so a cart mutated inside the approval
+// window would otherwise charge an amount nobody approved. The payment layer
+// pins a server-priced quote at check time and refuses at execute time if the
+// cart no longer matches it.
+const bindingHarness = createIsolatedBrowser();
+await bindingHarness.guard.init({
+  appName: "Approval binding test",
+  budget: { limit: 300, currency: "USD" },
+  defaultMode: "allow",
+  defaultMaxPerMinute: 60,
+  tools: {
+    add_item: { mode: "allow" },
+    checkout: { mode: "approve", chargesBudget: true },
+  },
+});
+
+const bindingCart = [{ id: "wireless-mouse", qty: 1, price: 29.99 }];
+const fingerprintOf = (lines) =>
+  lines
+    .map((line) => `${line.id}:${line.qty}`)
+    .sort()
+    .join("|");
+const totalOf = (lines) =>
+  lines.reduce((sum, line) => sum + Math.round(line.price * 100) * line.qty, 0) / 100;
+
+// Mirrors src/lib/payments-client.ts: a quote refreshed on every cart change,
+// pinned synchronously by getCost, and consumed by execute.
+let liveQuote = null;
+let pinnedQuote = null;
+const refreshQuote = () => {
+  liveQuote = bindingCart.length
+    ? { id: `q_${fingerprintOf(bindingCart)}`, fingerprint: fingerprintOf(bindingCart), total: totalOf(bindingCart) }
+    : null;
+};
+refreshQuote();
+
+const charges = [];
+await bindingHarness.document.modelContext.registerTool({
+  name: "add_item",
+  description: "Add an item to the cart.",
+  inputSchema: objectSchema({ id: { type: "string" }, qty: { type: "integer", minimum: 1 } }, ["id", "qty"]),
+  execute: async ({ id, qty }) => {
+    bindingCart.push({ id, qty, price: 199 });
+    refreshQuote();
+    return "added";
+  },
+});
+await bindingHarness.document.modelContext.registerTool({
+  name: "checkout",
+  description: "Charge the pinned quote.",
+  inputSchema: objectSchema(),
+  guard: {
+    getCost: () => {
+      pinnedQuote = liveQuote && liveQuote.fingerprint === fingerprintOf(bindingCart) ? liveQuote : null;
+      return pinnedQuote ? pinnedQuote.total : totalOf(bindingCart);
+    },
+  },
+  execute: async () => {
+    const pin = pinnedQuote;
+    pinnedQuote = null;
+    if (!pin) throw new Error("No priced quote was pinned for this cart.");
+    if (pin.fingerprint !== fingerprintOf(bindingCart)) {
+      throw new Error("The cart changed after the price was approved. Nothing was charged.");
+    }
+    charges.push(pin.total);
+    return JSON.stringify({ ok: true, total: pin.total });
+  },
+});
+
+let bindingBudget = null;
+bindingHarness.guard.on("budget", (next) => {
+  bindingBudget = next;
+});
+
+// The cart is mutated while the human is still looking at the approval card.
+let tamperedApprovalCost = null;
+const tamperedApproval = new Promise((resolve) => {
+  bindingHarness.guard.on("approval", async ({ pending }) => {
+    if (!pending.length || tamperedApprovalCost !== null) return;
+    tamperedApprovalCost = pending[0].cost;
+    await bindingHarness.guard.invoke("add_item", { id: "noise-headphones", qty: 20 });
+    bindingHarness.guard.approve(pending[0].id);
+    resolve();
+  });
+});
+const tamperedResult = await bindingHarness.guard.invoke("checkout", {});
+await tamperedApproval;
+
+assert.equal(tamperedApprovalCost, 29.99, "The human must be shown the pre-mutation total");
+assert.ok(totalOf(bindingCart) > 4000, "The cart must actually have been inflated");
+assert.match(tamperedResult, /cart changed after the price was approved/i);
+assert.deepEqual(charges, [], "A mutated cart must never reach the charge path");
+assert.equal(bindingBudget.spent, 0, "A refused charge must refund the budget reservation");
+
+// Positive control: an untouched cart charges exactly what was approved.
+bindingCart.length = 0;
+bindingCart.push({ id: "wireless-mouse", qty: 2, price: 29.99 });
+refreshQuote();
+let cleanApprovalCost = null;
+bindingHarness.guard.on("approval", ({ pending }) => {
+  if (!pending.length || cleanApprovalCost !== null) return;
+  cleanApprovalCost = pending[0].cost;
+  bindingHarness.guard.approve(pending[0].id);
+});
+const cleanResult = await bindingHarness.guard.invoke("checkout", {});
+assert.equal(cleanApprovalCost, 59.98);
+assert.deepEqual(JSON.parse(cleanResult), { ok: true, total: 59.98 });
+assert.deepEqual(charges, [59.98], "The charged amount must equal the approved amount");
+assert.equal(bindingBudget.spent, 59.98);
+
 console.log(
-  `PageControl SDK smoke test passed (${entries.length} core entries + native, abort, and migration cases).`,
+  `PageControl SDK smoke test passed (${entries.length} core entries + native, abort, migration, and approval-binding cases).`,
 );

@@ -29,6 +29,20 @@ export type Order = {
   items: CartItem[];
   total: number;
   createdAt: string;
+  /** Human-readable card summary, e.g. "visa ····4242". Never a payment handle. */
+  paidWith?: string;
+};
+
+/**
+ * Proof that money actually moved, produced by the server after a successful
+ * charge. The store refuses to record an order without one, so no code path
+ * can create an order that was never paid for.
+ */
+export type PaymentReceipt = {
+  orderId: string;
+  total: number;
+  currency: string;
+  card: { brand: string; last4: string } | null;
 };
 
 export type StoreState = {
@@ -168,30 +182,43 @@ export const storeApi = {
     return currentState.address ? { ...currentState.address } : null;
   },
 
-  checkout(): { ok: boolean; orderId?: string; total: number; message: string } {
-    if (!currentState.items.length) {
-      return { ok: false, total: 0, message: "The cart is empty." };
-    }
+  /** Checks the cart is ready to be quoted and charged. */
+  canCheckout(): { ok: boolean; message: string } {
+    if (!currentState.items.length) return { ok: false, message: "The cart is empty." };
     if (!currentState.address) {
-      return {
-        ok: false,
-        total: totalFor(currentState.items),
-        message: "Add a shipping address before checkout.",
-      };
+      return { ok: false, message: "Add a shipping address before checkout." };
     }
-    const total = totalFor(currentState.items);
+    return { ok: true, message: "" };
+  },
+
+  /**
+   * Records a paid order. The receipt comes from the server after a successful
+   * charge — this only commits local state, it never decides that money moved.
+   */
+  checkout(receipt: PaymentReceipt): {
+    ok: boolean;
+    orderId?: string;
+    total: number;
+    message: string;
+  } {
+    const ready = this.canCheckout();
+    if (!ready.ok) {
+      return { ok: false, total: totalFor(currentState.items), message: ready.message };
+    }
+    const paidWith = receipt.card ? `${receipt.card.brand} ····${receipt.card.last4}` : undefined;
     const order: Order = {
-      id: `NT-${Date.now().toString(36).toUpperCase()}`,
+      id: receipt.orderId,
       items: currentState.items.map((item) => ({ ...item, product: { ...item.product } })),
-      total,
+      total: receipt.total,
       createdAt: new Date().toISOString(),
+      paidWith,
     };
     commit({ type: "checkout", order, flash: flashKey("checkout") });
     return {
       ok: true,
       orderId: order.id,
-      total,
-      message: `Order ${order.id} is confirmed.`,
+      total: receipt.total,
+      message: `Order ${order.id} is confirmed.${paidWith ? ` Paid with ${paidWith}.` : ""}`,
     };
   },
 

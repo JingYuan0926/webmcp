@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { formatUSD } from "@/lib/catalog";
+import { refreshQuote } from "@/lib/payments-client";
 import { flashed, useStore } from "@/lib/store";
 
 export function CartCard() {
   const { state, api } = useStore();
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
   const total = state.items.reduce(
     (sum, item) => sum + item.product.price * item.qty,
     0,
@@ -17,9 +21,50 @@ export function CartCard() {
     flashed(state.lastFlash, "checkout") ||
     Boolean(state.lastFlash?.startsWith("product:"));
 
-  function checkout() {
-    const result = api.checkout();
-    setMessage(result.message);
+  // Keep a server-priced quote standing by. The guard reads it synchronously
+  // when it needs the cost of a checkout, so it has to already be here.
+  const lineKey = state.items
+    .map((item) => `${item.product.id}:${item.qty}`)
+    .sort()
+    .join("|");
+
+  useEffect(() => {
+    const lines = lineKey
+      ? lineKey.split("|").map((part) => {
+          const [id, qty] = part.split(":");
+          return { id, qty: Number(qty) };
+        })
+      : [];
+    void refreshQuote(lines);
+  }, [lineKey]);
+
+  async function checkout() {
+    const guard = window.PageControl;
+    if (!guard) {
+      setError("PageControl is not ready yet.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      // Routed through the guard rather than calling the store directly, so a
+      // human checkout is subject to the same approval, budget, and journal
+      // as an agent one.
+      const raw = await guard.invoke("checkout", {});
+      let parsed: { ok?: boolean; message?: string } | null = null;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = null;
+      }
+      if (parsed?.ok) setMessage(parsed.message ?? "Order confirmed.");
+      else setError(parsed?.message ?? raw);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Checkout failed.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -70,13 +115,19 @@ export function CartCard() {
         type="button"
         className="button button-primary full-width"
         onClick={checkout}
-        disabled={!state.items.length}
+        disabled={!state.items.length || busy}
       >
-        Checkout
+        {busy ? "Waiting for approval…" : "Checkout"}
       </button>
-      <p className={`inline-message${message && !message.includes("confirmed") ? " is-error" : ""}`} aria-live="polite">
-        {message}
-      </p>
+      {error ? (
+        <p className="inline-message is-error" role="alert">
+          {error}
+        </p>
+      ) : (
+        <p className="inline-message" aria-live="polite">
+          {message}
+        </p>
+      )}
     </section>
   );
 }

@@ -94,6 +94,34 @@ Failure behavior is a security decision. A guard that fails quietly is worse tha
 | A human ignores an approval | It denies itself after 60 seconds. Silence is never consent. |
 | A call is blocked | The agent receives a plain sentence explaining why, so it can correct itself and retry. |
 
+## Payments
+
+Checkout charges a real Stripe card in test mode. The agent triggers the charge and never sees the card.
+
+The shopper saves a card once, into a Stripe Elements iframe served from `js.stripe.com`. Because that iframe is a different origin, the page's own JavaScript cannot read the number — and a WebMCP tool is page JavaScript, so no tool can read it either. Stripe returns a `pm_...` handle that stays on the server behind an httpOnly cookie. There is deliberately no tool for adding, reading, or changing a card.
+
+The `checkout` tool still takes zero arguments. What it does now:
+
+1. The cart is priced **on the server**, from the server's own catalog. Client-supplied prices are ignored. The result is a single-use quote that expires in five minutes.
+2. The guard's `getCost` hook pins that quote and returns its total. That total is the number on the approval card.
+3. A human approves.
+4. `execute()` re-checks the live cart against the pinned quote. If anything moved during the approval window, the charge is refused and nothing is billed. Otherwise the server charges the quote's own amount off-session.
+
+Step 4 is the point. Cost is derived at check time but execution happens later, so without that binding a cart mutated inside the approval window charges an amount nobody approved — a $29.99 approval settling a $4,009.99 cart, with the journey recording `approved`. `scripts/pagecontrol-smoke.mjs` covers both the refusal and the matching-amount case.
+
+Failure messages the agent can see are a fixed set of strings. Stripe's own error text is logged server-side and never returned, because PageControl passes a tool's error straight into model context.
+
+### Setup
+
+```bash
+cp .env.example .env.local     # add your Stripe test keys
+npm run dev
+```
+
+Keys come from the [Stripe test dashboard](https://dashboard.stripe.com/test/apikeys). Test card `4242 4242 4242 4242`, any future expiry, any CVC. Use `4000 0000 0000 0341` for a decline and `4000 0025 0000 3155` for a card that demands authentication. Without keys the storefront still runs and the payment panel says so.
+
+The session store is in-memory, so saved cards reset when the dev server restarts.
+
 ## Merchant quick start
 
 ```html
@@ -133,10 +161,13 @@ Open `http://localhost:3000`. Test native WebMCP in ChatGPT's in-app browser or 
 - `src/app/globals.css` — product tokens, responsive layout, interaction states, and reduced-motion rules.
 - `src/lib/catalog.ts` — typed Northline Tech product catalog.
 - `src/lib/store.tsx` — React store, reducer, persistence, and imperative tool facade.
-- `src/lib/tools.ts` — merchant policy and ten WebMCP store tools.
+- `src/lib/tools.ts` — merchant policy and eleven WebMCP store tools.
+- `src/lib/payments-client.ts` — quote cache, the synchronous pin the guard reads, and the charge call.
+- `src/lib/server/` — Stripe client, cookie session holding the card handle, and server-side quote pricing.
+- `src/app/api/` — setup intent, saved payment method, cart quote, and charge confirmation routes.
 - `src/lib/use-pagecontrol.ts` — React bridge for SDK events.
 - `src/lib/demo-agent.ts` — deterministic ten-step security demo.
-- `src/components/store/` — storefront, cart, address, and orders interface.
+- `src/components/store/` — storefront, cart, payment card, address, and orders interface.
 - `src/components/guard/` — spend, approvals, timeline, alerts, policies, and export interface.
 
 ## Built with
