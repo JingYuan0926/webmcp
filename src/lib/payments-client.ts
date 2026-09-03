@@ -169,13 +169,32 @@ export type ChargeResult =
     }
   | { ok: false; code: string; message: string };
 
-/** Charges a pinned quote. The quote id is the only thing that crosses. */
-export async function chargeQuote(quoteId: string): Promise<ChargeResult> {
-  const response = await fetch("/api/checkout/confirm", {
+async function approvalGrant(quoteId: string): Promise<string | null> {
+  const response = await fetch("/api/checkout/grant", {
     method: "POST",
     credentials: "same-origin",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ quoteId }),
+  });
+  const payload = await response.json();
+  return response.ok && typeof payload?.grant === "string" ? payload.grant : null;
+}
+
+/** Charges a pinned quote only after the shop server obtains a signed grant. */
+export async function chargeQuote(quoteId: string): Promise<ChargeResult> {
+  const grant = await approvalGrant(quoteId);
+  if (!grant) {
+    return {
+      ok: false,
+      code: "grant_unavailable",
+      message: "The approval proof service is unavailable. Nothing was charged.",
+    };
+  }
+  const response = await fetch("/api/checkout/confirm", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ quoteId, grant }),
   });
   const payload = await response.json();
   if (payload?.ok) {

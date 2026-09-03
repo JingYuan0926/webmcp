@@ -132,6 +132,20 @@ export function claimQuote(
   return { ok: true, quote };
 }
 
+/** Reads an unexpired, unclaimed quote without consuming it. */
+export function readQuote(
+  quoteId: unknown,
+  sessionId: string,
+): { ok: true; quote: Quote } | { ok: false; code: string } {
+  sweep();
+  if (typeof quoteId !== "string" || !quoteId) return { ok: false, code: "quote_missing" };
+  const quote = quotes.get(quoteId);
+  if (!quote) return { ok: false, code: "quote_expired" };
+  if (quote.sessionId !== sessionId) return { ok: false, code: "quote_missing" };
+  if (quote.claimed) return { ok: false, code: "quote_used" };
+  return { ok: true, quote };
+}
+
 /** Releases a quote after a failed charge so the shopper can retry. */
 export function releaseQuote(quoteId: string): void {
   const quote = quotes.get(quoteId);

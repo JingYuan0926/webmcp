@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { requestOrigin, verifyAndConsumeCheckoutGrant } from "@/lib/server/pagecontrol-grants";
 import { claimQuote, quoteTotalDecimal, releaseQuote } from "@/lib/server/quotes";
 import { publicCard, readSession } from "@/lib/server/session";
 import {
@@ -27,6 +28,12 @@ const FAILURES: Record<string, string> = {
   quote_missing: "No approved quote was supplied.",
   quote_expired: "The approved quote expired. Ask for a fresh checkout.",
   quote_used: "That quote was already charged.",
+  wrong_origin: "The checkout request came from another site.",
+  grant_missing: "A signed human approval is required before checkout.",
+  grant_invalid: "The signed human approval is invalid.",
+  grant_mismatch: "The signed approval does not match this exact order.",
+  grant_used: "That signed approval was already used.",
+  grant_unavailable: "The approval proof service is unavailable. Nothing was charged.",
   card_declined: "The card was declined. Nothing was charged.",
   authentication_required:
     "The bank asked the cardholder to authenticate. A human must finish this payment in the browser.",
@@ -45,9 +52,13 @@ export async function POST(request: Request) {
   // Checked before the quote is claimed, so a blocked run does not burn it.
   if (liveKeyBlocked()) return fail("live_key_blocked", 403);
 
+  const origin = requestOrigin(request);
+  if (!origin) return fail("wrong_origin", 403);
+
   let quoteId: unknown;
+  let grant: unknown;
   try {
-    ({ quoteId } = await request.json());
+    ({ quoteId, grant } = await request.json());
   } catch {
     return fail("bad_request");
   }
@@ -59,6 +70,12 @@ export async function POST(request: Request) {
   const claim = claimQuote(quoteId, session.id);
   if (!claim.ok) return fail(claim.code);
   const { quote } = claim;
+
+  const approval = await verifyAndConsumeCheckoutGrant(grant, { origin, quote });
+  if (!approval.ok) {
+    releaseQuote(quote.id);
+    return fail(approval.code, approval.code === "grant_unavailable" ? 503 : 403);
+  }
 
   try {
     const intent = await stripe().paymentIntents.create(
