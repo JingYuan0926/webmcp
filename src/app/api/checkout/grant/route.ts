@@ -44,8 +44,15 @@ export async function POST(request: Request) {
   const issued = await issueCheckoutGrant(origin, result.quote);
   if (!issued.ok) {
     return NextResponse.json(
-      { ok: false, code: issued.code, message: "The approval proof service is unavailable." },
-      { status: 503 },
+      {
+        ok: false,
+        code: issued.code,
+        message:
+          issued.code === "grant_origin_not_permitted"
+            ? "This origin is not authorised to request approvals."
+            : "The approval proof service is unavailable.",
+      },
+      { status: issued.code === "grant_origin_not_permitted" ? 403 : 503 },
     );
   }
   return NextResponse.json({ ok: true, grant: issued.token });

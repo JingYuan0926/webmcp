@@ -101,8 +101,18 @@ export async function issueCheckoutGrant(
       cache: "no-store",
       signal: AbortSignal.timeout(5_000),
     });
-    const payload = (await response.json()) as { token?: unknown };
+    const payload = (await response.json()) as { token?: unknown; error?: unknown };
     if (!response.ok || typeof payload.token !== "string") {
+      // Distinguish a refused origin from a service that is genuinely down.
+      // Running the shop on an origin the signing service does not permit is a
+      // configuration problem, not an outage, and saying so saves an hour.
+      const serviceError = typeof payload.error === "string" ? payload.error : "";
+      console.error(
+        `[pagecontrol] grant request failed: status=${response.status} error=${serviceError || "(none)"} origin=${origin}`,
+      );
+      if (serviceError === "origin_not_permitted") {
+        return { ok: false, code: "grant_origin_not_permitted" };
+      }
       return { ok: false, code: "grant_unavailable" };
     }
     return { ok: true, token: payload.token };
@@ -137,24 +147,46 @@ export async function verifyAndConsumeCheckoutGrant(
     if (!signatureValid) return { ok: false, code: "grant_invalid" };
 
     const nowSeconds = Math.floor(Date.now() / 1000);
-    if (
-      claims.iss !== apiUrl() ||
-      claims.aud !== expected.origin ||
-      claims.origin !== expected.origin ||
-      claims.tool !== "checkout" ||
-      claims.quoteId !== quoteRef(expected.quote.id) ||
-      claims.amountMinor !== expected.quote.amountMinor ||
-      claims.sessionId !== expected.quote.sessionId ||
-      !Number.isInteger(claims.iat) ||
-      claims.iat > nowSeconds + 5 ||
-      !Number.isInteger(claims.exp) ||
-      claims.exp <= nowSeconds ||
-      claims.exp - claims.iat > 60 ||
-      typeof claims.nonce !== "string" ||
-      claims.nonce.length < 16 ||
-      typeof claims.jti !== "string" ||
-      claims.jti.length < 16
-    ) {
+
+    // Each binding is checked on its own so a failure names the exact field.
+    // The reason is logged server-side only; the client still receives the
+    // generic grant_mismatch, which tells an attacker nothing.
+    const failures: string[] = [];
+    const check = (field: string, ok: boolean, detail?: string): void => {
+      if (!ok) failures.push(detail ? `${field} (${detail})` : field);
+    };
+
+    check("iss", claims.iss === apiUrl(), `signed=${claims.iss} expected=${apiUrl()}`);
+    check("aud", claims.aud === expected.origin, `signed=${claims.aud} expected=${expected.origin}`);
+    check("origin", claims.origin === expected.origin, `signed=${claims.origin} expected=${expected.origin}`);
+    check("tool", claims.tool === "checkout", `signed=${claims.tool}`);
+    check(
+      "quoteId",
+      claims.quoteId === quoteRef(expected.quote.id),
+      `signed=${claims.quoteId} expected=${quoteRef(expected.quote.id)}`,
+    );
+    check(
+      "amountMinor",
+      claims.amountMinor === expected.quote.amountMinor,
+      `signed=${claims.amountMinor} expected=${expected.quote.amountMinor}`,
+    );
+    check(
+      "sessionId",
+      claims.sessionId === expected.quote.sessionId,
+      `signed=${claims.sessionId} expected=${expected.quote.sessionId}`,
+    );
+    check("iat", Number.isInteger(claims.iat) && claims.iat <= nowSeconds + 5, `iat=${claims.iat} now=${nowSeconds}`);
+    check(
+      "exp",
+      Number.isInteger(claims.exp) && claims.exp > nowSeconds,
+      `exp=${claims.exp} now=${nowSeconds} expiredBy=${nowSeconds - claims.exp}s`,
+    );
+    check("ttl", claims.exp - claims.iat <= 60, `ttl=${claims.exp - claims.iat}s`);
+    check("nonce", typeof claims.nonce === "string" && claims.nonce.length >= 16);
+    check("jti", typeof claims.jti === "string" && claims.jti.length >= 16);
+
+    if (failures.length) {
+      console.error(`[pagecontrol] grant_mismatch: ${failures.join(" | ")}`);
       return { ok: false, code: "grant_mismatch" };
     }
 

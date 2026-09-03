@@ -197,6 +197,8 @@ const GRANT_ERRORS: Record<string, string> = {
   quote_expired: "The approved price expired. Start checkout again.",
   quote_used: "That approved price was already charged.",
   grant_unavailable: "The approval proof service is unavailable. Nothing was charged.",
+  grant_origin_not_permitted:
+    "This origin is not authorised to request approvals. Add it to PAGECONTROL_ALLOWED_ORIGINS on the signing service. Nothing was charged.",
   bad_request: "The approval request was malformed. Nothing was charged.",
 };
 
