@@ -8,16 +8,19 @@ import { StorePane } from "@/components/store/StorePane";
 import { StoreProvider } from "@/lib/store";
 import { registerStoreTools } from "@/lib/tools";
 
+// Start registration as soon as the client bundle evaluates. Waiting for a
+// component effect leaves a short first-load window where an agent can inspect
+// the page before its WebMCP tools exist and fall back to ordinary page reading.
+if (typeof window !== "undefined") {
+  void registerStoreTools().catch(() => {
+    // The store remains fully usable when the SDK or WebMCP host is unavailable.
+  });
+}
+
 function PageControlDemo() {
   const [panelOpen, setPanelOpen] = useState(false);
   const widgetRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    registerStoreTools().catch(() => {
-      // The store remains fully usable when the SDK or WebMCP host is unavailable.
-    });
-  }, []);
 
   useEffect(() => {
     if (!panelOpen) return;
