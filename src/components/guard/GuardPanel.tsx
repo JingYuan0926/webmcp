@@ -67,13 +67,15 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
             </div>
             <p className="guard-tagline">Review what your agent can access and do.</p>
           </div>
-          {/* A healthy guard is just the dot; only an abnormal state is worth
-              spelling out. The status stays readable to assistive tech either way. */}
-          <div className={`guard-live${alerting ? "" : " guard-live--quiet"}`} title={status}>
-            <span className={alerting ? "is-alert" : ""} aria-hidden="true" />
-            {alerting ? <strong>{status}</strong> : null}
+          {/* Healthy is the default, so it says nothing at all. Paused and
+              tamper are the states worth surfacing. */}
+          {alerting ? (
+            <div className="guard-live">
+              <strong>{status}</strong>
+            </div>
+          ) : (
             <span className="sr-only">{status}</span>
-          </div>
+          )}
         </header>
 
         {snapshot.environment.native ? (

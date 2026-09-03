@@ -234,7 +234,7 @@ summary:focus-visible {
   background: color-mix(in srgb, var(--ok) 9%, var(--card));
   color: var(--brand-ink);
   font-size: 0.75rem;
-  font-weight: 750;
+  font-weight: 550;
   white-space: nowrap;
 }
 
@@ -1019,11 +1019,11 @@ summary:focus-visible {
   --panel-muted: #3c505d;
   --panel-line: #d7dbe0;
   --panel-input: #cdd3da;
-  --panel-primary: #339ccc;
-  --panel-primary-foreground: #f3f2f2;
+  --panel-primary: #0000ff;
+  --panel-primary-foreground: #ffffff;
   --panel-secondary: #dfe3e7;
-  --panel-accent: #e3ebf2;
-  --panel-ring: #3eaeea;
+  --panel-accent: #ececff;
+  --panel-ring: #4d4dff;
   --panel-danger: #db334a;
   --panel-font: ui-rounded, "Avenir Next", "Nunito Sans", var(--font-ui);
   --brand: var(--panel-primary);
@@ -1128,7 +1128,7 @@ summary:focus-visible {
   color: var(--panel-ink);
   box-shadow: var(--shadow-card);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 500;
   opacity: 0;
   pointer-events: none;
   transform: translateX(0.25rem);
@@ -1156,7 +1156,7 @@ summary:focus-visible {
 
 .guard-wordmark strong {
   font-size: 1.0625rem;
-  font-weight: 750;
+  font-weight: 550;
   letter-spacing: -0.03em;
 }
 
@@ -1214,45 +1214,22 @@ summary:focus-visible {
   line-height: 1.45;
 }
 
+/* Only rendered when the guard is paused or tampered with. */
 .guard-live {
-  min-height: 1.75rem;
-  display: inline-grid;
-  grid-template-columns: auto auto;
+  min-height: 1.5rem;
+  display: inline-flex;
   align-items: center;
-  justify-content: end;
-  gap: 0.125rem var(--space-2);
   padding: 0 var(--space-2);
-  border: 1px solid color-mix(in srgb, var(--panel-primary) 24%, var(--panel-line));
+  border: 1px solid color-mix(in srgb, var(--warn) 32%, var(--panel-line));
   border-radius: 999px;
-  background: var(--panel-accent);
-  text-align: right;
-}
-
-.guard-live > span {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background: var(--ok);
-  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--ok) 10%, transparent);
-}
-
-.guard-live > span.is-alert {
-  background: var(--warn);
-  box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--warn) 10%, transparent);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  color: color-mix(in srgb, var(--warn) 72%, var(--panel-ink));
 }
 
 .guard-live strong {
   font-size: 0.6875rem;
-  letter-spacing: 0.02em;
-}
-
-/* Healthy state: the dot alone, no pill around it. */
-.guard-live--quiet {
-  min-height: 0;
-  grid-template-columns: auto;
-  padding: 0;
-  border: 0;
-  background: none;
+  font-weight: 550;
+  letter-spacing: 0.01em;
 }
 
 .panel-error {
@@ -1291,7 +1268,7 @@ summary:focus-visible {
   margin: 0;
   color: var(--panel-ink);
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.02em;
 }
 
@@ -1330,7 +1307,7 @@ summary:focus-visible {
   margin: 0;
   color: var(--panel-ink);
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: -0.02em;
 }
 
@@ -1338,7 +1315,7 @@ summary:focus-visible {
   margin: 0 0 var(--space-1);
   color: var(--panel-muted);
   font-size: 0.6875rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1441,7 +1418,7 @@ summary:focus-visible {
   padding: 0 var(--space-2);
   border-radius: 999px;
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .panel-count--warn {
@@ -1497,7 +1474,7 @@ summary:focus-visible {
   margin-top: var(--space-2);
   color: var(--panel-ink);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .approval-actions {
@@ -1516,7 +1493,7 @@ summary:focus-visible {
   color: var(--panel-ink);
   font-family: inherit;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .panel-button:focus-visible,
@@ -1625,7 +1602,7 @@ summary:focus-visible {
   padding: 0 var(--space-2);
   border-radius: 999px;
   font-size: 0.75rem;
-  font-weight: 850;
+  font-weight: 600;
   letter-spacing: 0.035em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -1769,7 +1746,7 @@ summary:focus-visible {
 
 .alert-code {
   color: var(--danger);
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .policy-list {
@@ -1836,7 +1813,7 @@ summary:focus-visible {
   color: var(--panel-ink);
   font-family: var(--panel-font);
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.25;
 }
 
@@ -1867,7 +1844,7 @@ summary:focus-visible {
   padding: 0 var(--space-3);
   font-family: var(--panel-font);
   font-size: 0.75rem;
-  font-weight: 850;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -1887,7 +1864,7 @@ summary:focus-visible {
   padding: 0 var(--space-2);
   font-family: var(--panel-font);
   font-size: 0.6875rem;
-  font-weight: 800;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -1969,7 +1946,7 @@ summary:focus-visible {
 .policy-function dt {
   color: var(--panel-muted);
   font-size: 0.6875rem;
-  font-weight: 750;
+  font-weight: 550;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -2005,7 +1982,7 @@ summary:focus-visible {
 .budget-policy label {
   color: var(--panel-muted);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .panel-field small {
@@ -2128,7 +2105,7 @@ summary:focus-visible {
   overflow: hidden;
   color: var(--panel-muted);
   font-size: 0.6875rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.01em;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2154,7 +2131,7 @@ summary:focus-visible {
   overflow: hidden;
   color: var(--panel-ink);
   font-size: 0.8125rem;
-  font-weight: 650;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2267,7 +2244,7 @@ summary:focus-visible {
   color: var(--panel-ink);
   font-family: inherit;
   font-size: 0.75rem;
-  font-weight: 750;
+  font-weight: 550;
 }
 
 .export-row > span {
