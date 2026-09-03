@@ -646,19 +646,23 @@
     var style = document.createElement("style");
     style.id = "pagecontrol-styles";
     style.textContent =
-      ".pagecontrol-overlay{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:20px;background:rgba(16,22,19,.72);font-family:system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif}" +
-      ".pagecontrol-card{width:min(440px,100%);border:1px solid #27332e;border-radius:16px;background:#1a2420;color:#e2ece8;box-shadow:0 24px 80px rgba(0,0,0,.42);padding:24px}" +
-      ".pagecontrol-kicker{margin:0 0 8px;color:#2fbf94;font:700 12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase}" +
-      ".pagecontrol-title{margin:0;font-size:22px;line-height:1.25}" +
-      ".pagecontrol-copy{margin:10px 0 0;color:#8fa39c;font-size:14px;line-height:1.55;overflow-wrap:anywhere}" +
-      ".pagecontrol-copy--intent{white-space:pre-line;color:#e2ece8}" +
-      ".pagecontrol-cost{margin:16px 0 0;padding:12px;border-radius:10px;background:#101613;color:#e2ece8;font:600 14px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}" +
-      ".pagecontrol-countdown{margin:14px 0 0;color:#e0a03c;font:600 13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}" +
-      ".pagecontrol-actions{display:flex;gap:12px;margin-top:20px}" +
-      ".pagecontrol-button{min-height:44px;flex:1;border:1px solid #27332e;border-radius:10px;padding:10px 16px;background:#101613;color:#e2ece8;font:700 14px/1 system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;cursor:pointer}" +
-      ".pagecontrol-button--allow{border-color:#2fbf94;background:#0d7a68;color:#ffffff}" +
-      ".pagecontrol-button:hover{filter:brightness(1.08)}" +
-      ".pagecontrol-button:focus-visible{outline:3px solid #e2ece8;outline-offset:3px}" +
+      // Light palette matching the merchant panel. The SDK still ships its own
+      // values rather than reading host CSS variables, so a page that never
+      // styles PageControl still gets a coherent dialog.
+      ".pagecontrol-overlay{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;padding:20px;background:rgba(23,44,59,.38);font-family:ui-rounded,\"Avenir Next\",\"Nunito Sans\",system-ui,-apple-system,sans-serif}" +
+      ".pagecontrol-card{width:min(440px,100%);border:1px solid #d7dbe0;border-radius:16px;background:#fdfcfc;color:#172c3b;box-shadow:0 24px 60px rgba(23,44,59,.18),0 2px 8px rgba(23,44,59,.08);padding:24px}" +
+      ".pagecontrol-kicker{margin:0 0 6px;color:#0000ff;font:600 11px/1.4 inherit;letter-spacing:.08em;text-transform:uppercase}" +
+      ".pagecontrol-title{margin:0;color:#172c3b;font-size:21px;font-weight:600;line-height:1.25;letter-spacing:-.02em}" +
+      ".pagecontrol-copy{margin:10px 0 0;color:#3c505d;font-size:14px;line-height:1.55;overflow-wrap:anywhere}" +
+      ".pagecontrol-copy--intent{white-space:pre-line;color:#172c3b}" +
+      ".pagecontrol-cost{margin:16px 0 0;padding:12px;border:1px solid #e2e2ff;border-radius:10px;background:#ececff;color:#172c3b;font:600 14px/1.4 inherit;font-variant-numeric:tabular-nums}" +
+      ".pagecontrol-countdown{margin:14px 0 0;color:#b07515;font:550 13px/1.4 inherit;font-variant-numeric:tabular-nums}" +
+      ".pagecontrol-actions{display:flex;gap:10px;margin-top:20px}" +
+      ".pagecontrol-button{min-height:44px;flex:1;border:1px solid #d7dbe0;border-radius:10px;padding:10px 16px;background:#ffffff;color:#172c3b;font:550 14px/1 inherit;cursor:pointer}" +
+      ".pagecontrol-button--allow{border-color:#0000ff;background:#0000ff;color:#ffffff}" +
+      ".pagecontrol-button:hover{background:#f1f3f6}" +
+      ".pagecontrol-button--allow:hover{background:#1a1aff;border-color:#1a1aff}" +
+      ".pagecontrol-button:focus-visible{outline:2px solid #0000ff;outline-offset:2px}" +
       "@media(prefers-reduced-motion:no-preference){.pagecontrol-card{animation:pagecontrol-enter 200ms cubic-bezier(0,0,.2,1)}.pagecontrol-button{transition:filter 100ms cubic-bezier(0,0,.2,1),transform 100ms cubic-bezier(0,0,.2,1)}.pagecontrol-button:active{transform:scale(.98)}@keyframes pagecontrol-enter{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}}";
     (document.head || document.documentElement).appendChild(style);
   }
@@ -702,7 +706,7 @@
     card.className = "pagecontrol-card";
     var kicker = document.createElement("p");
     kicker.className = "pagecontrol-kicker";
-    kicker.textContent = "PageControl approval";
+    kicker.textContent = "PageCTRL approval";
     var title = document.createElement("h2");
     title.id = "pagecontrol-title";
     title.className = "pagecontrol-title";
