@@ -17,6 +17,7 @@
   --warn: #e0a03c;
   --danger: #e05252;
   --font-ui: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --panel-font: ui-rounded, "Avenir Next", "Nunito Sans", system-ui, -apple-system, sans-serif;
   --font-data: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -115,104 +116,17 @@ summary:focus-visible {
     var(--bg);
 }
 
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  min-height: 4.75rem;
-  display: grid;
-  grid-template-columns: minmax(12rem, 1fr) auto minmax(12rem, 1fr);
-  align-items: center;
-  gap: var(--space-8);
-  padding: var(--space-3) var(--space-6);
-  border-bottom: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
-  background: color-mix(in srgb, var(--bg) 94%, transparent);
-  backdrop-filter: blur(16px);
-}
 
-.brand-lockup {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  color: inherit;
-  text-decoration: none;
-}
 
-.brand-lockup div {
-  display: grid;
-  gap: 0.125rem;
-}
 
-.brand-lockup strong {
-  font-size: 1rem;
-  letter-spacing: -0.02em;
-}
 
-.brand-lockup span:last-child {
-  color: var(--muted);
-  font-size: 0.75rem;
-  line-height: 1.35;
-}
 
-.store-nav {
-  display: flex;
-  align-items: center;
-  gap: var(--space-5);
-  justify-self: center;
-}
 
-.store-nav a {
-  min-height: 2.5rem;
-  display: inline-flex;
-  align-items: center;
-  color: var(--muted);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  text-decoration: none;
-}
 
-.store-nav a:hover {
-  color: var(--ink);
-}
 
-.store-utilities {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  justify-self: end;
-}
 
-.shipping-note {
-  color: var(--muted);
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
 
-.cart-link {
-  min-height: 2.5rem;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--card);
-  color: var(--ink);
-  font-size: 0.8125rem;
-  font-weight: 750;
-  text-decoration: none;
-}
 
-.cart-link > span {
-  min-width: 1.25rem;
-  height: 1.25rem;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  background: var(--brand);
-  color: var(--card);
-  font-size: 0.6875rem;
-}
 
 .topbar-actions {
   display: flex;
@@ -384,15 +298,66 @@ summary:focus-visible {
 }
 
 .store-pane {
-  padding: var(--space-8) var(--space-6) var(--space-10);
+  padding: var(--space-5) var(--space-6) var(--space-10);
+}
+
+/* The shop name, standing in for the removed header bar. */
+.store-brand {
+  margin: 0 0 var(--space-2);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.store-footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  margin-top: var(--space-10);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+
+.store-footer p {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.store-footer strong {
+  color: var(--ink);
+  font-size: 0.8125rem;
+}
+
+.store-footer span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.store-footer nav {
+  display: flex;
+  gap: var(--space-5);
+}
+
+.store-footer a {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.store-footer a:hover {
+  color: var(--brand-ink);
 }
 
 .store-intro {
   display: flex;
   align-items: end;
   justify-content: space-between;
-  gap: var(--space-8);
-  margin-bottom: var(--space-8);
+  gap: var(--space-6);
+  margin-bottom: var(--space-5);
 }
 
 .eyebrow {
@@ -407,18 +372,18 @@ summary:focus-visible {
 .store-intro h1 {
   max-width: 34rem;
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3.25rem);
-  line-height: 0.98;
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  line-height: 1.1;
   letter-spacing: -0.055em;
   text-wrap: balance;
 }
 
 .store-intro > div > p:last-child {
-  max-width: 37rem;
-  margin: var(--space-4) 0 0;
+  max-width: 34rem;
+  margin: var(--space-2) 0 0;
   color: var(--muted);
-  font-size: 0.9375rem;
-  line-height: 1.6;
+  font-size: 0.8125rem;
+  line-height: 1.5;
 }
 
 .store-benefits {
@@ -1064,7 +1029,6 @@ summary:focus-visible {
   --panel-accent: #ececff;
   --panel-ring: #4d4dff;
   --panel-danger: #db334a;
-  --panel-font: ui-rounded, "Avenir Next", "Nunito Sans", var(--font-ui);
   --brand: var(--panel-primary);
   --ok: var(--panel-primary);
   --danger: var(--panel-danger);
@@ -1777,12 +1741,22 @@ summary:focus-visible {
   line-height: 1.4;
 }
 
+.policy-group {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .policy-subheading {
-  margin: var(--space-3) 0 0;
+  margin: var(--space-2) 0 0;
   color: var(--panel-muted);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
+}
+
+.policy-group:first-child .policy-subheading {
+  margin-top: 0;
 }
 
 .policy-row {
@@ -1801,14 +1775,15 @@ summary:focus-visible {
   padding: var(--space-2) var(--space-3);
 }
 
+/* The glyph alone. The tile behind it was competing with the label it sits
+   next to, and every row had one. */
 .policy-action-icon {
-  width: 2rem;
-  height: 2rem;
+  width: 1.25rem;
+  height: 1.25rem;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-sm);
-  background: var(--panel-accent);
-  color: var(--panel-primary);
+  flex: 0 0 auto;
+  color: var(--panel-muted);
 }
 
 .policy-detail-trigger {
@@ -2554,13 +2529,29 @@ summary:focus-visible {
 }
 
 /* Merchant dashboard */
+/* The dashboard's rules all consume the shared store tokens, so repointing
+   them here adopts the PageCtrl panel palette without touching each rule. */
 .merchant-dashboard {
+  --bg: #fdfcfc;
+  --card: #fafafa;
+  --ink: #172c3b;
+  --muted: #3c505d;
+  --line: #d7dbe0;
+  --brand: #0000ff;
+  --brand-ink: #0000cc;
+  /* Referenced by three rules but never defined anywhere, so those colours
+     silently fell back to inherited text. */
+  --brand-dark: #0000cc;
+  --ok: #0000ff;
+  --danger: #db334a;
+  --shadow-card: 0 1px 2px color-mix(in srgb, #172c3b 8%, transparent);
   min-height: 100svh;
   background: var(--bg);
   color: var(--ink);
+  font-family: var(--panel-font);
 }
 
-.dashboard-header {
+.console-header {
   min-height: 4.75rem;
   display: flex;
   align-items: center;
@@ -2571,7 +2562,7 @@ summary:focus-visible {
   background: var(--card);
 }
 
-.dashboard-brand {
+.console-brand {
   display: inline-flex;
   align-items: center;
   gap: var(--space-3);
@@ -2579,39 +2570,36 @@ summary:focus-visible {
   text-decoration: none;
 }
 
-.dashboard-brand > span:last-child {
+.console-brand img {
+  width: 1.875rem;
+  height: 1.875rem;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.console-brand > span:last-child {
   display: grid;
   gap: 0.125rem;
 }
 
-.dashboard-brand strong {
+.console-brand strong {
   font-size: 0.875rem;
 }
 
-.dashboard-brand small {
+.console-brand small {
   color: var(--muted);
   font-size: 0.75rem;
 }
 
-.dashboard-mark {
-  width: 2.5rem;
-  height: 2.5rem;
-  display: grid;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--brand) 45%, var(--line));
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--brand) 8%, var(--card));
-  color: var(--brand);
-}
 
-.dashboard-header nav {
+.console-header nav {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 
-.dashboard-header nav a,
-.dashboard-header nav button {
+.console-header nav a,
+.console-header nav button {
   min-height: 2.5rem;
   display: inline-flex;
   align-items: center;
@@ -2621,12 +2609,12 @@ summary:focus-visible {
   background: transparent;
   color: var(--muted);
   font-size: 0.75rem;
-  font-weight: 750;
+  font-weight: 550;
   text-decoration: none;
 }
 
-.dashboard-header nav a:hover,
-.dashboard-header nav button:hover {
+.console-header nav a:hover,
+.console-header nav button:hover {
   background: color-mix(in srgb, var(--brand) 6%, var(--bg));
   color: var(--brand-dark);
 }
@@ -2663,7 +2651,7 @@ summary:focus-visible {
   color: var(--brand-dark);
   font-family: var(--font-data);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -2673,7 +2661,7 @@ summary:focus-visible {
 .dashboard-state-card h1 {
   max-width: 16ch;
   margin: 0;
-  font-size: clamp(2rem, 5vw, 4rem);
+  font-size: clamp(1.5rem, 2.6vw, 2.125rem);
   line-height: 0.98;
   letter-spacing: -0.055em;
 }
@@ -2740,7 +2728,7 @@ summary:focus-visible {
   margin-top: var(--space-1);
   color: var(--muted);
   font-size: 0.75rem;
-  font-weight: 750;
+  font-weight: 550;
 }
 
 .dashboard-login-card input {
@@ -2762,7 +2750,7 @@ summary:focus-visible {
   border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .dashboard-button--primary {
@@ -2835,7 +2823,7 @@ summary:focus-visible {
   color: color-mix(in srgb, var(--warn) 70%, var(--ink));
   font-family: var(--font-data);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .dashboard-summary {
@@ -2948,7 +2936,7 @@ summary:focus-visible {
 
 .dashboard-key-heading span:first-child {
   font-size: 0.875rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .dashboard-key-heading p,
@@ -2966,7 +2954,7 @@ summary:focus-visible {
   color: var(--brand-dark);
   font-family: var(--font-data);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .dashboard-key-scope.is-secret {
@@ -3238,7 +3226,7 @@ summary:focus-visible {
   color: var(--brand-dark);
   font-family: var(--font-data);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .dashboard-install li p {
@@ -3323,13 +3311,13 @@ summary:focus-visible {
 }
 
 @media (max-width: 38rem) {
-  .dashboard-header {
+  .console-header {
     align-items: flex-start;
     padding-right: var(--space-4);
     padding-left: var(--space-4);
   }
 
-  .dashboard-header nav a:first-child {
+  .console-header nav a:first-child {
     display: none;
   }
 
@@ -3373,11 +3361,22 @@ summary:focus-visible {
 }
 
 /* SDK documentation */
+/* Same token repoint as the dashboard: these rules consume the shared store
+   tokens, so one block adopts the PageCtrl palette. */
 .sdk-docs-page {
+  --bg: #ffffff;
+  --card: #fafafa;
+  --ink: #172c3b;
+  --muted: #3c505d;
+  --line: #d7dbe0;
+  --brand: #0000ff;
+  --brand-ink: #0000cc;
+  --brand-dark: #0000cc;
+  --ok: #0000ff;
+  --danger: #db334a;
   min-height: 100svh;
-  background:
-    radial-gradient(circle at 12% 2%, color-mix(in srgb, var(--brand) 8%, transparent), transparent 28rem),
-    var(--bg);
+  background: var(--bg);
+  font-family: var(--panel-font);
 }
 
 .sdk-docs-header {
@@ -3446,7 +3445,7 @@ summary:focus-visible {
   padding: 0 var(--space-3);
   color: var(--muted);
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 500;
   text-decoration: none;
 }
 
@@ -3475,7 +3474,7 @@ summary:focus-visible {
   margin: 0;
   color: var(--brand-ink);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -3484,7 +3483,7 @@ summary:focus-visible {
   max-width: 18ch;
   margin: var(--space-4) 0;
   font-size: clamp(2.5rem, 6vw, 4.75rem);
-  font-weight: 650;
+  font-weight: 500;
   letter-spacing: -0.065em;
   line-height: 0.98;
 }
@@ -3497,22 +3496,7 @@ summary:focus-visible {
   line-height: 1.7;
 }
 
-.sdk-docs-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: var(--space-6);
-}
 
-.sdk-docs-badges span {
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid color-mix(in srgb, var(--brand) 26%, var(--line));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--brand) 5%, var(--card));
-  color: var(--brand-ink);
-  font-size: 0.75rem;
-  font-weight: 750;
-}
 
 .sdk-docs-hero > aside {
   display: grid;
@@ -3527,7 +3511,7 @@ summary:focus-visible {
 .sdk-docs-hero > aside > span {
   color: var(--ok);
   font-size: 0.6875rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -3553,7 +3537,7 @@ summary:focus-visible {
   padding-top: var(--space-3);
   color: var(--panel-ink);
   font-size: 0.8125rem;
-  font-weight: 750;
+  font-weight: 550;
   text-decoration: none;
 }
 
@@ -3589,14 +3573,14 @@ summary:focus-visible {
   padding: 0 var(--space-3);
   color: var(--muted);
   font-size: 0.8125rem;
-  font-weight: 650;
+  font-weight: 500;
   text-decoration: none;
 }
 
 .sdk-docs-sidebar a[aria-current="location"] {
   color: var(--ink);
   background: color-mix(in srgb, var(--brand) 7%, var(--bg));
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .sdk-docs-content {
@@ -3616,7 +3600,7 @@ summary:focus-visible {
 .sdk-docs-section h2 {
   margin: var(--space-3) 0 var(--space-4);
   font-size: clamp(1.75rem, 4vw, 2.5rem);
-  font-weight: 680;
+  font-weight: 500;
   letter-spacing: -0.045em;
   line-height: 1.08;
 }
@@ -3938,7 +3922,7 @@ summary:focus-visible {
   width: fit-content;
   color: var(--brand-ink);
   font-size: 0.8125rem;
-  font-weight: 750;
+  font-weight: 550;
   text-underline-offset: 0.2em;
 }
 
@@ -4015,7 +3999,7 @@ summary:focus-visible {
   display: inline-flex;
   align-items: center;
   color: var(--brand-ink);
-  font-weight: 750;
+  font-weight: 550;
   text-decoration: none;
 }
 

@@ -37,6 +37,22 @@ const toolUsageOrder = [
 ] as const;
 const toolUsageRank = new Map<string, number>(toolUsageOrder.map((name, index) => [name, index]));
 
+/**
+ * Tools grouped by the job they do, so the list reads as areas of the store
+ * rather than a flat inventory. Anything unlisted — a late third-party
+ * registration, say — falls into "Other" rather than being hidden.
+ */
+const toolCategories: Array<{ title: string; tools: string[] }> = [
+  { title: "Products", tools: ["search_products", "list_products", "get_product"] },
+  { title: "Cart", tools: ["view_cart", "add_to_cart", "remove_from_cart"] },
+  {
+    title: "Checkout",
+    tools: ["checkout", "set_shipping_address", "payment_method_status"],
+  },
+  { title: "Support", tools: ["contact_seller"] },
+  { title: "Account", tools: ["delete_account"] },
+];
+
 type CapKey = keyof typeof capCopy;
 
 function humanizeToolName(name: string) {
@@ -326,6 +342,19 @@ export function PolicyList({
   const storeTools = sortedTools.filter((tool) => !tool.name.startsWith("pagecontrol_"));
   const pageControlTools = sortedTools.filter((tool) => tool.name.startsWith("pagecontrol_"));
 
+  const categorised = new Set(toolCategories.flatMap((category) => category.tools));
+  const groups = toolCategories
+    .map((category) => ({
+      title: category.title,
+      tools: category.tools
+        .map((name) => storeTools.find((tool) => tool.name === name))
+        .filter((tool): tool is PageControlTool => Boolean(tool)),
+    }))
+    .filter((group) => group.tools.length);
+  const ungrouped = storeTools.filter((tool) => !categorised.has(tool.name));
+  if (ungrouped.length) groups.push({ title: "Other", tools: ungrouped });
+  if (pageControlTools.length) groups.push({ title: "PageCTRL", tools: pageControlTools });
+
   function renderPolicyRow(tool: PageControlTool) {
     return (
       <PolicyRow
@@ -352,9 +381,12 @@ export function PolicyList({
         Common actions first. Choose a status, or open the action name for details.
       </p>
       <div className="policy-list">
-        {storeTools.map(renderPolicyRow)}
-        {pageControlTools.length ? <h3 className="policy-subheading">PageCTRL tools</h3> : null}
-        {pageControlTools.map(renderPolicyRow)}
+        {groups.map((group) => (
+          <section key={group.title} className="policy-group">
+            <h3 className="policy-subheading">{group.title}</h3>
+            {group.tools.map(renderPolicyRow)}
+          </section>
+        ))}
       </div>
     </section>
   );

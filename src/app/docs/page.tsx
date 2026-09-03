@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ConsoleHeader } from "@/components/console/ConsoleHeader";
 import { DocsSidebar } from "./DocsSidebar";
 
 export const metadata: Metadata = {
@@ -122,15 +123,6 @@ const eventRows = [
   ["surface", "The guarded and unguarded browser-reported tool lists changed."],
 ] as const;
 
-function ShieldMark() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-      <path d="M12 3 5 6v5c0 4.6 2.8 8.1 7 10 4.2-1.9 7-5.4 7-10V6l-7-3Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      <path d="m9 12 2 2 4-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 function GitHubMark() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -154,22 +146,14 @@ function CodeBlock({ title, children }: { title: string; children: string }) {
 export default function DocsPage() {
   return (
     <div className="sdk-docs-page">
-      <header className="sdk-docs-header">
-        <div className="sdk-docs-header-inner">
-          <Link className="sdk-docs-brand" href="/" aria-label="PageCTRL demo home">
-            <span><ShieldMark /></span>
-            <strong>PageCTRL SDK</strong>
-            <small>v1.0.0</small>
-          </Link>
-          <nav aria-label="Documentation utilities">
-            <Link href="/">Live demo</Link>
-            <a href="https://github.com/JingYuan0926/webmcp" target="_blank" rel="noreferrer">
-              <GitHubMark />
-              <span>GitHub</span>
-            </a>
-          </nav>
-        </div>
-      </header>
+      <ConsoleHeader subtitle="SDK docs · v1.0.0">
+        <Link href="/">Live demo</Link>
+        <Link href="/dashboard">Dashboard</Link>
+        <a href="https://github.com/JingYuan0926/webmcp" target="_blank" rel="noreferrer">
+          <GitHubMark />
+          <span>GitHub</span>
+        </a>
+      </ConsoleHeader>
 
       <main>
         <section className="sdk-docs-hero" aria-labelledby="sdk-docs-title">
@@ -180,9 +164,6 @@ export default function DocsPage() {
               PageCTRL wraps WebMCP tool execution with validation, policies, budgets, approvals,
               tamper detection, and a redacted flight recorder. It runs entirely inside the page.
             </p>
-            <div className="sdk-docs-badges" aria-label="SDK characteristics">
-              <span>One script</span><span>No dependencies</span><span>No SDK telemetry</span>
-            </div>
           </div>
           <aside aria-label="Integration summary">
             <span>Current package</span>

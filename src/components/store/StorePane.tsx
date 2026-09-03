@@ -25,9 +25,9 @@ export function StorePane() {
     <main className="store-pane">
       <section className="store-intro" aria-labelledby="catalog-title">
         <div>
-          <p className="eyebrow">Curated essentials for work and home</p>
+          <p className="store-brand">Northline Tech</p>
           <h1 id="catalog-title">Better tech for everyday work.</h1>
-          <p>Reliable desk gear, useful upgrades, and straightforward support—all selected to make your setup work better.</p>
+          <p>Reliable desk gear and useful upgrades, selected to make your setup work better.</p>
         </div>
         <SearchBar value={query} onChange={setQuery} resultCount={products.length} />
       </section>
@@ -55,6 +55,16 @@ export function StorePane() {
           <OrdersCard />
         </aside>
       </div>
+      <footer className="store-footer">
+        <p>
+          <strong>Northline Tech</strong>
+          <span>Everyday technology, thoughtfully selected. Free shipping over $50.</span>
+        </p>
+        <nav aria-label="Store pages">
+          <a href="/docs">SDK Docs</a>
+          <a href="/dashboard">Dashboard</a>
+        </nav>
+      </footer>
     </main>
   );
 }

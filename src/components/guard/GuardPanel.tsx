@@ -46,14 +46,14 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
         type="button"
         className="guard-hide-button"
         onClick={onHide}
-        aria-label="Close PageCtrl settings"
+        aria-label="Close PageCTRL settings"
         title="Close"
       >
         <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
           <path d="m7 7 10 10m0-10L7 17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
       </button>
-      <aside className="guard-panel" aria-label="PageCtrl panel">
+      <aside className="guard-panel" aria-label="PageCTRL panel">
         <header className="guard-header">
           <div>
             <div className="guard-wordmark">
@@ -105,11 +105,13 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
             <span>The store still works. Reload to reconnect PageCTRL.</span>
           </div>
         ) : null}
-        <AgentAuthority budget={snapshot.budget} />
+        {/* Renders nothing when no approval is pending, so it costs no space
+            while idle — but an approval denies itself after 60 seconds, so
+            when there is one it has to be the first thing in view. */}
         <ApprovalsList approvals={snapshot.approvals} />
-        {/* Alerts are current state; the timeline is history. */}
-        <AlertsStrip alerts={snapshot.alerts} />
+        <AgentAuthority budget={snapshot.budget} />
         <Timeline entries={snapshot.entries} />
+        <AlertsStrip alerts={snapshot.alerts} />
         <ToolSurface surface={snapshot.surface} />
         <PolicyList
           tools={snapshot.tools}
