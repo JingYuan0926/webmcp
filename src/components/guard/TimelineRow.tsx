@@ -19,7 +19,10 @@ const verdictTone: Record<PageControlEntry["verdict"], "ok" | "warn" | "danger">
   paused: "danger",
 };
 
-const timeFormat = new Intl.DateTimeFormat("en-MY", {
+const dateTimeFormat = new Intl.DateTimeFormat("en-MY", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
   hour: "2-digit",
   minute: "2-digit",
   second: "2-digit",
@@ -138,8 +141,12 @@ export function TimelineRow({ entry }: { entry: PageControlEntry }) {
             {context ? <span className="timeline-context"> · {context}</span> : null}
           </strong>
           <small>
-            <time dateTime={entry.ts} title={timeFormat.format(new Date(entry.ts))}>
-              {relativeTime(timestamp, currentTime)}
+            <time
+              dateTime={entry.ts}
+              title={relativeTime(timestamp, currentTime)}
+              aria-label={`${dateTimeFormat.format(new Date(entry.ts))}, ${relativeTime(timestamp, currentTime)}`}
+            >
+              {dateTimeFormat.format(new Date(entry.ts))}
             </time>
           </small>
         </span>

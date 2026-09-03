@@ -20,8 +20,8 @@ export function Timeline({ entries }: { entries: PageControlEntry[] }) {
           <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
             <path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
           </svg>
-          <strong>No tool calls yet</strong>
-          <span>Run the test agent to record a guarded journey.</span>
+          <strong>No WebMCP tool calls in this tab</strong>
+          <span>Use an agent or run the security demo. This in-memory log resets when the page reloads.</span>
         </div>
       )}
     </section>

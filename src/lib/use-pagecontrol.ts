@@ -20,6 +20,15 @@ export type GuardSnapshot = {
 const emptyPolicies: PageControlPolicies = { merchant: {}, user: {}, effective: {} };
 const MAX_ORDINARY_ALERTS = 20;
 
+function mergeJourneyEntries(
+  current: PageControlEntry[],
+  incoming: PageControlEntry[],
+): PageControlEntry[] {
+  const entriesById = new Map(current.map((entry) => [entry.id, entry]));
+  incoming.forEach((entry) => entriesById.set(entry.id, entry));
+  return Array.from(entriesById.values()).sort((first, second) => first.seq - second.seq);
+}
+
 export function usePageControl(): GuardSnapshot {
   const [entries, setEntries] = useState<PageControlEntry[]>([]);
   const [tools, setTools] = useState<PageControlTool[]>([]);
@@ -51,12 +60,11 @@ export function usePageControl(): GuardSnapshot {
         interval = null;
       }
       setAvailable(true);
-      setEntries(guard.getJourney());
       setEnvironment(guard.getEnvironment());
       setSurface(guard.getSurface());
       cleanups.push(
         guard.on("entry", (entry) => {
-          setEntries((current) => [...current, entry]);
+          setEntries((current) => mergeJourneyEntries(current, [entry]));
         }),
         guard.on("tools", (nextTools) => {
           setTools(nextTools);
@@ -97,6 +105,10 @@ export function usePageControl(): GuardSnapshot {
           setSurface(nextSurface);
         }),
       );
+      // Subscribe before taking the snapshot. If a tool finishes between the
+      // two operations, the id-based merge keeps exactly one copy instead of
+      // dropping the entry or showing it twice.
+      setEntries((current) => mergeJourneyEntries(current, guard.getJourney()));
     }
 
     connect();
