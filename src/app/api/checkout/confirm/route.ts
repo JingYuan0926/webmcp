@@ -105,12 +105,16 @@ export async function POST(request: Request) {
         automatic_payment_methods: { enabled: true, allow_redirects: "never" },
         description: `Northline Tech order (${quote.lines.length} line${quote.lines.length === 1 ? "" : "s"})`,
         metadata: {
-          quote_id: quote.id,
+          // quote.id carries the whole signed payload and runs past Stripe's
+          // field limits. quote.ref is a UUID and identifies the quote 1:1.
+          quote_ref: quote.ref,
           fingerprint: quote.fingerprint,
         },
       },
       // Agents retry. Make a retry a no-op rather than a second charge.
-      { idempotencyKey: `pi:${quote.id}` },
+      // Keyed on quote.ref: Stripe caps an idempotency key at 255 characters
+      // and quote.id is far longer, which made every charge fail outright.
+      { idempotencyKey: `pi:${quote.ref}` },
     );
 
     if (intent.status !== "succeeded") {
