@@ -105,11 +105,13 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
             <span>The store still works. Reload to reconnect PageControl.</span>
           </div>
         ) : null}
-        <AgentAuthority budget={snapshot.budget} />
+        {/* Renders nothing when no approval is pending, so it costs no space
+            while idle — but an approval denies itself after 60 seconds, so
+            when there is one it has to be the first thing in view. */}
         <ApprovalsList approvals={snapshot.approvals} />
-        {/* Alerts are current state; the timeline is history. */}
-        <AlertsStrip alerts={snapshot.alerts} />
+        <AgentAuthority budget={snapshot.budget} />
         <Timeline entries={snapshot.entries} />
+        <AlertsStrip alerts={snapshot.alerts} />
         <ToolSurface surface={snapshot.surface} />
         <PolicyList
           tools={snapshot.tools}
