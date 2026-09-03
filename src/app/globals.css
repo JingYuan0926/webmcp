@@ -714,6 +714,98 @@ summary:focus-visible {
 }
 
 .cart-list,
+.cart-list li {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.cart-list li > div {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.cart-list strong {
+  overflow: hidden;
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cart-list span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.icon-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+}
+
+.compact-empty,
+.store-empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  border: 1px dashed color-mix(in srgb, var(--muted) 36%, var(--line));
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  text-align: center;
+}
+
+.compact-empty {
+  margin: var(--space-4) 0;
+}
+
+.compact-empty strong,
+.store-empty strong {
+  color: var(--ink);
+  font-size: 0.8125rem;
+}
+
+.compact-empty span,
+.store-empty span {
+  max-width: 20rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.store-empty {
+  min-height: 16rem;
+  align-content: center;
+}
+
+.cart-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 var(--space-3);
+  font-size: 0.8125rem;
+}
+
+.cart-total strong {
+  font-size: 1rem;
+}
+
+.full-width,
+.full-field {
+  width: 100%;
+}
+
 .order-list {
   display: grid;
   gap: var(--space-2);
@@ -802,6 +894,43 @@ summary:focus-visible {
   width: auto;
   height: 0.8125rem;
   object-fit: contain;
+}
+
+.approval-intent {
+  white-space: pre-line;
+}
+
+/* Sits between the total and the Checkout button, so it needs air on both
+   sides — without the bottom margin the button ran straight into it. */
+.order-terms {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.order-terms p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+  min-height: 1.125rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.order-terms span {
+  color: var(--muted);
+}
+
+.order-terms > p > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .checkout-hint {
