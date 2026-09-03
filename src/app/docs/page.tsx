@@ -137,6 +137,7 @@ export default function DocsPage() {
     <div className="sdk-docs-page">
       <ConsoleHeader subtitle="SDK docs · v1.0.0">
         <Link href="/">Live demo</Link>
+        <Link href="/dashboard">Dashboard</Link>
         <a href="https://github.com/JingYuan0926/webmcp" target="_blank" rel="noreferrer">
           <GitHubMark />
           <span>GitHub</span>
@@ -152,9 +153,6 @@ export default function DocsPage() {
               PageControl wraps WebMCP tool execution with validation, policies, budgets, approvals,
               tamper detection, and a redacted flight recorder. It runs entirely inside the page.
             </p>
-            <div className="sdk-docs-badges" aria-label="SDK characteristics">
-              <span>One script</span><span>No dependencies</span><span>No SDK telemetry</span>
-            </div>
           </div>
           <aside aria-label="Integration summary">
             <span>Current package</span>
