@@ -628,6 +628,23 @@ await register({
 });
 assert.equal(guard.getJourney().at(-1).verdict, "tampered");
 
+const journeyBeforeReload = guard.getJourney();
+const journeyBeforeReloadJson = JSON.stringify(journeyBeforeReload);
+const hashBeforeReload = journeyBeforeReload.at(-1).hash;
+vm.runInContext(sdkSource, context, { filename: "pagecontrol-simulated-reload.js" });
+assert.equal(window.PageControl, guard, "A simulated reload must preserve the SDK instance");
+assert.equal(
+  JSON.stringify(guard.getJourney()),
+  journeyBeforeReloadJson,
+  "A simulated reload must preserve the journey",
+);
+await guard.invoke("list_products", {});
+assert.equal(
+  guard.getJourney().at(-1).prevHash,
+  hashBeforeReload,
+  "The first post-reload entry must continue the existing hash chain",
+);
+
 const entries = guard.getJourney();
 for (let index = 0; index < entries.length; index += 1) {
   assert.match(entries[index].hash, /^[a-f0-9]{64}$/);
@@ -666,6 +683,7 @@ function createNativeModelContext({ failTool, failTimes = Number.POSITIVE_INFINI
       tools.delete(name);
       events.dispatchEvent(new Event("toolchange"));
     },
+    dispatchEvent: events.dispatchEvent.bind(events),
     addEventListener: events.addEventListener.bind(events),
     removeEventListener: events.removeEventListener.bind(events),
   };

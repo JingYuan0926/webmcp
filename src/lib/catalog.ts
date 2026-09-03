@@ -46,7 +46,7 @@ export const catalog: Product[] = [
   },
   {
     id: "laptop-pro",
-    name: "Laptop Pro 14",
+    name: "Laptop Pro",
     price: 1199,
     tag: "Computers",
     blurb: "A bright display and all-day power for serious work.",
@@ -101,7 +101,7 @@ export const catalog: Product[] = [
   },
   {
     id: "portable-ssd",
-    name: "Portable SSD 1 TB",
+    name: "Portable SSD",
     price: 109,
     tag: "Storage",
     blurb: "Fast pocket storage in a shock-resistant shell.",

@@ -143,8 +143,17 @@ export function registerStoreTools(): Promise<boolean> {
       {
         name: "get_product",
         label: "View a product",
-        description: "Get one product by its stable catalog id.",
-        inputSchema: objectSchema({ id: { type: "string", minLength: 1 } }, ["id"]),
+        description: "Get one product by its catalog id or product name.",
+        inputSchema: objectSchema(
+          {
+            id: {
+              type: "string",
+              minLength: 1,
+              description: "A catalog id or product name, such as laptop-pro or Laptop Pro.",
+            },
+          },
+          ["id"],
+        ),
         annotations: { readOnlyHint: true, untrustedContentHint: false },
         execute: async (inputs) => JSON.stringify(storeApi.get(asString(inputs.id))),
       },
@@ -154,7 +163,11 @@ export function registerStoreTools(): Promise<boolean> {
         description: "Add a positive integer quantity of one product to the cart.",
         inputSchema: objectSchema(
           {
-            id: { type: "string", minLength: 1 },
+            id: {
+              type: "string",
+              minLength: 1,
+              description: "A catalog id or product name, such as laptop-pro or Laptop Pro.",
+            },
             qty: { type: "integer", minimum: 1 },
           },
           ["id", "qty"],
@@ -340,6 +353,13 @@ export function registerStoreTools(): Promise<boolean> {
 
     for (const tool of tools) await guard.registerTool(tool);
     guard.seal();
+
+    // Native WebMCP hosts may have queried the surface while registration was
+    // still in flight. Notify that exact native context after the complete,
+    // sealed surface is ready so the host immediately re-reads the tool list.
+    if (guard.getEnvironment().native && document.modelContext.dispatchEvent) {
+      document.modelContext.dispatchEvent(new Event("toolchange"));
+    }
     return true;
   })().catch((error) => {
     registrationPromise = null;

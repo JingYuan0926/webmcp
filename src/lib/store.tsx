@@ -125,6 +125,24 @@ function totalFor(items: CartItem[]): number {
   return items.reduce((total, item) => total + item.product.price * item.qty, 0);
 }
 
+function normalizeProductReference(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+// Keep accepting identifiers an agent may have learned from an earlier
+// catalog response. Product names can improve without turning a follow-up
+// action into an unpriceable request.
+const productReferenceAliases: Record<string, string> = {
+  "laptop-pro-14": "laptop-pro",
+  "portable-ssd-1-tb": "portable-ssd",
+};
+
 export const storeApi = {
   list(): Product[] {
     return catalog.slice();
@@ -141,8 +159,16 @@ export const storeApi = {
     );
   },
 
-  get(id: string): Product | null {
-    return catalog.find((product) => product.id === id) ?? null;
+  get(reference: string): Product | null {
+    const normalized = normalizeProductReference(reference);
+    const canonicalId = productReferenceAliases[normalized] ?? normalized;
+    return (
+      catalog.find(
+        (product) =>
+          normalizeProductReference(product.id) === canonicalId ||
+          normalizeProductReference(product.name) === canonicalId,
+      ) ?? null
+    );
   },
 
   addToCart(id: string, qty: number): { ok: boolean; message: string; lineTotal: number } {
@@ -161,9 +187,10 @@ export const storeApi = {
   },
 
   removeFromCart(id: string): { ok: boolean; message: string } {
-    const exists = currentState.items.some((item) => item.product.id === id);
+    const canonicalId = this.get(id)?.id ?? id;
+    const exists = currentState.items.some((item) => item.product.id === canonicalId);
     if (!exists) return { ok: false, message: "That item is not in the cart." };
-    commit({ type: "remove", id, flash: flashKey("cart") });
+    commit({ type: "remove", id: canonicalId, flash: flashKey("cart") });
     return { ok: true, message: "Removed the item from the cart." };
   },
 

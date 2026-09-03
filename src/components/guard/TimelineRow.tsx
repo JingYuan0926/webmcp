@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { catalog } from "@/lib/catalog";
+import { storeApi } from "@/lib/store";
 
 const verdictTone: Record<PageControlEntry["verdict"], "ok" | "warn" | "danger"> = {
   allowed: "ok",
@@ -66,7 +66,7 @@ function entryContext(entry: PageControlEntry): string | null {
   if (!args) return null;
 
   if (typeof args.id === "string") {
-    const product = catalog.find((item) => item.id === args.id);
+    const product = storeApi.get(args.id);
     const itemName = product?.name ?? humanizeIdentifier(args.id);
     const quantity = typeof args.qty === "number" && Number.isFinite(args.qty) ? args.qty : null;
     return quantity && quantity > 1 ? `${itemName} × ${quantity}` : itemName;

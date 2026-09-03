@@ -161,6 +161,7 @@ declare global {
       options?: { signal?: AbortSignal },
     ) => Promise<string>;
     unregisterTool?: (name: string) => Promise<unknown>;
+    dispatchEvent?: (event: Event) => boolean;
     addEventListener?: (name: string, callback: EventListenerOrEventListenerObject) => void;
     removeEventListener?: (name: string, callback: EventListenerOrEventListenerObject) => void;
   };
