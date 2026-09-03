@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createPublicKey, verify } from "node:crypto";
+import { createHash, createPublicKey, verify } from "node:crypto";
 import type { JsonWebKey as NodeJsonWebKey } from "node:crypto";
 
 import type { Quote } from "@/lib/server/quotes";
@@ -60,6 +60,18 @@ async function verificationKey(): Promise<{ key: ReturnType<typeof createPublicK
   return publicKeyPromise;
 }
 
+/**
+ * Grants bind to a digest of the quote id, not the id itself.
+ *
+ * A quote now carries its whole signed payload in its id, which runs past the
+ * signing service's 256-character limit on that field. The digest is 1:1 with
+ * the quote, so the binding is exactly as tight, and the deployed service
+ * needs no change.
+ */
+function quoteRef(quoteId: string): string {
+  return createHash("sha256").update(quoteId).digest("hex");
+}
+
 export function requestOrigin(request: Request): string | null {
   const expected = new URL(request.url).origin;
   return request.headers.get("origin") === expected ? expected : null;
@@ -82,7 +94,7 @@ export async function issueCheckoutGrant(
       body: JSON.stringify({
         origin,
         tool: "checkout",
-        quoteId: quote.id,
+        quoteId: quoteRef(quote.id),
         amountMinor: quote.amountMinor,
         sessionId: quote.sessionId,
       }),
@@ -130,7 +142,7 @@ export async function verifyAndConsumeCheckoutGrant(
       claims.aud !== expected.origin ||
       claims.origin !== expected.origin ||
       claims.tool !== "checkout" ||
-      claims.quoteId !== expected.quote.id ||
+      claims.quoteId !== quoteRef(expected.quote.id) ||
       claims.amountMinor !== expected.quote.amountMinor ||
       claims.sessionId !== expected.quote.sessionId ||
       !Number.isInteger(claims.iat) ||
