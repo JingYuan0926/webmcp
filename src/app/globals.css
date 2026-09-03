@@ -1536,7 +1536,7 @@ summary:focus-visible {
   min-height: 3.25rem;
   width: 100%;
   display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr) auto auto 1rem;
+  grid-template-columns: minmax(0, 1fr) auto auto 1rem;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
@@ -1544,12 +1544,6 @@ summary:focus-visible {
   background: transparent;
   color: inherit;
   text-align: left;
-}
-
-.timeline-seq {
-  color: var(--panel-muted);
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .timeline-main {
@@ -1564,6 +1558,11 @@ summary:focus-visible {
   font-size: 0.75rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.timeline-context {
+  color: var(--panel-muted);
+  font-weight: 500;
 }
 
 .timeline-main small {
@@ -1628,7 +1627,7 @@ summary:focus-visible {
 .timeline-detail {
   display: grid;
   gap: var(--space-3);
-  padding: 0 var(--space-5) var(--space-4) 3.5rem;
+  padding: 0 var(--space-5) var(--space-4) var(--space-4);
 }
 
 .timeline-detail > div > span {
@@ -2466,17 +2465,17 @@ summary:focus-visible {
   }
 
   .timeline-summary {
-    grid-template-columns: 1.75rem minmax(0, 1fr) auto 0.75rem;
+    grid-template-columns: minmax(0, 1fr) auto 0.75rem;
   }
 
   .timeline-summary .injection-badge {
-    grid-column: 2 / 3;
+    grid-column: 1 / 2;
     justify-self: start;
   }
 
   .timeline-detail {
     padding-right: var(--space-4);
-    padding-left: 3rem;
+    padding-left: var(--space-4);
   }
 }
 

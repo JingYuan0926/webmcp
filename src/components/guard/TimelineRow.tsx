@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { catalog } from "@/lib/catalog";
 
 const verdictTone: Record<PageControlEntry["verdict"], "ok" | "warn" | "danger"> = {
   allowed: "ok",
@@ -24,6 +26,60 @@ const timeFormat = new Intl.DateTimeFormat("en-MY", {
   hour12: false,
 });
 
+const toolLabels: Record<string, string> = {
+  search_products: "Search products",
+  list_products: "Browse the catalog",
+  get_product: "View product",
+  add_to_cart: "Add to cart",
+  remove_from_cart: "Remove from cart",
+  view_cart: "View cart",
+  set_shipping_address: "Change delivery address",
+  payment_method_status: "Check payment method",
+  checkout: "Place order",
+  contact_seller: "Message seller",
+  delete_account: "Delete account",
+  pagecontrol_explain_block: "Explain blocked action",
+  pagecontrol_get_journey: "Read activity history",
+};
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function humanizeIdentifier(value: string): string {
+  const words = value.replace(/[-_]+/g, " ").trim();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : value;
+}
+
+function toolLabel(tool: string): string {
+  return toolLabels[tool] ?? humanizeIdentifier(tool);
+}
+
+function entryContext(entry: PageControlEntry): string | null {
+  const args = asRecord(entry.args);
+  if (!args) return null;
+
+  if (typeof args.id === "string") {
+    const product = catalog.find((item) => item.id === args.id);
+    const itemName = product?.name ?? humanizeIdentifier(args.id);
+    const quantity = typeof args.qty === "number" && Number.isFinite(args.qty) ? args.qty : null;
+    return quantity && quantity > 1 ? `${itemName} × ${quantity}` : itemName;
+  }
+
+  if (typeof args.query === "string" && args.query.trim()) {
+    const query = args.query.trim();
+    return `“${query.length > 42 ? `${query.slice(0, 39)}…` : query}”`;
+  }
+
+  return null;
+}
+
+function isEmptyObject(value: unknown): boolean {
+  const record = asRecord(value);
+  return record !== null && Object.keys(record).length === 0;
+}
+
 function renderValue(value: unknown): string {
   if (typeof value === "string") return value;
   if (value === null || value === undefined) return "—";
@@ -34,13 +90,38 @@ function renderValue(value: unknown): string {
   }
 }
 
-function duration(ms: number): string {
-  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
+function relativeTime(timestamp: number, currentTime: number): string {
+  if (!Number.isFinite(timestamp)) return "time unavailable";
+  const seconds = Math.max(0, Math.floor((currentTime - timestamp) / 1000));
+  if (seconds < 2) return "just now";
+  if (seconds < 60) return `${seconds} seconds ago`;
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+
+  const days = Math.floor(hours / 24);
+  return `${days} ${days === 1 ? "day" : "days"} ago`;
 }
 
 export function TimelineRow({ entry }: { entry: PageControlEntry }) {
   const [expanded, setExpanded] = useState(false);
+  const timestamp = useMemo(() => new Date(entry.ts).getTime(), [entry.ts]);
+  const [currentTime, setCurrentTime] = useState(timestamp);
   const detailId = `journey-entry-${entry.id}`;
+  const context = entryContext(entry);
+  const output = entry.error ?? entry.result;
+  const noInput = entry.args === null || entry.args === undefined || isEmptyObject(entry.args);
+  const noOutput = output === null || output === undefined;
+
+  useEffect(() => {
+    const updateTime = () => setCurrentTime(Date.now());
+    updateTime();
+    const interval = window.setInterval(updateTime, 1_000);
+    return () => window.clearInterval(interval);
+  }, [timestamp]);
 
   return (
     <article className={`timeline-row${entry.suspicious ? " timeline-row--suspicious" : ""}`}>
@@ -51,13 +132,15 @@ export function TimelineRow({ entry }: { entry: PageControlEntry }) {
         aria-controls={detailId}
         onClick={() => setExpanded((current) => !current)}
       >
-        <span className="timeline-seq">#{entry.seq}</span>
         <span className="timeline-main">
-          <strong>{entry.tool}</strong>
+          <strong>
+            {toolLabel(entry.tool)}
+            {context ? <span className="timeline-context"> · {context}</span> : null}
+          </strong>
           <small>
-            {timeFormat.format(new Date(entry.ts))}
-            {" · "}
-            {duration(entry.durationMs)}
+            <time dateTime={entry.ts} title={timeFormat.format(new Date(entry.ts))}>
+              {relativeTime(timestamp, currentTime)}
+            </time>
           </small>
         </span>
         {entry.suspicious ? <span className="injection-badge">INJECTION?</span> : null}
@@ -69,16 +152,20 @@ export function TimelineRow({ entry }: { entry: PageControlEntry }) {
       {expanded ? (
         <div id={detailId} className="timeline-detail">
           <div>
+            <span>Function</span>
+            <pre>{entry.tool}</pre>
+          </div>
+          <div>
             <span>Decision</span>
             <pre>{entry.note}</pre>
           </div>
           <div>
-            <span>Args · redacted</span>
-            <pre>{renderValue(entry.args)}</pre>
+            <span>Input · sensitive values masked</span>
+            <pre>{noInput ? "No input needed." : renderValue(entry.args)}</pre>
           </div>
           <div>
-            <span>Result · redacted</span>
-            <pre>{renderValue(entry.error ?? entry.result)}</pre>
+            <span>{entry.error ? "Error" : "Output"} · sensitive values masked</span>
+            <pre>{noOutput ? "No output recorded." : renderValue(output)}</pre>
           </div>
           <div className="hash-pair">
             <span>hash {entry.hash.slice(0, 10)}</span>
