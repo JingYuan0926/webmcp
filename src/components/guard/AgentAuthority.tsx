@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import { AuthorityRow } from "@/components/guard/AuthorityRow";
+import { ShipIcon, WalletIcon } from "@/components/guard/AuthorityIcons";
 import { CardRow } from "@/components/guard/CardRow";
 import { formatUSD } from "@/lib/catalog";
 import { hasCard, subscribe } from "@/lib/payments-client";
@@ -111,6 +112,8 @@ function SpendRow({
       label="Spend limit"
       value={`${formatUSD(budget.spent)} of ${formatUSD(budget.limit)}`}
       tone={level}
+      icon={<WalletIcon />}
+      full
       editorId="budget-editor"
       editLabel="Edit session budget"
       open={open}
@@ -215,6 +218,7 @@ function AddressRow({
           : "Not set"
       }
       empty={!initialAddress}
+      icon={<ShipIcon />}
       editorId="address-editor"
       editLabel="Edit shipping address"
       open={open}

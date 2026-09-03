@@ -17,6 +17,7 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
   const [runError, setRunError] = useState("");
   const tampered = snapshot.tools.some((tool) => tool.tampered);
   const status = tampered ? "Tamper detected" : snapshot.guardState.paused ? "Paused" : "Live";
+  const alerting = tampered || snapshot.guardState.paused;
   const ready = snapshot.available && snapshot.tools.some((tool) => tool.name === "list_products");
 
   async function runSecurityDemo() {
@@ -33,29 +34,45 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
   }
 
   return (
-    <div className="guard-panel-shell" hidden={hidden}>
+    <div
+      id="pagecontrol-panel"
+      className="guard-panel-shell"
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby="pagecontrol-title"
+      hidden={hidden}
+    >
       <button
         type="button"
         className="guard-hide-button"
         onClick={onHide}
-        aria-label="Hide PageControl panel"
-        title="Hide PageControl"
+        aria-label="Close PageControl settings"
+        title="Close"
       >
-        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-          <path d="m14 7-5 5 5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+          <path d="m7 7 10 10m0-10L7 17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
       </button>
       <aside className="guard-panel" aria-label="PageControl panel">
         <header className="guard-header">
           <div>
             <div className="guard-wordmark">
-              <strong>PageControl</strong>
+              <span className="guard-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18">
+                  <path d="M12 3 5 6v5c0 4.6 2.8 8.1 7 10 4.2-1.9 7-5.4 7-10V6l-7-3Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                  <path d="m9 12 2 2 4-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <strong id="pagecontrol-title">PageControl</strong>
             </div>
-            <p className="guard-tagline">PageControl — the in-page policy layer for WebMCP.</p>
+            <p className="guard-tagline">Review what your agent can access and do.</p>
           </div>
-          <div className="guard-live">
-            <span className={tampered || snapshot.guardState.paused ? "is-alert" : ""} aria-hidden="true" />
-            <strong>{status}</strong>
+          {/* A healthy guard is just the dot; only an abnormal state is worth
+              spelling out. The status stays readable to assistive tech either way. */}
+          <div className={`guard-live${alerting ? "" : " guard-live--quiet"}`} title={status}>
+            <span className={alerting ? "is-alert" : ""} aria-hidden="true" />
+            {alerting ? <strong>{status}</strong> : null}
+            <span className="sr-only">{status}</span>
           </div>
         </header>
 

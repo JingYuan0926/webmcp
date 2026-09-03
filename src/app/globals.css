@@ -105,12 +105,7 @@ summary:focus-visible {
 
 .app-shell {
   min-height: 100svh;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 25rem;
-}
-
-.app-shell--panel-hidden {
-  grid-template-columns: minmax(0, 1fr);
+  display: block;
 }
 
 .store-column {
@@ -1017,113 +1012,177 @@ summary:focus-visible {
   grid-column: 1 / -1;
 }
 
+.pagecontrol-widget {
+  --panel-bg: #fdfcfc;
+  --panel-card: #fafafa;
+  --panel-ink: #172c3b;
+  --panel-muted: #3c505d;
+  --panel-line: #d7dbe0;
+  --panel-input: #cdd3da;
+  --panel-primary: #339ccc;
+  --panel-primary-foreground: #f3f2f2;
+  --panel-secondary: #dfe3e7;
+  --panel-accent: #e3ebf2;
+  --panel-ring: #3eaeea;
+  --panel-danger: #db334a;
+  --panel-font: ui-rounded, "Avenir Next", "Nunito Sans", var(--font-ui);
+  --brand: var(--panel-primary);
+  --ok: var(--panel-primary);
+  --danger: var(--panel-danger);
+  font-family: var(--panel-font);
+}
+
 .guard-panel-shell {
-  position: sticky;
-  z-index: 21;
-  top: 0;
-  height: 100svh;
+  position: fixed;
+  z-index: 60;
+  right: var(--space-5);
+  bottom: 5.25rem;
+  width: min(27rem, calc(100vw - 2rem));
+  max-height: min(48rem, calc(100svh - 7rem));
   min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--panel-line);
+  border-radius: 1rem;
   background: var(--panel-bg);
+  box-shadow:
+    0 1.5rem 4rem color-mix(in srgb, var(--panel-ink) 18%, transparent),
+    0 0.25rem 1rem color-mix(in srgb, var(--panel-ink) 8%, transparent);
+  transform-origin: right bottom;
 }
 
 .guard-panel {
-  height: 100%;
+  max-height: inherit;
   overflow-y: auto;
   overscroll-behavior: contain;
   background: var(--panel-bg);
   color: var(--panel-ink);
-  font-family: var(--font-data);
-  scrollbar-color: var(--panel-line) var(--panel-bg);
+  font-family: var(--panel-font);
+  scrollbar-color: var(--panel-secondary) var(--panel-bg);
 }
 
 .guard-header {
+  position: sticky;
+  z-index: 3;
+  top: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
+  align-items: center;
   gap: var(--space-3);
-  padding: var(--space-5);
+  padding: var(--space-5) 4rem var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--panel-line);
+  background: color-mix(in srgb, var(--panel-bg) 94%, transparent);
+  backdrop-filter: blur(16px);
 }
 
 .guard-hide-button {
   position: absolute;
-  z-index: 4;
-  top: var(--space-5);
-  left: 0;
-  transform: translateX(-100%);
-  width: 1.5rem;
-  height: 2.5rem;
+  z-index: 5;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 2.25rem;
+  height: 2.25rem;
   display: grid;
   place-items: center;
   box-sizing: border-box;
   padding: 0;
-  border: 1px solid var(--panel-line);
-  border-right: 0;
-  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-  background: var(--panel-bg);
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
   color: var(--panel-muted);
 }
 
-.guard-hide-button::after {
-  content: "";
-  position: absolute;
-  inset-block: 0;
-  right: 0;
-  width: 2.5rem;
-}
-
 .guard-hide-button:hover {
-  background: var(--panel-card);
+  background: var(--panel-accent);
   color: var(--panel-ink);
 }
 
 .show-guard-button {
   position: fixed;
-  right: var(--space-4);
-  bottom: var(--space-4);
-  z-index: 30;
-  min-height: 2.75rem;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--panel-line);
-  border-radius: var(--radius-md);
-  background: var(--panel-bg);
-  color: var(--panel-ink);
-  box-shadow: var(--shadow-float);
-  font-family: var(--font-data);
-  font-size: 0.75rem;
-  font-weight: 750;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  z-index: 61;
+  width: 3.25rem;
+  height: 3.25rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--panel-primary) 78%, var(--panel-line));
+  border-radius: 999px;
+  background: var(--panel-primary);
+  color: var(--panel-primary-foreground);
+  box-shadow:
+    0 0.75rem 2rem color-mix(in srgb, var(--panel-primary) 28%, transparent),
+    0 0.125rem 0.5rem color-mix(in srgb, var(--panel-ink) 16%, transparent);
+  font-family: var(--panel-font);
 }
 
-.show-guard-button:hover {
-  border-color: color-mix(in srgb, var(--ok) 48%, var(--panel-line));
-  color: var(--ok);
+.show-guard-button::before {
+  content: attr(data-label);
+  position: absolute;
+  right: calc(100% + var(--space-3));
+  width: max-content;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--panel-line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-bg);
+  color: var(--panel-ink);
+  box-shadow: var(--shadow-card);
+  font-size: 0.75rem;
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(0.25rem);
+}
+
+.show-guard-button:hover,
+.show-guard-button:focus-visible,
+.show-guard-button.is-open {
+  border-color: var(--panel-primary);
+  background: var(--panel-bg);
+  color: var(--panel-primary);
+}
+
+.show-guard-button:hover::before,
+.show-guard-button:focus-visible::before {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .guard-wordmark {
-  min-height: 2.5rem;
   display: flex;
   align-items: center;
+  gap: var(--space-2);
 }
 
 .guard-wordmark strong {
-  font-size: 1rem;
-  letter-spacing: -0.025em;
+  font-size: 1.0625rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+.guard-mark {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.65rem;
+  background: var(--panel-primary);
+  color: var(--panel-primary-foreground);
 }
 
 .guard-tagline {
-  margin: var(--space-1) 0 0;
+  margin: var(--space-2) 0 0;
   color: var(--panel-muted);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.45;
 }
 
 .native-webmcp-note {
-  margin: 0;
-  padding: var(--space-3) var(--space-5);
-  border-bottom: 1px solid var(--panel-line);
+  margin: var(--space-3) var(--space-3) 0;
+  padding: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--panel-primary) 28%, var(--panel-line));
+  border-radius: var(--radius-md);
+  background: var(--panel-accent);
   color: var(--panel-muted);
   font-size: 0.75rem;
   line-height: 1.45;
@@ -1133,9 +1192,11 @@ summary:focus-visible {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 7rem;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-5);
-  border-bottom: 1px solid var(--panel-line);
-  background: color-mix(in srgb, var(--panel-card) 42%, var(--panel-bg));
+  margin: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--panel-line);
+  border-radius: var(--radius-md);
+  background: var(--panel-card);
 }
 
 .guard-command-bar .panel-button {
@@ -1154,11 +1215,16 @@ summary:focus-visible {
 }
 
 .guard-live {
-  display: grid;
+  min-height: 1.75rem;
+  display: inline-grid;
   grid-template-columns: auto auto;
   align-items: center;
   justify-content: end;
   gap: 0.125rem var(--space-2);
+  padding: 0 var(--space-2);
+  border: 1px solid color-mix(in srgb, var(--panel-primary) 24%, var(--panel-line));
+  border-radius: 999px;
+  background: var(--panel-accent);
   text-align: right;
 }
 
@@ -1176,8 +1242,17 @@ summary:focus-visible {
 }
 
 .guard-live strong {
-  font-size: 0.75rem;
-  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+}
+
+/* Healthy state: the dot alone, no pill around it. */
+.guard-live--quiet {
+  min-height: 0;
+  grid-template-columns: auto;
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
 .panel-error {
@@ -1205,14 +1280,18 @@ summary:focus-visible {
 .timeline-section,
 .tool-surface,
 .policy-section {
-  padding: var(--space-5);
-  border-bottom: 1px solid var(--panel-line);
+  margin: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--panel-line);
+  border-radius: var(--radius-md);
+  background: var(--panel-card);
 }
 
 .tool-surface h2 {
   margin: 0;
   color: var(--panel-ink);
-  font-size: 0.875rem;
+  font-size: 1rem;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
@@ -1250,16 +1329,17 @@ summary:focus-visible {
 .panel-section-heading h2 {
   margin: 0;
   color: var(--panel-ink);
-  font-size: 0.875rem;
+  font-size: 1rem;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 .panel-eyebrow {
   margin: 0 0 var(--space-1);
   color: var(--panel-muted);
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -1290,7 +1370,7 @@ summary:focus-visible {
   margin-top: var(--space-4);
   overflow: hidden;
   border-radius: 999px;
-  background: var(--panel-line);
+  background: var(--panel-secondary);
 }
 
 .meter-fill {
@@ -1336,13 +1416,14 @@ summary:focus-visible {
   flex: 0 0 auto;
   border: 1px solid var(--panel-line);
   border-radius: var(--radius-sm);
-  background: var(--panel-card);
+  background: var(--panel-bg);
   color: var(--panel-muted);
 }
 
 .budget-edit-button:hover {
-  border-color: color-mix(in srgb, var(--ok) 42%, var(--panel-line));
-  color: var(--panel-ink);
+  border-color: var(--panel-primary);
+  background: var(--panel-accent);
+  color: var(--panel-primary);
 }
 
 .budget-update-message {
@@ -1431,11 +1512,11 @@ summary:focus-visible {
   border: 1px solid var(--panel-line);
   border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
-  background: var(--panel-card);
+  background: var(--panel-bg);
   color: var(--panel-ink);
   font-family: inherit;
   font-size: 0.75rem;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .panel-button:focus-visible,
@@ -1451,17 +1532,18 @@ summary:focus-visible {
 .guard-panel select:focus-visible,
 .guard-panel button:focus-visible,
 .guard-panel summary:focus-visible {
-  outline-color: var(--panel-ink);
+  outline-color: var(--panel-ring);
 }
 
 .panel-button--allow {
-  border-color: var(--ok);
-  background: color-mix(in srgb, var(--brand) 82%, var(--panel-card));
-  color: var(--panel-ink);
+  border-color: var(--panel-primary);
+  background: var(--panel-primary);
+  color: var(--panel-primary-foreground);
 }
 
 .panel-button--ghost {
-  color: var(--panel-muted);
+  background: var(--panel-secondary);
+  color: var(--panel-ink);
 }
 
 .panel-button--compact {
@@ -1475,7 +1557,7 @@ summary:focus-visible {
 }
 
 .timeline-heading {
-  padding: 0 var(--space-5);
+  padding: 0 var(--space-4);
 }
 
 .timeline-list {
@@ -1501,7 +1583,7 @@ summary:focus-visible {
   grid-template-columns: 2rem minmax(0, 1fr) auto auto 1rem;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-5);
+  padding: var(--space-2) var(--space-4);
   border: 0;
   background: transparent;
   color: inherit;
@@ -1551,8 +1633,8 @@ summary:focus-visible {
 
 .verdict-chip--ok,
 .mode-chip--allow {
-  background: color-mix(in srgb, var(--ok) 11%, var(--panel-card));
-  color: var(--ok);
+  background: var(--panel-accent);
+  color: #1f627f;
 }
 
 .verdict-chip--warn,
@@ -1630,7 +1712,7 @@ summary:focus-visible {
   display: grid;
   justify-items: center;
   gap: var(--space-2);
-  margin: var(--space-4) var(--space-5) 0;
+  margin: var(--space-4) var(--space-4) 0;
   padding: var(--space-6);
   border: 1px dashed var(--panel-line);
   border-radius: var(--radius-md);
@@ -1651,8 +1733,11 @@ summary:focus-visible {
 .alerts-strip {
   display: grid;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-5);
-  border-bottom: 1px solid var(--panel-line);
+  margin: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--panel-line);
+  border-radius: var(--radius-md);
+  background: var(--panel-card);
 }
 
 .alert-row {
@@ -1712,7 +1797,7 @@ summary:focus-visible {
   overflow: hidden;
   border: 1px solid var(--panel-line);
   border-radius: var(--radius-sm);
-  background: var(--panel-card);
+  background: var(--panel-bg);
 }
 
 .policy-row-main {
@@ -1730,8 +1815,8 @@ summary:focus-visible {
   display: grid;
   place-items: center;
   border-radius: var(--radius-sm);
-  background: var(--panel-bg);
-  color: var(--panel-muted);
+  background: var(--panel-accent);
+  color: var(--panel-primary);
 }
 
 .policy-detail-trigger {
@@ -1749,7 +1834,7 @@ summary:focus-visible {
 
 .policy-label {
   color: var(--panel-ink);
-  font-family: var(--font-ui);
+  font-family: var(--panel-font);
   font-size: 0.8125rem;
   font-weight: 700;
   line-height: 1.25;
@@ -1780,7 +1865,7 @@ summary:focus-visible {
   border: 1px solid transparent;
   border-radius: 999px;
   padding: 0 var(--space-3);
-  font-family: var(--font-data);
+  font-family: var(--panel-font);
   font-size: 0.75rem;
   font-weight: 850;
   white-space: nowrap;
@@ -1792,7 +1877,7 @@ summary:focus-visible {
   gap: var(--space-2);
   padding: var(--space-3);
   border-top: 1px solid var(--panel-line);
-  background: var(--panel-bg);
+  background: var(--panel-card);
 }
 
 .policy-mode-option {
@@ -1800,7 +1885,7 @@ summary:focus-visible {
   border: 1px solid transparent;
   border-radius: 999px;
   padding: 0 var(--space-2);
-  font-family: var(--font-data);
+  font-family: var(--panel-font);
   font-size: 0.6875rem;
   font-weight: 800;
   white-space: nowrap;
@@ -1827,7 +1912,7 @@ summary:focus-visible {
 
 .policy-confirmation strong {
   color: var(--panel-ink);
-  font-family: var(--font-ui);
+  font-family: var(--panel-font);
   font-size: 0.8125rem;
 }
 
@@ -1866,7 +1951,7 @@ summary:focus-visible {
 
 .policy-details {
   border-top: 1px solid var(--panel-line);
-  background: var(--panel-bg);
+  background: var(--panel-card);
 }
 
 .policy-function {
@@ -1907,7 +1992,7 @@ summary:focus-visible {
   gap: var(--space-3);
   padding: var(--space-3);
   border-top: 1px solid var(--panel-line);
-  background: var(--panel-bg);
+  background: var(--panel-card);
 }
 
 .panel-field {
@@ -1935,10 +2020,10 @@ summary:focus-visible {
   min-width: 0;
   width: 100%;
   min-height: 2.5rem;
-  border: 1px solid var(--panel-line);
+  border: 1px solid var(--panel-input);
   border-radius: var(--radius-sm);
   padding: var(--space-2);
-  background: var(--panel-card);
+  background: var(--panel-bg);
   color: var(--panel-ink);
   font-family: inherit;
   font-size: 0.75rem;
@@ -1967,7 +2052,7 @@ summary:focus-visible {
   padding: var(--space-3);
   border: 1px solid var(--panel-line);
   border-radius: var(--radius-sm);
-  background: var(--panel-card);
+  background: var(--panel-bg);
 }
 
 .budget-policy > div:first-child {
@@ -1995,44 +2080,82 @@ summary:focus-visible {
 
 .authority-rows {
   display: grid;
-  gap: var(--space-3);
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
   margin: var(--space-4) 0 0;
   padding: 0;
   list-style: none;
 }
 
 .authority-row {
+  min-width: 0;
   display: grid;
+  align-content: start;
   gap: var(--space-2);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--panel-line);
+  padding: var(--space-3);
+  /* A hairline rather than a full-strength rule: at two columns the tiles read
+     as a group without the borders becoming the loudest thing in the panel. */
+  border: 1px solid color-mix(in srgb, var(--panel-line) 55%, transparent);
+  border-radius: var(--radius-md);
 }
 
-.authority-row:first-child {
-  padding-top: 0;
-  border-top: 0;
+/* The spend row carries a meter, so it reads better across the full width. An
+   open editor takes the full width too, rather than stretching one column. */
+.authority-row--full,
+.authority-row.is-open {
+  grid-column: 1 / -1;
+}
+
+.authority-row.is-open {
+  border-color: color-mix(in srgb, var(--panel-primary) 34%, var(--panel-line));
 }
 
 .authority-row-head {
   display: grid;
-  grid-template-columns: minmax(0, auto) minmax(0, 1fr) 2rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-2);
 }
 
-.authority-label {
+.authority-icon {
+  display: grid;
+  place-items: center;
   color: var(--panel-muted);
-  font-size: 0.75rem;
+}
+
+.authority-label {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--panel-muted);
+  font-size: 0.6875rem;
   font-weight: 700;
+  letter-spacing: 0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authority-value-line {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.card-brand {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border-radius: 0.2rem;
+  overflow: hidden;
+  line-height: 0;
 }
 
 .authority-value {
   min-width: 0;
   overflow: hidden;
   color: var(--panel-ink);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 650;
   font-variant-numeric: tabular-nums;
-  text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -2054,12 +2177,32 @@ summary:focus-visible {
 }
 
 .authority-row .meter-track {
+  height: 0.3rem;
   margin-top: 0;
 }
 
-/* Cancels .budget-policy's own top margin, which would double the row gap. */
+/* The pencil sits inside a tile now, so it needs less presence than it did as
+   a standalone control. */
+.authority-row .budget-edit-button {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-color: transparent;
+  background: transparent;
+}
+
+.authority-row .budget-edit-button:hover {
+  border-color: color-mix(in srgb, var(--panel-primary) 34%, var(--panel-line));
+  background: var(--panel-accent);
+}
+
+/* Cancels .budget-policy's own top margin, which would double the row gap.
+   The tile already supplies the border and background, so the editor drops
+   both rather than nesting one frame inside another. */
 .authority-editor {
-  margin-top: 0;
+  margin-top: var(--space-1);
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
 /* Load-bearing: .budget-policy sets display:grid, which outranks the user
@@ -2096,6 +2239,13 @@ summary:focus-visible {
   width: 100%;
 }
 
+/* Two columns need real width. Below this the tiles stack. */
+@media (max-width: 26rem) {
+  .authority-rows {
+    grid-template-columns: 1fr;
+  }
+}
+
 .guard-panel-shell[hidden] {
   display: none;
 }
@@ -2104,7 +2254,7 @@ summary:focus-visible {
   display: grid;
   justify-items: center;
   gap: var(--space-2);
-  padding: var(--space-5);
+  padding: var(--space-4) var(--space-5) var(--space-5);
 }
 
 .export-button {
@@ -2165,6 +2315,8 @@ summary:focus-visible {
   .panel-button,
   .alert-row,
   .export-button,
+  .show-guard-button,
+  .show-guard-button::before,
   .timeline-chevron,
   .policy-chevron,
   .switch > span,
@@ -2175,6 +2327,17 @@ summary:focus-visible {
       border-color 100ms cubic-bezier(0, 0, 0.2, 1),
       filter 100ms cubic-bezier(0, 0, 0.2, 1),
       transform 150ms cubic-bezier(0, 0, 0.2, 1);
+  }
+
+  .guard-panel-shell:not([hidden]) {
+    animation: pagecontrol-popover-in 160ms cubic-bezier(0, 0, 0.2, 1);
+  }
+
+  @keyframes pagecontrol-popover-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem) scale(0.98);
+    }
   }
 
   .product-image {
@@ -2240,38 +2403,15 @@ summary:focus-visible {
 }
 
 @media (max-width: 56.249rem) {
-  .app-shell {
-    display: block;
-  }
-
   .guard-panel-shell {
-    position: relative;
-    height: auto;
-    min-height: 100svh;
-  }
-
-  .guard-panel {
-    height: auto;
-    min-height: 100svh;
-    overflow: visible;
+    right: var(--space-4);
+    bottom: 4.75rem;
+    max-height: calc(100svh - 6rem);
   }
 
   .guard-hide-button {
     top: var(--space-4);
-    left: var(--space-4);
-    transform: none;
-    width: 2.5rem;
-    border: 0;
-    border-radius: var(--radius-sm);
-    background: transparent;
-  }
-
-  .guard-hide-button::after {
-    content: none;
-  }
-
-  .guard-header {
-    padding-left: calc(var(--space-4) + 2.5rem + var(--space-3));
+    right: var(--space-4);
   }
 
   .topbar {
@@ -2340,24 +2480,6 @@ summary:focus-visible {
     grid-template-columns: 1fr;
   }
 
-  .guard-header,
-  .guard-section,
-  .tool-surface,
-  .policy-section {
-    padding-right: var(--space-4);
-    padding-left: var(--space-4);
-  }
-
-  .guard-header {
-    padding-left: calc(var(--space-4) + 2.5rem + var(--space-3));
-  }
-
-  .timeline-heading,
-  .timeline-summary {
-    padding-right: var(--space-4);
-    padding-left: var(--space-4);
-  }
-
   .timeline-summary {
     grid-template-columns: 1.75rem minmax(0, 1fr) auto 0.75rem;
   }
@@ -2374,6 +2496,30 @@ summary:focus-visible {
 }
 
 @media (max-width: 27rem) {
+  .guard-panel-shell {
+    right: var(--space-3);
+    bottom: 4.5rem;
+    width: calc(100vw - 1.5rem);
+    max-height: calc(100svh - 5.5rem);
+  }
+
+  .show-guard-button {
+    right: var(--space-3);
+    bottom: var(--space-3);
+  }
+
+  .guard-header {
+    padding-left: var(--space-4);
+  }
+
+  .guard-live {
+    display: none;
+  }
+
+  .guard-command-bar {
+    grid-template-columns: 1fr;
+  }
+
   .run-button {
     order: 3;
     width: 100%;
