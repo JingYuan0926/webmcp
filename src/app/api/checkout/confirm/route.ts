@@ -108,7 +108,9 @@ export async function POST(request: Request) {
         },
       },
       // Agents retry. Make a retry a no-op rather than a second charge.
-      { idempotencyKey: `pi:${quote.id}` },
+      // Keyed on the quote's nonce, not its id: a signed quote id runs to
+      // ~380 characters and Stripe caps idempotency keys at 255.
+      { idempotencyKey: `pi:${quote.ref}` },
     );
 
     if (intent.status !== "succeeded") {
