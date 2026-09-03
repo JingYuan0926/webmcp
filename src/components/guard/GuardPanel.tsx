@@ -19,63 +19,65 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
   }
 
   return (
-    <aside className="guard-panel" aria-label="PageControl panel" hidden={hidden}>
-      <header className="guard-header">
-        <button
-          type="button"
-          className="guard-hide-button"
-          onClick={onHide}
-          aria-label="Hide PageControl panel"
-          title="Hide PageControl"
-        >
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-            <path d="m14 7-5 5 5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        <div>
-          <div className="guard-wordmark">
-            <strong>PageControl</strong>
+    <div className="guard-panel-shell" hidden={hidden}>
+      <button
+        type="button"
+        className="guard-hide-button"
+        onClick={onHide}
+        aria-label="Hide PageControl panel"
+        title="Hide PageControl"
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <path d="m14 7-5 5 5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <aside className="guard-panel" aria-label="PageControl panel">
+        <header className="guard-header">
+          <div>
+            <div className="guard-wordmark">
+              <strong>PageControl</strong>
+            </div>
+            <p className="guard-tagline">PageControl — the in-page policy layer for WebMCP.</p>
           </div>
-          <p className="guard-tagline">PageControl — the in-page policy layer for WebMCP.</p>
-        </div>
-        <div className="guard-live">
-          <span className={tampered || snapshot.guardState.paused ? "is-alert" : ""} aria-hidden="true" />
-          <strong>{status}</strong>
-        </div>
-      </header>
+          <div className="guard-live">
+            <span className={tampered || snapshot.guardState.paused ? "is-alert" : ""} aria-hidden="true" />
+            <strong>{status}</strong>
+          </div>
+        </header>
 
-      {snapshot.environment.native ? (
-        <p className="native-webmcp-note" role="status">
-          Guarding native agent calls on this page.
-        </p>
-      ) : null}
+        {snapshot.environment.native ? (
+          <p className="native-webmcp-note" role="status">
+            Guarding native agent calls on this page.
+          </p>
+        ) : null}
 
-      <div className="guard-command-bar" aria-label="Agent controls">
-        <button
-          type="button"
-          className="panel-button panel-button--ghost"
-          onClick={togglePause}
-          disabled={!snapshot.available}
-        >
-          {snapshot.guardState.paused ? "Resume agent" : "Pause agent"}
-        </button>
-      </div>
-
-      {!snapshot.available ? (
-        <div className="panel-error" role="status">
-          <strong>SDK not loaded</strong>
-          <span>The store still works. Reload to reconnect PageControl.</span>
+        <div className="guard-command-bar" aria-label="Agent controls">
+          <button
+            type="button"
+            className="panel-button panel-button--ghost"
+            onClick={togglePause}
+            disabled={!snapshot.available}
+          >
+            {snapshot.guardState.paused ? "Resume agent" : "Pause agent"}
+          </button>
         </div>
-      ) : null}
-      <AgentAuthority budget={snapshot.budget} />
-      <ApprovalsList approvals={snapshot.approvals} />
-      {/* Alerts are current state; the timeline is history. */}
-      <AlertsStrip alerts={snapshot.alerts} />
-      <Timeline entries={snapshot.entries} />
-      <PolicyList
-        tools={snapshot.tools}
-        policies={snapshot.policies}
-      />
-    </aside>
+
+        {!snapshot.available ? (
+          <div className="panel-error" role="status">
+            <strong>SDK not loaded</strong>
+            <span>The store still works. Reload to reconnect PageControl.</span>
+          </div>
+        ) : null}
+        <AgentAuthority budget={snapshot.budget} />
+        <ApprovalsList approvals={snapshot.approvals} />
+        {/* Alerts are current state; the timeline is history. */}
+        <AlertsStrip alerts={snapshot.alerts} />
+        <Timeline entries={snapshot.entries} />
+        <PolicyList
+          tools={snapshot.tools}
+          policies={snapshot.policies}
+        />
+      </aside>
+    </div>
   );
 }

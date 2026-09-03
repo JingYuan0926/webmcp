@@ -1017,10 +1017,17 @@ summary:focus-visible {
   grid-column: 1 / -1;
 }
 
-.guard-panel {
+.guard-panel-shell {
   position: sticky;
+  z-index: 21;
   top: 0;
   height: 100svh;
+  min-width: 0;
+  background: var(--panel-bg);
+}
+
+.guard-panel {
+  height: 100%;
   overflow-y: auto;
   overscroll-behavior: contain;
   background: var(--panel-bg);
@@ -1031,7 +1038,7 @@ summary:focus-visible {
 
 .guard-header {
   display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: var(--space-3);
   padding: var(--space-5);
@@ -1039,14 +1046,19 @@ summary:focus-visible {
 }
 
 .guard-hide-button {
+  position: absolute;
+  z-index: 4;
+  top: var(--space-5);
+  left: 0;
+  transform: translateX(-100%);
   width: 2.5rem;
   height: 2.5rem;
   display: grid;
   place-items: center;
-  flex: 0 0 auto;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
+  border: 1px solid var(--panel-line);
+  border-right: 0;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  background: var(--panel-bg);
   color: var(--panel-muted);
 }
 
@@ -1376,6 +1388,7 @@ summary:focus-visible {
 .policy-mode-trigger:focus-visible,
 .policy-mode-option:focus-visible,
 .budget-edit-button:focus-visible,
+.guard-hide-button:focus-visible,
 .guard-panel input:focus-visible,
 .guard-panel select:focus-visible,
 .guard-panel button:focus-visible,
@@ -2025,7 +2038,7 @@ summary:focus-visible {
   width: 100%;
 }
 
-.guard-panel[hidden] {
+.guard-panel-shell[hidden] {
   display: none;
 }
 
@@ -2173,11 +2186,29 @@ summary:focus-visible {
     display: block;
   }
 
-  .guard-panel {
+  .guard-panel-shell {
     position: relative;
     height: auto;
     min-height: 100svh;
+  }
+
+  .guard-panel {
+    height: auto;
+    min-height: 100svh;
     overflow: visible;
+  }
+
+  .guard-hide-button {
+    top: var(--space-4);
+    left: var(--space-4);
+    transform: none;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+  }
+
+  .guard-header {
+    padding-left: calc(var(--space-4) + 2.5rem + var(--space-3));
   }
 
   .topbar {
@@ -2251,6 +2282,10 @@ summary:focus-visible {
   .policy-section {
     padding-right: var(--space-4);
     padding-left: var(--space-4);
+  }
+
+  .guard-header {
+    padding-left: calc(var(--space-4) + 2.5rem + var(--space-3));
   }
 
   .timeline-heading,
