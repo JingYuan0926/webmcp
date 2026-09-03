@@ -2741,6 +2741,33 @@ summary:focus-visible {
   text-align: right;
 }
 
+.dashboard-origin-binding {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.dashboard-origin-binding span,
+.dashboard-key-intro {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.dashboard-origin-binding strong {
+  overflow: hidden;
+  max-width: min(28rem, 45vw);
+  color: var(--ink);
+  font-family: var(--font-data);
+  font-size: 0.875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-key-intro {
+  margin: var(--space-2) 0 0;
+}
+
 .dashboard-key-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2966,6 +2993,15 @@ summary:focus-visible {
 
   .dashboard-section-heading > p {
     text-align: left;
+  }
+
+  .dashboard-origin-binding {
+    width: 100%;
+    justify-items: start;
+  }
+
+  .dashboard-origin-binding strong {
+    max-width: 100%;
   }
 
   .dashboard-section {

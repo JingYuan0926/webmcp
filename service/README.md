@@ -13,6 +13,7 @@ This small Node service keeps PageControl's Ed25519 private key outside the merc
 
 - `PAGECONTROL_PRIVATE_KEY` — base64-encoded PKCS#8 Ed25519 private key. Required for a stable production identity.
 - `PAGECONTROL_SERVICE_TOKEN` — server-to-server credential required by `/grant`.
+- `PAGECONTROL_ALLOWED_ORIGINS` — comma-separated exact origins that may receive grants. Whitespace is trimmed; wildcards and trailing-slash aliases are not accepted. When unset, the service allows any valid origin and prints a startup warning.
 - `PAGECONTROL_ISSUER` — canonical API origin. Defaults to `https://api.pagecontrol.app`.
 - `PORT` — supplied automatically by Railway.
 
@@ -30,7 +31,7 @@ From this folder:
 
 ```bash
 railway init
-railway variables set PAGECONTROL_PRIVATE_KEY="..." PAGECONTROL_SERVICE_TOKEN="..."
+railway variables set PAGECONTROL_PRIVATE_KEY="..." PAGECONTROL_SERVICE_TOKEN="..." PAGECONTROL_ALLOWED_ORIGINS="https://merchant.example"
 railway up
 ```
 

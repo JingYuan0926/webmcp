@@ -165,6 +165,8 @@ The SDK itself remains dependency-free and sends no telemetry. The separate [`se
 
 The signing key runs on a separate origin the merchant deployment does not control. Putting that private key inside the merchant's own deployment would defeat the purpose of the separate trust boundary.
 
+Production service tokens can be scoped to exact merchant origins with `PAGECONTROL_ALLOWED_ORIGINS`, so a leaked token cannot issue grants outside its configured origin allowlist.
+
 This prevents a page script from calling the charge route with only a quote id. It does not stop a malicious merchant: the merchant owns its Stripe account and backend and could charge outside PageControl entirely. An in-page prompt also remains visually forgeable until a browser-owned or cross-origin approval surface exists.
 
 ## Run locally

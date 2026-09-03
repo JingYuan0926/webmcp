@@ -11,6 +11,7 @@ export default function DashboardPage() {
   return (
     <DashboardClient
       signingApiUrl={process.env.NEXT_PUBLIC_PAGECONTROL_API_URL || "Not connected"}
+      allowedOrigin={process.env.NEXT_PUBLIC_PAGECONTROL_ALLOWED_ORIGIN?.trim() || "Any origin"}
     />
   );
 }

@@ -87,7 +87,7 @@ function KeyCard({
   );
 }
 
-export function DashboardClient({ signingApiUrl }: { signingApiUrl: string }) {
+export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUrl: string; allowedOrigin: string }) {
   const [view, setView] = useState<ViewState>("loading");
   const [keys, setKeys] = useState<MerchantKeys | null>(null);
   const [error, setError] = useState("");
@@ -297,8 +297,12 @@ export function DashboardClient({ signingApiUrl }: { signingApiUrl: string }) {
           <section className="dashboard-section" aria-labelledby="dashboard-keys-title">
             <div className="dashboard-section-heading">
               <div><p className="dashboard-eyebrow">Developer settings</p><h2 id="dashboard-keys-title">API keys</h2></div>
-              <p>Rotating a key replaces it immediately in this preview session.</p>
+              <div className="dashboard-origin-binding">
+                <span>Token is bound to</span>
+                <strong>{allowedOrigin}</strong>
+              </div>
             </div>
+            <p className="dashboard-key-intro">Rotating a key replaces it immediately in this preview session.</p>
             <div className="dashboard-key-grid">
               <KeyCard kind="publishable" value={keys.publishable} rotatedAt={keys.publishableRotatedAt} revealed busy={rotating === "publishable"} confirming={confirming === "publishable"} onReveal={() => {}} onCopy={() => void copy(keys.publishable, "Publishable key")} onRotate={() => void rotate("publishable")} />
               <KeyCard kind="secret" value={keys.secret} rotatedAt={keys.secretRotatedAt} revealed={secretVisible} busy={rotating === "secret"} confirming={confirming === "secret"} onReveal={() => setSecretVisible((visible) => !visible)} onCopy={() => void copy(keys.secret, "Secret key")} onRotate={() => void rotate("secret")} />

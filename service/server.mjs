@@ -17,6 +17,12 @@ const SERVICE_TOKEN = process.env.PAGECONTROL_SERVICE_TOKEN || "";
 const MAX_BODY_BYTES = 32 * 1024;
 const GRANT_TTL_SECONDS = 60;
 
+export function parseAllowedOrigins(value = process.env.PAGECONTROL_ALLOWED_ORIGINS || "") {
+  return new Set(value.split(",").map((origin) => origin.trim()).filter(Boolean));
+}
+
+const ALLOWED_ORIGINS = parseAllowedOrigins();
+
 function loadKeyPair() {
   const encodedPrivateKey = process.env.PAGECONTROL_PRIVATE_KEY;
   if (encodedPrivateKey) {
@@ -152,7 +158,7 @@ function validServiceToken(request) {
   return supplied.length === expected.length && timingSafeEqual(supplied, expected);
 }
 
-export function createPageControlServer() {
+export function createPageControlServer({ allowedOrigins = ALLOWED_ORIGINS } = {}) {
   return createServer(async (request, response) => {
     const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
 
@@ -186,6 +192,10 @@ export function createPageControlServer() {
           json(response, 400, { ok: false, code: "invalid_request", message: "The approval grant fields are invalid." });
           return;
         }
+        if (allowedOrigins.size > 0 && !allowedOrigins.has(body.origin)) {
+          json(response, 403, { error: "origin_not_permitted" });
+          return;
+        }
         json(response, 201, { ok: true, ...issueGrant(body) });
       } catch (error) {
         const tooLarge = error instanceof Error && error.message === "body_too_large";
@@ -215,6 +225,9 @@ export function createPageControlServer() {
 
 const isEntryPoint = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isEntryPoint) {
+  if (ALLOWED_ORIGINS.size === 0) {
+    console.warn("PAGECONTROL_ALLOWED_ORIGINS is unset — grants will be issued for any origin.");
+  }
   const server = createPageControlServer();
   server.listen(PORT, "0.0.0.0", () => {
     const address = server.address();
