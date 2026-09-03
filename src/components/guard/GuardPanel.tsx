@@ -1,16 +1,29 @@
 "use client";
 
+import { useState } from "react";
+
 import { AgentAuthority } from "@/components/guard/AgentAuthority";
 import { AlertsStrip } from "@/components/guard/AlertsStrip";
 import { ApprovalsList } from "@/components/guard/ApprovalsList";
 import { PolicyList } from "@/components/guard/PolicyList";
 import { Timeline } from "@/components/guard/Timeline";
+import { demoSteps, runTestAgent } from "@/lib/demo-agent";
 import { usePageControl } from "@/lib/use-pagecontrol";
 
 export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: boolean }) {
   const snapshot = usePageControl();
+  const [progress, setProgress] = useState<{ step: number; tool: string } | null>(null);
+  const [runError, setRunError] = useState("");
   const tampered = snapshot.tools.some((tool) => tool.tampered);
   const status = tampered ? "Tamper detected" : snapshot.guardState.paused ? "Paused" : "Live";
+  const ready = snapshot.available && snapshot.tools.some((tool) => tool.name === "list_products");
+
+  async function runSecurityDemo() {
+    setRunError("");
+    const result = await runTestAgent((step, tool) => setProgress({ step, tool }));
+    if (!result.ok) setRunError(result.message);
+    setProgress(null);
+  }
 
   function togglePause() {
     if (!window.PageControl) return;
@@ -54,12 +67,22 @@ export function GuardPanel({ onHide, hidden }: { onHide: () => void; hidden?: bo
         <div className="guard-command-bar" aria-label="Agent controls">
           <button
             type="button"
+            className="panel-button panel-button--allow"
+            onClick={runSecurityDemo}
+            disabled={!ready || Boolean(progress)}
+            aria-busy={Boolean(progress)}
+          >
+            {progress ? `Demo ${progress.step}/${demoSteps.length}: ${progress.tool}` : "Run security demo"}
+          </button>
+          <button
+            type="button"
             className="panel-button panel-button--ghost"
             onClick={togglePause}
             disabled={!snapshot.available}
           >
             {snapshot.guardState.paused ? "Resume agent" : "Pause agent"}
           </button>
+          {runError ? <p role="alert">{runError}</p> : null}
         </div>
 
         {!snapshot.available ? (
