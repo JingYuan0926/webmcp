@@ -112,8 +112,9 @@ export async function POST(request: Request) {
         },
       },
       // Agents retry. Make a retry a no-op rather than a second charge.
-      // Keyed on quote.ref: Stripe caps an idempotency key at 255 characters
-      // and quote.id is far longer, which made every charge fail outright.
+      // Keyed on the quote's ref, not its id: a signed quote id runs to about
+      // 364 characters and Stripe caps an idempotency key at 255, so every
+      // charge was rejected before it reached the card.
       { idempotencyKey: `pi:${quote.ref}` },
     );
 
