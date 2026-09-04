@@ -54,7 +54,12 @@ export function AgentAuthority({
       </div>
 
       <ul className="authority-rows">
-        <SpendRow budget={budget} open={openRow === "budget"} onToggle={() => toggle("budget")} />
+        <SpendRow
+          budget={budget}
+          pending={api.cart().total}
+          open={openRow === "budget"}
+          onToggle={() => toggle("budget")}
+        />
         <CardRow open={openRow === "card"} onToggle={() => toggle("card")} />
         <AddressRow
           key={JSON.stringify(state.address)}
@@ -71,10 +76,13 @@ export function AgentAuthority({
 
 function SpendRow({
   budget,
+  pending,
   open,
   onToggle,
 }: {
   budget: { limit: number; spent: number; currency: string };
+  /** What the current cart would spend at checkout. Not yet charged. */
+  pending: number;
   open: boolean;
   onToggle: () => void;
 }) {
@@ -83,8 +91,15 @@ function SpendRow({
   const [ok, setOk] = useState(true);
 
   const ratio = budget.limit > 0 ? budget.spent / budget.limit : budget.spent > 0 ? 1 : 0;
-  const level = ratio >= 1 ? "danger" : ratio >= 0.7 ? "warn" : "ok";
   const percent = Math.min(100, Math.max(0, ratio * 100));
+
+  // The cart is money the agent has lined up but not spent. It is shown as a
+  // separate segment so a shopper can see a checkout coming before it happens,
+  // and it counts toward the warning level for the same reason.
+  const pendingPercent =
+    budget.limit > 0 ? Math.min(100 - percent, Math.max(0, (pending / budget.limit) * 100)) : 0;
+  const projected = ratio + (budget.limit > 0 ? pending / budget.limit : 0);
+  const level = projected >= 1 ? "danger" : projected >= 0.7 ? "warn" : "ok";
 
   useEffect(() => {
     let cancelled = false;
@@ -115,7 +130,11 @@ function SpendRow({
   return (
     <AuthorityRow
       label="Spend limit"
-      value={`${formatUSD(budget.spent)} of ${formatUSD(budget.limit)}`}
+      value={
+        pending > 0
+          ? `${formatUSD(budget.spent)} of ${formatUSD(budget.limit)} · ${formatUSD(pending)} in cart`
+          : `${formatUSD(budget.spent)} of ${formatUSD(budget.limit)}`
+      }
       tone={level}
       icon={<WalletIcon />}
       full
@@ -135,6 +154,12 @@ function SpendRow({
           aria-valuenow={Math.min(budget.spent, budget.limit)}
         >
           <span className={`meter-fill meter-fill--${level}`} style={{ width: `${percent}%` }} />
+          {pendingPercent > 0 ? (
+            <span
+              className={`meter-fill meter-fill--pending`}
+              style={{ width: `${pendingPercent}%` }}
+            />
+          ) : null}
         </div>
       }
     >

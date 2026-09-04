@@ -1348,6 +1348,20 @@ summary:focus-visible {
   background: var(--danger);
 }
 
+/* What the cart would spend if it were checked out now. Drawn after the
+   committed fill and visibly lighter, so pending money never reads as spent. */
+.meter-track {
+  display: flex;
+}
+
+.meter-fill--pending {
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ok) 45%, transparent) 0 4px,
+    transparent 4px 8px
+  );
+}
+
 .meter-meta {
   display: flex;
   justify-content: space-between;

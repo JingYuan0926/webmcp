@@ -87,7 +87,9 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       return {
         ...state,
         items: action.state.items,
-        address: action.state.address,
+        // A visitor who has never saved an address keeps the sample one, so
+        // checkout stays reachable. A real saved address always wins.
+        address: action.state.address ?? state.address,
         orders: action.state.orders,
       };
     case "add": {
@@ -361,7 +363,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     window.queueMicrotask(() => {
       if (cancelled) return;
       const persisted = readPersistedState();
-      currentState = { ...currentState, ...persisted };
+      currentState = {
+        ...currentState,
+        ...persisted,
+        address: persisted.address ?? currentState.address,
+      };
       dispatch({ type: "hydrate", state: persisted });
       setHydrated(true);
     });
