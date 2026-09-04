@@ -5,3 +5,9 @@ node_modules
 .env
 .env.local
 .env*.local
+
+# working notes and the superseded prototype, not part of the product
+/claude/
+/.claude/
+/SITUATION.md
+/TASK-*.md
