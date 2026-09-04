@@ -338,18 +338,18 @@ function readPersistedOrders(value: unknown): Order[] {
   });
 }
 
-function readPersistedState(): Pick<StoreState, "items" | "address" | "orders"> {
+/**
+ * Only receipts survive storage. The cart and the address stay session-only, so
+ * a fresh page load never inherits another run's basket.
+ */
+function readPersistedOrderHistory(): Order[] {
   try {
     const raw = window.localStorage.getItem("kedai-tech-store");
-    if (!raw) return { items: [], address: null, orders: [] };
-    const parsed = JSON.parse(raw) as {
-      orders?: unknown;
-    };
-    // Cart and shipping details are session-only. A fresh demo must never
-    // inherit another run's basket or delivery address.
-    return { items: [], address: null, orders: readPersistedOrders(parsed.orders) };
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as { orders?: unknown };
+    return readPersistedOrders(parsed.orders);
   } catch {
-    return { items: [], address: null, orders: [] };
+    return [];
   }
 }
 
@@ -362,13 +362,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     dispatchBridge = dispatch;
     window.queueMicrotask(() => {
       if (cancelled) return;
-      const persisted = readPersistedState();
-      currentState = {
-        ...currentState,
-        ...persisted,
-        address: persisted.address ?? currentState.address,
+      // Carry the live basket forward instead of resetting it. This runs one
+      // microtask after mount, and it runs again whenever the provider
+      // remounts, so overwriting `items` here erased anything the shopper or
+      // the agent had already added. `currentState` outlives the component and
+      // holds the true cart; a page reload re-evaluates this module, so a new
+      // visit still starts empty.
+      const next = {
+        items: currentState.items,
+        address: currentState.address,
+        orders: readPersistedOrderHistory(),
       };
-      dispatch({ type: "hydrate", state: persisted });
+      currentState = { ...currentState, ...next };
+      dispatch({ type: "hydrate", state: next });
       setHydrated(true);
     });
     return () => {
