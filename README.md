@@ -2,6 +2,48 @@
 
 Control what agents do next. The in-page trust and security layer for WebMCP, protecting both merchants and users.
 
+## Devpost description
+
+### Why this use case is a strong fit for WebMCP
+
+WebMCP tools execute as JavaScript inside the page. Registration and dispatch can happen without crossing a network boundary, so an API gateway, payment rail, or edge firewall cannot reliably see the definition, arguments, and result. A policy layer for those calls belongs where they execute.
+
+PageCTRL also uses WebMCP as its own interface, not only as its target. It patches `document.modelContext.registerTool`, audits the browser's real tool list through `getTools()` and the `toolchange` event, and registers three tools of its own. The agent can ask why it was blocked, read its own record, and request a budget change that a human must approve.
+
+WebMCP makes the shared human checkpoint possible. The approval gate leaves the agent's `execute()` pending while the person reviews the action on the same page. The agent does not lose its task, and the person does not have to move to a separate administrative system.
+
+### How it creates a better user experience
+
+Agents are useful for browsing, but people hesitate exactly where delegation becomes valuable: payment and other consequential actions.
+
+PageCTRL closes that gap. The shopper saves a card through Stripe's hosted page. The agent can then shop inside a session budget, per-action amount cap, and per-product quantity cap. It stops for approval only on actions that matter, such as checkout or changing the delivery address. Card details are never exposed as a tool argument or result.
+
+Blocked calls are not dead ends. The agent receives a plain sentence naming the rule and limit, so it can adapt and retry. If fifty items are refused, it can ask for five. It can also call the guard's own explanation tool, and the answer appears in the shared journey.
+
+Merchant rules form the locked floor. A user may make them stricter but cannot weaken them. One layer therefore protects both sides without giving either side a hidden bypass.
+
+### What people and agents can do together that was difficult before
+
+A person and an agent share one live page—the same cart, delivery address, and checkout—while a policy engine watches and records every WebMCP action.
+
+The approval gate suspends a tool call mid-flight until the person decides. That creates direct supervision inside the task instead of asking the person to trust an autonomous run after the fact.
+
+The demo includes a third-party widget that tries to replace the checkout tool and add an unreviewed tool. PageCTRL refuses the replacement and raises an alert. A layer outside the page would not reliably observe a tool-definition change that never crossed its boundary.
+
+The agent can read its own flight record and reason about its limits. The guard participates in the workflow instead of acting as a silent wall.
+
+### How we implemented WebMCP
+
+`public/pagecontrol.js` is a dependency-free browser script loaded before application tool registration. It patches `document.modelContext.registerTool` and mirrors the active context on `navigator.modelContext`. Every registered `execute()` is replaced by a guarded pipeline: schema validation, two-tier policy resolution, rate limits, cumulative quantity and amount caps, an atomically reserved session budget, human approval, execution timeout, PII redaction, injection scanning, and a SHA-256 hash-chained journey entry. If native WebMCP appears after load, the SDK adopts it and migrates the guarded surface without losing sealed state.
+
+The SDK audits the browser's own tool list through `getTools()` and `toolchange`, then reports any definition it did not wrap. A guard that quietly misses a tool creates false confidence, so coverage is visible in the panel.
+
+Checkout approval is enforced server-side. After a human approves, the merchant server requests a short-lived Ed25519 grant from `api.pagecontrol.app`. The charge route verifies that the grant matches the exact origin, session, quote, amount, expiry, and single-use nonce. The signing key stays in a separate service, and Stripe card details remain on Stripe's hosted page.
+
+## Built with
+
+This project is an entry for the OpenAI WebMCP Challenge. OpenAI Codex helped build the implementation from a detailed product and security specification. The demo targets ChatGPT's in-app browser, which supports WebMCP natively.
+
 ## Why PageCTRL exists
 
 AI agents can act inside a web page through WebMCP. A page registers JavaScript tools, and an agent can search, edit, buy, or delete through those tools.
@@ -323,48 +365,6 @@ Open `http://localhost:3000`. Test native WebMCP in ChatGPT's in-app browser or 
 - `src/lib/demo-agent.ts` — deterministic ten-step security demo.
 - `src/components/store/` — storefront, cart, and orders interface.
 - `src/components/guard/` — agent authority (budget, card, address), approvals, alerts, timeline, policies, and export interface.
-
-## Devpost description
-
-### Why this use case is a strong fit for WebMCP
-
-WebMCP tools execute as JavaScript inside the page. Registration and dispatch can happen without crossing a network boundary, so an API gateway, payment rail, or edge firewall cannot reliably see the definition, arguments, and result. A policy layer for those calls belongs where they execute.
-
-PageCTRL also uses WebMCP as its own interface, not only as its target. It patches `document.modelContext.registerTool`, audits the browser's real tool list through `getTools()` and the `toolchange` event, and registers three tools of its own. The agent can ask why it was blocked, read its own record, and request a budget change that a human must approve.
-
-WebMCP makes the shared human checkpoint possible. The approval gate leaves the agent's `execute()` pending while the person reviews the action on the same page. The agent does not lose its task, and the person does not have to move to a separate administrative system.
-
-### How it creates a better user experience
-
-Agents are useful for browsing, but people hesitate exactly where delegation becomes valuable: payment and other consequential actions.
-
-PageCTRL closes that gap. The shopper saves a card through Stripe's hosted page. The agent can then shop inside a session budget, per-action amount cap, and per-product quantity cap. It stops for approval only on actions that matter, such as checkout or changing the delivery address. Card details are never exposed as a tool argument or result.
-
-Blocked calls are not dead ends. The agent receives a plain sentence naming the rule and limit, so it can adapt and retry. If fifty items are refused, it can ask for five. It can also call the guard's own explanation tool, and the answer appears in the shared journey.
-
-Merchant rules form the locked floor. A user may make them stricter but cannot weaken them. One layer therefore protects both sides without giving either side a hidden bypass.
-
-### What people and agents can do together that was difficult before
-
-A person and an agent share one live page—the same cart, delivery address, and checkout—while a policy engine watches and records every WebMCP action.
-
-The approval gate suspends a tool call mid-flight until the person decides. That creates direct supervision inside the task instead of asking the person to trust an autonomous run after the fact.
-
-The demo includes a third-party widget that tries to replace the checkout tool and add an unreviewed tool. PageCTRL refuses the replacement and raises an alert. A layer outside the page would not reliably observe a tool-definition change that never crossed its boundary.
-
-The agent can read its own flight record and reason about its limits. The guard participates in the workflow instead of acting as a silent wall.
-
-### How we implemented WebMCP
-
-`public/pagecontrol.js` is a dependency-free browser script loaded before application tool registration. It patches `document.modelContext.registerTool` and mirrors the active context on `navigator.modelContext`. Every registered `execute()` is replaced by a guarded pipeline: schema validation, two-tier policy resolution, rate limits, cumulative quantity and amount caps, an atomically reserved session budget, human approval, execution timeout, PII redaction, injection scanning, and a SHA-256 hash-chained journey entry. If native WebMCP appears after load, the SDK adopts it and migrates the guarded surface without losing sealed state.
-
-The SDK audits the browser's own tool list through `getTools()` and `toolchange`, then reports any definition it did not wrap. A guard that quietly misses a tool creates false confidence, so coverage is visible in the panel.
-
-Checkout approval is enforced server-side. After a human approves, the merchant server requests a short-lived Ed25519 grant from `api.pagecontrol.app`. The charge route verifies that the grant matches the exact origin, session, quote, amount, expiry, and single-use nonce. The signing key stays in a separate service, and Stripe card details remain on Stripe's hosted page.
-
-## Built with
-
-This project is an entry for the OpenAI WebMCP Challenge. OpenAI Codex helped build the implementation from a detailed product and security specification. The demo targets ChatGPT's in-app browser, which supports WebMCP natively.
 
 ## Roadmap
 
