@@ -143,22 +143,6 @@ The shim is only a demo fallback. The interface always shows the active mode:
 - In Chrome, enable `chrome://flags/#enable-webmcp-testing`, reload the page, and confirm the badge reads **Native**.
 - Use the open-source [Model Context Tool Inspector](https://github.com/beaufortfrancois/model-context-tool-inspector) to list and execute the page tools manually.
 
-## How we attacked it
-
-A guard that nobody attacked is a guess. Two adversarial review rounds tried to break PageCTRL and confirmed sixteen defects. All are fixed. Every security defect carries a regression test in `scripts/pagecontrol-smoke.mjs`.
-
-These four attacks worked, and matter most:
-
-**1. The budget race.** Two `checkout` calls fired together both passed one remaining budget. The check read the spent total before the awaited execution added to it. Two calls of $200 each cleared a $300 limit. Fix: the cost is now reserved synchronously at check time, then refunded on deny, pause, timeout, or error.
-
-**2. The kill switch gap.** `pause()` set the paused flag but never settled approvals already waiting for a human. Granting one of those approvals still ran the tool, with the kill switch on. Fix: `pause()` denies every pending approval, and the pipeline re-checks the flag after an approval resolves.
-
-**3. The guard that failed open.** Any script could define `document.modelContext = {}` before the SDK loaded. The wrapper threw, `window.PageControl` never existed, and the page ran with no guard at all — silently. This is the worst failure mode for a security product. Fix: load-time wrapping falls back to the shim, so the guard always comes up.
-
-**4. The split tool surface.** If one tool failed while migrating to a late-arriving native WebMCP, half the tools moved and half stayed. The two globals then pointed at different contexts, permanently, with no retry. Fix: migration tolerates per-tool failures, keeps both globals identical, and retries after a total failure.
-
-The remaining twelve were smaller: a tool that stayed callable after `unregisterTool`, policy fields that were accepted without validation, a leaked interval, alert rows keyed by array index, and a badge that claimed a mode before the SDK had connected.
-
 ## What happens when things fail
 
 Failure behavior is a security decision. A guard that fails quietly is worse than no guard, because it creates false confidence. PageCTRL never fails open.
@@ -378,11 +362,9 @@ The SDK audits the browser's own tool list through `getTools()` and `toolchange`
 
 Checkout approval is enforced server-side. After a human approves, the merchant server requests a short-lived Ed25519 grant from `api.pagecontrol.app`. The charge route verifies that the grant matches the exact origin, session, quote, amount, expiry, and single-use nonce. The signing key stays in a separate service, and Stripe card details remain on Stripe's hosted page.
 
-Two adversarial review rounds confirmed and fixed sixteen defects. Each security finding has regression coverage in `scripts/pagecontrol-smoke.mjs`, including concurrent budget reservations, a kill switch that originally missed in-flight approvals, broken native-context adoption, approval-call pairing, and load-time registration races.
-
 ## Built with
 
-This project is an entry for the OpenAI WebMCP Challenge. OpenAI Codex helped build the implementation from a detailed product and security specification. The code then passed adversarial security review and carries regression tests for every confirmed finding. The demo targets ChatGPT's in-app browser, which supports WebMCP natively.
+This project is an entry for the OpenAI WebMCP Challenge. OpenAI Codex helped build the implementation from a detailed product and security specification. The demo targets ChatGPT's in-app browser, which supports WebMCP natively.
 
 ## Roadmap
 
