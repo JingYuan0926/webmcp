@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { persistSession, requireSession, setCustomer } from "@/lib/server/session";
+import { forgetCard, persistSession, requireSession, setCustomer } from "@/lib/server/session";
 import {
   LIVE_KEY_MESSAGE,
   liveKeyBlocked,
@@ -32,14 +32,28 @@ export async function POST(request: Request) {
 
   try {
     const session = await requireSession();
-    const customerId =
-      session.stripeCustomerId ??
-      (
+
+    // A customer saved under a previous Stripe key does not exist under the
+    // current one, and Stripe then refuses the whole setup. Check first, and
+    // start a fresh customer rather than failing every card setup for anyone
+    // who visited before the key changed.
+    let customerId = session.stripeCustomerId;
+    if (customerId) {
+      try {
+        const existing = await stripe().customers.retrieve(customerId);
+        if ((existing as { deleted?: boolean }).deleted) customerId = null;
+      } catch {
+        customerId = null;
+      }
+      if (!customerId) forgetCard(session);
+    }
+
+    if (!customerId) {
+      customerId = (
         await stripe().customers.create({
           metadata: { app: "northline-tech", session: session.id },
         })
       ).id;
-    if (!session.stripeCustomerId) {
       setCustomer(session, customerId);
       await persistSession(session);
     }
