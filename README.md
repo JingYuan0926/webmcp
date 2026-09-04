@@ -2,6 +2,21 @@
 
 Control what agents do next. The in-page trust and security layer for WebMCP, protecting both merchants and users.
 
+## Links
+
+| | |
+| --- | --- |
+| **Live demo** | https://webmcp-nine.vercel.app |
+| **Source code** | https://github.com/JingYuan0926/webmcp |
+| **SDK docs** | https://webmcp-nine.vercel.app/docs |
+| **Merchant console** | https://webmcp-nine.vercel.app/dashboard |
+| **Signing service** (separate origin) | https://api.pagecontrol.app/health |
+
+The signing service runs on infrastructure the shop does not control. It
+publishes only the public key, at
+[`/.well-known/pagecontrol-key.json`](https://api.pagecontrol.app/.well-known/pagecontrol-key.json),
+so anyone can verify an approval. The private key never leaves it.
+
 ## Devpost description
 
 ### Why this use case is a strong fit for WebMCP
