@@ -62,9 +62,21 @@ type StoreAction =
   | { type: "address"; address: Address; flash: string }
   | { type: "checkout"; order: Order; flash: string };
 
+/**
+ * A sample address ships with the demo so checkout is reachable on a fresh
+ * visit. Anyone evaluating this should reach the approval gate without first
+ * filling a form. It is editable, and a saved address replaces it on hydrate.
+ */
+const sampleAddress: Address = {
+  name: "Taylor Morgan",
+  line1: "125 Market Street",
+  city: "San Francisco",
+  postcode: "94105",
+};
+
 const initialState: StoreState = {
   items: [],
-  address: null,
+  address: sampleAddress,
   orders: [],
   lastFlash: null,
 };
