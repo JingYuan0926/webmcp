@@ -11,3 +11,9 @@ node_modules
 /.claude/
 /SITUATION.md
 /TASK-*.md
+
+# personal working notes, not part of the product
+/VIDEO-SCRIPT.md
+/brand.md
+/README-ADDITIONS.md
+/STATS.md
