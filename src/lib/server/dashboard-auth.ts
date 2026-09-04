@@ -1,7 +1,5 @@
 import "server-only";
 
-import { DEMO_DASHBOARD_PASSWORD, DEMO_DASHBOARD_USERNAME } from "@/lib/demo-credentials";
-
 import {
   createCipheriv,
   createDecipheriv,
@@ -53,12 +51,22 @@ function signature(payload: string): string {
   return createHmac("sha256", previewSecret()).update(payload).digest("base64url");
 }
 
+/**
+ * Fallback sign-in details for the console. They never reach the browser: this
+ * module is server-only, and the sign-in form ships with empty fields.
+ *
+ * Set PAGECONTROL_DASHBOARD_USERNAME and PAGECONTROL_DASHBOARD_PASSWORD to
+ * replace them, which also keeps them out of this public repository.
+ */
+const FALLBACK_USERNAME = "demoaccount@gmail.com";
+const FALLBACK_PASSWORD = "PageCTRL#Demo2026!";
+
 export function dashboardCredentialsMatch(username: unknown, password: unknown): boolean {
   if (typeof username !== "string" || typeof password !== "string") return false;
   const expectedUsername =
-    process.env.PAGECONTROL_DASHBOARD_USERNAME?.trim() || DEMO_DASHBOARD_USERNAME;
+    process.env.PAGECONTROL_DASHBOARD_USERNAME?.trim() || FALLBACK_USERNAME;
   const expectedPassword =
-    process.env.PAGECONTROL_DASHBOARD_PASSWORD?.trim() || DEMO_DASHBOARD_PASSWORD;
+    process.env.PAGECONTROL_DASHBOARD_PASSWORD?.trim() || FALLBACK_PASSWORD;
   return equal(username, expectedUsername) && equal(password, expectedPassword);
 }
 

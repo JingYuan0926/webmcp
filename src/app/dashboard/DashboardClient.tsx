@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 
 import { ConsoleHeader } from "@/components/console/ConsoleHeader";
-import { DEMO_DASHBOARD_PASSWORD, DEMO_DASHBOARD_USERNAME } from "@/lib/demo-credentials";
 
 type MerchantKeys = {
   publishable: string;
@@ -244,14 +243,14 @@ export function DashboardClient({ signingApiUrl, allowedOrigin }: { signingApiUr
           </div>
           <form className="dashboard-login-card" onSubmit={signIn}>
             <div>
-              <p className="dashboard-eyebrow">Demo account</p>
+              <p className="dashboard-eyebrow">Merchant account</p>
               <h2>Sign in</h2>
-              <p>Both fields are filled in for you. Press <strong>Sign in</strong>.</p>
+              <p>Enter the account details you were given.</p>
             </div>
             <label htmlFor="dashboard-username">Email or username</label>
-            <input id="dashboard-username" name="username" type="text" autoComplete="username" spellCheck={false} defaultValue={DEMO_DASHBOARD_USERNAME} required />
+            <input id="dashboard-username" name="username" type="text" autoComplete="username" spellCheck={false} required />
             <label htmlFor="dashboard-password">Password</label>
-            <input id="dashboard-password" name="password" type="password" autoComplete="current-password" spellCheck={false} defaultValue={DEMO_DASHBOARD_PASSWORD} required aria-describedby={error ? "dashboard-login-error" : undefined} aria-invalid={error ? "true" : undefined} />
+            <input id="dashboard-password" name="password" type="password" autoComplete="current-password" spellCheck={false} required aria-describedby={error ? "dashboard-login-error" : undefined} aria-invalid={error ? "true" : undefined} />
             {error ? <p id="dashboard-login-error" className="dashboard-error" role="alert">{error}</p> : null}
             <button type="submit" className="dashboard-button dashboard-button--primary" disabled={loginBusy} aria-busy={loginBusy}>
               {loginBusy ? "Signing in…" : "Sign in"}
