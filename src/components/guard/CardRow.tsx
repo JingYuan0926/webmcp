@@ -10,6 +10,37 @@ import { CardBrandIcon, CardIcon } from "@/components/guard/AuthorityIcons";
 type Status = "loading" | "idle" | "redirecting" | "returning" | "awaiting";
 
 /**
+ * Marks that card setup runs in a tab this page opened. The returning tab reads
+ * it to decide whether closing itself is safe. Both tabs share this origin, but
+ * only the returning one carries `card_setup` in its URL.
+ */
+const SETUP_TAB_FLAG = "pagectrl:card-setup-tab";
+
+function setSetupTabFlag(): void {
+  try {
+    window.localStorage.setItem(SETUP_TAB_FLAG, "1");
+  } catch {
+    // Storage is unavailable; the tab simply stays open.
+  }
+}
+
+function clearSetupTabFlag(): void {
+  try {
+    window.localStorage.removeItem(SETUP_TAB_FLAG);
+  } catch {
+    // Nothing to clear.
+  }
+}
+
+function readSetupTabFlag(): boolean {
+  try {
+    return window.localStorage.getItem(SETUP_TAB_FLAG) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/**
  * The saved payment card, as one row of the agent authority group.
  *
  * The mount effect is deliberately not gated on `open` or on panel visibility:
@@ -50,6 +81,7 @@ export function CardRow({ open, onToggle }: { open: boolean; onToggle: () => voi
   useEffect(() => {
     const unsubscribe = subscribe(() => setCard(savedCard()));
 
+
     const params = new URLSearchParams(window.location.search);
     const outcome = params.get("card_setup");
     const sessionId = params.get("session_id");
@@ -78,6 +110,17 @@ export function CardRow({ open, onToggle }: { open: boolean; onToggle: () => voi
 
       if (outcome === "success" && sessionId) {
         await completeReturn(sessionId);
+        // Stripe returns to a second copy of the shop with an empty basket,
+        // which reads as a lost cart. Close that tab so the browser goes back
+        // to the original one, where the cart and the journey are intact.
+        // The flag is only set when a separate tab was actually opened, so the
+        // popup-blocked path never closes the shopper's only tab.
+        if (readSetupTabFlag()) {
+          clearSetupTabFlag();
+          window.close();
+          // A browser that refuses to close the tab leaves this standing.
+          setNotice("Card saved. You can close this tab and return to the shop.");
+        }
       } else {
         if (outcome === "cancelled") setNotice("Card setup was cancelled.");
         setStatus("idle");
@@ -108,9 +151,12 @@ export function CardRow({ open, onToggle }: { open: boolean; onToggle: () => voi
       // No "noopener" in the feature string: with it, window.open always
       // returns null, so the popup-blocked fallback below fired every time and
       // navigated this tab as well. The opener is severed afterwards instead.
+      setSetupTabFlag();
       const opened = window.open(payload.url, "_blank");
       if (!opened) {
-        // Genuinely blocked. A redirect beats a dead button.
+        // Genuinely blocked. A redirect beats a dead button. This tab is the
+        // one going to Stripe, so it must not close itself on the way back.
+        clearSetupTabFlag();
         window.location.href = payload.url;
         return;
       }

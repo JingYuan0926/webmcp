@@ -1,5 +1,7 @@
 import "server-only";
 
+import { DEMO_DASHBOARD_PASSWORD, DEMO_DASHBOARD_USERNAME } from "@/lib/demo-credentials";
+
 import {
   createCipheriv,
   createDecipheriv,
@@ -53,8 +55,10 @@ function signature(payload: string): string {
 
 export function dashboardCredentialsMatch(username: unknown, password: unknown): boolean {
   if (typeof username !== "string" || typeof password !== "string") return false;
-  const expectedUsername = process.env.PAGECONTROL_DASHBOARD_USERNAME || "q";
-  const expectedPassword = process.env.PAGECONTROL_DASHBOARD_PASSWORD || "q";
+  const expectedUsername =
+    process.env.PAGECONTROL_DASHBOARD_USERNAME?.trim() || DEMO_DASHBOARD_USERNAME;
+  const expectedPassword =
+    process.env.PAGECONTROL_DASHBOARD_PASSWORD?.trim() || DEMO_DASHBOARD_PASSWORD;
   return equal(username, expectedUsername) && equal(password, expectedPassword);
 }
 
